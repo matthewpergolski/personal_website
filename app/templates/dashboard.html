@@ -1,0 +1,631 @@
+{% extends 'base.html' %}
+
+{% block title %}Data Dashboard | Data Science Portfolio{% endblock %}
+
+{% block styles %}
+<style>
+    .dashboard-card {
+        transition: all 0.3s ease;
+    }
+    
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 350px;
+        width: 100%;
+    }
+    
+    .filter-pill {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .filter-pill:hover {
+        background-color: #2563eb;
+        color: white;
+    }
+    
+    .filter-pill.active {
+        background-color: #2563eb;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <section class="py-8 mb-8 text-center" data-aos="fade-up">
+        <h1 class="text-4xl font-bold mb-4">Interactive Data Dashboard</h1>
+        <p class="text-xl text-gray-600 max-w-3xl mx-auto">Explore the patterns and insights from my GitHub data through interactive visualizations</p>
+    </section>
+    
+    <!-- Dashboard Controls -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8" data-aos="fade-up">
+        <div class="flex flex-wrap gap-3 justify-center">
+            <button class="filter-pill px-4 py-2 rounded-full bg-gray-100 text-gray-800 font-medium active" data-filter="all">All Data</button>
+            <button class="filter-pill px-4 py-2 rounded-full bg-gray-100 text-gray-800 font-medium" data-filter="languages">Languages</button>
+            <button class="filter-pill px-4 py-2 rounded-full bg-gray-100 text-gray-800 font-medium" data-filter="activity">Activity</button>
+            <button class="filter-pill px-4 py-2 rounded-full bg-gray-100 text-gray-800 font-medium" data-filter="repositories">Repositories</button>
+            <button class="filter-pill px-4 py-2 rounded-full bg-gray-100 text-gray-800 font-medium" data-filter="ml-models">ML Models</button>
+        </div>
+    </div>
+    
+    <!-- Main Dashboard Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+        <!-- Language Distribution Card -->
+        <div class="dashboard-card bg-white rounded-lg shadow-lg overflow-hidden" data-aos="fade-right" data-category="languages">
+            <div class="p-6">
+                <h2 class="text-2xl font-bold mb-4 text-blue-800">Programming Language Distribution</h2>
+                <p class="text-gray-600 mb-4">Analysis of languages used across all repositories</p>
+                <div class="chart-container">
+                    <canvas id="languagesChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contribution Heatmap -->
+        <div class="dashboard-card bg-white rounded-lg shadow-lg overflow-hidden" data-aos="fade-left" data-category="activity">
+            <div class="p-6">
+                <h2 class="text-2xl font-bold mb-4 text-blue-800">Contribution Activity</h2>
+                <p class="text-gray-600 mb-4">GitHub commit frequency over the past year</p>
+                <div class="chart-container">
+                    <div id="contributionHeatmap"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Repository Size Comparison -->
+        <div class="dashboard-card bg-white rounded-lg shadow-lg overflow-hidden" data-aos="fade-right" data-category="repositories">
+            <div class="p-6">
+                <h2 class="text-2xl font-bold mb-4 text-blue-800">Repository Size Comparison</h2>
+                <p class="text-gray-600 mb-4">Relative size and activity of top repositories</p>
+                <div class="chart-container">
+                    <canvas id="repoSizeChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stars Over Time -->
+        <div class="dashboard-card bg-white rounded-lg shadow-lg overflow-hidden" data-aos="fade-left" data-category="repositories">
+            <div class="p-6">
+                <h2 class="text-2xl font-bold mb-4 text-blue-800">Stars Over Time</h2>
+                <p class="text-gray-600 mb-4">Accumulation of GitHub stars across repositories</p>
+                <div class="chart-container">
+                    <canvas id="starsTimelineChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ML Model Performance -->
+        <div class="dashboard-card bg-white rounded-lg shadow-lg overflow-hidden" data-aos="fade-right" data-category="ml-models">
+            <div class="p-6">
+                <h2 class="text-2xl font-bold mb-4 text-blue-800">ML Model Performance</h2>
+                <p class="text-gray-600 mb-4">Comparison of accuracy metrics across different models</p>
+                <div class="chart-container">
+                    <canvas id="mlModelChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Data Processing Pipeline -->
+        <div class="dashboard-card bg-white rounded-lg shadow-lg overflow-hidden" data-aos="fade-left" data-category="ml-models">
+            <div class="p-6">
+                <h2 class="text-2xl font-bold mb-4 text-blue-800">Data Processing Pipeline</h2>
+                <p class="text-gray-600 mb-4">Interactive visualization of my data science workflow</p>
+                <div class="chart-container">
+                    <div id="dataFlowDiagram"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Interactive ML Demo Section -->
+    <section class="bg-gradient-to-r from-blue-700 to-indigo-800 text-white rounded-lg shadow-xl p-8 mb-12" data-aos="zoom-in">
+        <div class="text-center mb-8">
+            <h2 class="text-3xl font-bold mb-4">Interactive ML Model Demo</h2>
+            <p class="text-xl opacity-90 max-w-3xl mx-auto">Try out a live machine learning model directly in your browser</p>
+        </div>
+        
+        <div class="bg-white/10 backdrop-blur-md rounded-lg p-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="col-span-1">
+                    <h3 class="text-xl font-semibold mb-4">Input Parameters</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block mb-2 text-sm font-medium">Feature 1</label>
+                            <input type="range" id="feature1" min="0" max="100" value="50" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            <div class="flex justify-between text-xs mt-1">
+                                <span>0</span>
+                                <span>100</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block mb-2 text-sm font-medium">Feature 2</label>
+                            <input type="range" id="feature2" min="0" max="100" value="50" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            <div class="flex justify-between text-xs mt-1">
+                                <span>0</span>
+                                <span>100</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block mb-2 text-sm font-medium">Feature 3</label>
+                            <input type="range" id="feature3" min="0" max="100" value="50" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            <div class="flex justify-between text-xs mt-1">
+                                <span>0</span>
+                                <span>100</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block mb-2 text-sm font-medium">Feature 4</label>
+                            <input type="range" id="feature4" min="0" max="100" value="50" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            <div class="flex justify-between text-xs mt-1">
+                                <span>0</span>
+                                <span>100</span>
+                            </div>
+                        </div>
+                        <button id="predictBtn" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors">
+                            Generate Prediction
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="col-span-2">
+                    <h3 class="text-xl font-semibold mb-4">Model Visualization</h3>
+                    <div class="bg-white rounded-lg p-4 h-full">
+                        <canvas id="mlDemoChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-6 pt-6 border-t border-white/20">
+                <h3 class="text-xl font-semibold mb-4">Prediction Results</h3>
+                <div id="predictionResult" class="bg-white/5 rounded-lg p-4 text-center">
+                    <p class="text-lg">Adjust the parameters and click "Generate Prediction" to see results</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Recent Projects with Data Science Focus -->
+    <section class="mb-12" data-aos="fade-up">
+        <h2 class="text-3xl font-bold mb-8 text-center">Data Science Projects</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="dashboard-card bg-white rounded-lg shadow-lg overflow-hidden">
+                <img src="https://via.placeholder.com/600x300/3b82f6/FFFFFF?text=Machine+Learning+Project" alt="Project thumbnail" class="w-full h-48 object-cover">
+                <div class="p-6">
+                    <h3 class="text-xl font-bold mb-2 text-blue-800">Time Series Forecasting</h3>
+                    <p class="text-gray-600 mb-4">Predicting stock market trends using LSTM neural networks</p>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Python</span>
+                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">TensorFlow</span>
+                        <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">Time Series</span>
+                    </div>
+                    <a href="#" class="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">View Project</a>
+                </div>
+            </div>
+            
+            <div class="dashboard-card bg-white rounded-lg shadow-lg overflow-hidden">
+                <img src="https://via.placeholder.com/600x300/4f46e5/FFFFFF?text=NLP+Project" alt="Project thumbnail" class="w-full h-48 object-cover">
+                <div class="p-6">
+                    <h3 class="text-xl font-bold mb-2 text-blue-800">Sentiment Analysis</h3>
+                    <p class="text-gray-600 mb-4">Analyzing customer reviews using NLP and transformers</p>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Python</span>
+                        <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">BERT</span>
+                        <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">NLP</span>
+                    </div>
+                    <a href="#" class="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">View Project</a>
+                </div>
+            </div>
+            
+            <div class="dashboard-card bg-white rounded-lg shadow-lg overflow-hidden">
+                <img src="https://via.placeholder.com/600x300/10b981/FFFFFF?text=Data+Visualization" alt="Project thumbnail" class="w-full h-48 object-cover">
+                <div class="p-6">
+                    <h3 class="text-xl font-bold mb-2 text-blue-800">COVID-19 Data Analysis</h3>
+                    <p class="text-gray-600 mb-4">Interactive visualization of pandemic spread and impact</p>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">Python</span>
+                        <span class="bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full">Plotly</span>
+                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Pandas</span>
+                    </div>
+                    <a href="#" class="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">View Project</a>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Filter controls
+    const filterButtons = document.querySelectorAll('.filter-pill');
+    const dashboardCards = document.querySelectorAll('.dashboard-card');
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Update active state
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            const filter = button.dataset.filter;
+            
+            // Show/hide cards based on filter
+            dashboardCards.forEach(card => {
+                if (filter === 'all' || card.dataset.category === filter) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    });
+    
+    // Initialize charts
+    
+    // 1. Languages Chart
+    const languagesCtx = document.getElementById('languagesChart').getContext('2d');
+    new Chart(languagesCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Python', 'JavaScript', 'R', 'SQL', 'Java', 'C++', 'Other'],
+            datasets: [{
+                data: [45, 20, 15, 10, 5, 3, 2],
+                backgroundColor: [
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(255, 206, 86, 0.7)',
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(153, 102, 255, 0.7)',
+                    'rgba(255, 99, 132, 0.7)',
+                    'rgba(255, 159, 64, 0.7)',
+                    'rgba(201, 203, 207, 0.7)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            return `${label}: ${value}%`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // 2. Repository Size Chart
+    const repoSizeCtx = document.getElementById('repoSizeChart').getContext('2d');
+    new Chart(repoSizeCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Data Analysis', 'ML Project', 'NLP Research', 'Visualization', 'Web App'],
+            datasets: [{
+                label: 'Code Size (KB)',
+                data: [350, 520, 280, 190, 430],
+                backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }, {
+                label: 'Commits',
+                data: [45, 65, 30, 25, 50],
+                backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    }
+                },
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    // 3. Stars Timeline Chart
+    const starsTimelineCtx = document.getElementById('starsTimelineChart').getContext('2d');
+    new Chart(starsTimelineCtx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            datasets: [{
+                label: 'Cumulative Stars',
+                data: [5, 12, 20, 25, 35, 45, 55, 70, 85, 100, 120, 145],
+                fill: true,
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    // 4. ML Model Chart
+    const mlModelCtx = document.getElementById('mlModelChart').getContext('2d');
+    new Chart(mlModelCtx, {
+        type: 'radar',
+        data: {
+            labels: ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'Training Speed', 'Inference Speed'],
+            datasets: [{
+                label: 'Random Forest',
+                data: [85, 82, 80, 81, 70, 90],
+                fill: true,
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(54, 162, 235, 1)'
+            }, {
+                label: 'Neural Network',
+                data: [90, 87, 85, 86, 60, 75],
+                fill: true,
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(255, 99, 132, 1)'
+            }, {
+                label: 'Gradient Boosting',
+                data: [88, 90, 83, 87, 75, 82],
+                fill: true,
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                pointBackgroundColor: 'rgba(75, 192, 192, 1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(75, 192, 192, 1)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    angleLines: {
+                        display: true
+                    },
+                    suggestedMin: 50,
+                    suggestedMax: 100
+                }
+            }
+        }
+    });
+    
+    // 5. Contribution Heatmap (Plotly)
+    const heatmapData = [
+        {
+            z: [
+                [0, 1, 0, 2, 0, 0, 0],
+                [1, 3, 0, 1, 2, 0, 0],
+                [0, 2, 4, 3, 1, 1, 0],
+                [0, 0, 1, 4, 3, 2, 1],
+                [0, 2, 0, 1, 5, 0, 0]
+            ],
+            x: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+            y: ['Jan-Mar', 'Apr-Jun', 'Jul-Sep', 'Oct-Dec', 'Current'],
+            type: 'heatmap',
+            colorscale: 'Blues',
+            showscale: false
+        }
+    ];
+    
+    const heatmapLayout = {
+        title: 'Commit Activity',
+        margin: { t: 50, l: 80, b: 50, r: 20 },
+        height: 300
+    };
+    
+    Plotly.newPlot('contributionHeatmap', heatmapData, heatmapLayout);
+    
+    // 6. Data Flow Diagram (Plotly)
+    const nodes = [
+        { id: 'data', label: 'Raw Data', x: 0, y: 0 },
+        { id: 'clean', label: 'Data Cleaning', x: 1, y: 0 },
+        { id: 'feature', label: 'Feature Engineering', x: 2, y: 0 },
+        { id: 'split', label: 'Train/Test Split', x: 3, y: 0 },
+        { id: 'model_train', label: 'Model Training', x: 4, y: 0 },
+        { id: 'model_eval', label: 'Model Evaluation', x: 5, y: 0 },
+        { id: 'deploy', label: 'Deployment', x: 6, y: 0 }
+    ];
+    
+    const edges = [
+        { from: 'data', to: 'clean' },
+        { from: 'clean', to: 'feature' },
+        { from: 'feature', to: 'split' },
+        { from: 'split', to: 'model_train' },
+        { from: 'model_train', to: 'model_eval' },
+        { from: 'model_eval', to: 'deploy' }
+    ];
+    
+    const nodeTrace = {
+        x: nodes.map(node => node.x),
+        y: nodes.map(node => node.y),
+        mode: 'markers+text',
+        marker: {
+            size: 30,
+            color: '#4299e1',
+            line: { width: 2, color: '#2b6cb0' }
+        },
+        text: nodes.map(node => node.label),
+        textposition: 'bottom',
+        hoverinfo: 'text',
+        name: ''
+    };
+    
+    const edgeTraces = edges.map(edge => {
+        const fromNode = nodes.find(node => node.id === edge.from);
+        const toNode = nodes.find(node => node.id === edge.to);
+        
+        return {
+            x: [fromNode.x, toNode.x],
+            y: [fromNode.y, toNode.y],
+            mode: 'lines',
+            line: {
+                color: '#a0aec0',
+                width: 2
+            },
+            hoverinfo: 'none'
+        };
+    });
+    
+    const data = [nodeTrace, ...edgeTraces];
+    
+    const layout = {
+        showlegend: false,
+        hovermode: 'closest',
+        margin: { t: 30, b: 90, l: 20, r: 20 },
+        xaxis: {
+            showgrid: false,
+            zeroline: false,
+            showticklabels: false
+        },
+        yaxis: {
+            showgrid: false,
+            zeroline: false,
+            showticklabels: false
+        },
+        height: 300
+    };
+    
+    Plotly.newPlot('dataFlowDiagram', data, layout);
+    
+    // 7. ML Demo Chart 
+    const mlDemoCtx = document.getElementById('mlDemoChart').getContext('2d');
+    const mlDemoChart = new Chart(mlDemoCtx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Class A',
+                data: generateRandomPoints(50, 20, 60, 20, 60),
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                pointRadius: 6
+            }, {
+                label: 'Class B',
+                data: generateRandomPoints(50, 40, 80, 40, 80),
+                backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                pointRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Feature 1'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Feature 2'
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `(${context.parsed.x.toFixed(1)}, ${context.parsed.y.toFixed(1)})`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Generate points for the ML demo
+    function generateRandomPoints(count, minX, maxX, minY, maxY) {
+        const points = [];
+        for (let i = 0; i < count; i++) {
+            points.push({
+                x: Math.random() * (maxX - minX) + minX,
+                y: Math.random() * (maxY - minY) + minY
+            });
+        }
+        return points;
+    }
+    
+    // Handle prediction button click
+    document.getElementById('predictBtn').addEventListener('click', function() {
+        const feature1 = parseInt(document.getElementById('feature1').value);
+        const feature2 = parseInt(document.getElementById('feature2').value);
+        const feature3 = parseInt(document.getElementById('feature3').value);
+        const feature4 = parseInt(document.getElementById('feature4').value);
+        
+        // Add the new point to the chart
+        mlDemoChart.data.datasets.push({
+            label: 'Your Input',
+            data: [{x: feature1, y: feature2}],
+            backgroundColor: 'rgba(75, 192, 192, 1)',
+            pointRadius: 10,
+            pointStyle: 'triangle'
+        });
+        mlDemoChart.update();
+        
+        // Calculate "prediction" (simplified demo version)
+        const distanceToA = Math.sqrt(Math.pow(feature1 - 40, 2) + Math.pow(feature2 - 40, 2));
+        const distanceToB = Math.sqrt(Math.pow(feature1 - 60, 2) + Math.pow(feature2 - 60, 2));
+        
+        let predictedClass, confidence;
+        if (distanceToA < distanceToB) {
+            predictedClass = 'Class A';
+            confidence = 100 * (distanceToB / (distanceToA + distanceToB));
+        } else {
+            predictedClass = 'Class B';
+            confidence = 100 * (distanceToA / (distanceToA + distanceToB));
+        }
+        
+        // Display the prediction
+        document.getElementById('predictionResult').innerHTML = `
+            <div class="text-center">
+                <p class="text-lg mb-2">Prediction: <span class="font-bold">${predictedClass}</span></p>
+                <p class="mb-4">Confidence: ${confidence.toFixed(2)}%</p>
+                <div class="bg-gray-200 rounded-full h-2.5 mb-4 dark:bg-gray-700">
+                    <div class="bg-blue-600 h-2.5 rounded-full" style="width: ${confidence}%"></div>
+                </div>
+                <p class="text-sm">Features Used: [${feature1}, ${feature2}, ${feature3}, ${feature4}]</p>
+            </div>
+        `;
+    });
+});
+</script>
+{% endblock %} 

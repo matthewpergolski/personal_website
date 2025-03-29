@@ -1,0 +1,314 @@
+{% extends 'base.html' %}
+
+{% block title %}About | Matthew Pergolski{% endblock %}
+
+{% block styles %}
+<style>
+    .education-item {
+        position: relative;
+        padding-left: 30px;
+        margin-bottom: 2rem;
+    }
+    
+    .education-item::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background-color: #3b82f6;
+    }
+    
+    .education-item::after {
+        content: '';
+        position: absolute;
+        left: 7px;
+        top: 16px;
+        width: 2px;
+        height: calc(100% + 1rem);
+        background-color: #3b82f6;
+    }
+    
+    .education-item:last-child::after {
+        display: none;
+    }
+    
+    .tech-badge {
+        transition: all 0.2s ease;
+    }
+    
+    .tech-badge:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <section class="bg-white shadow-lg rounded-lg p-8 mb-12" data-aos="fade-up">
+        <h1 class="text-3xl font-bold mb-6">About Me</h1>
+        
+        <div class="prose lg:prose-lg">
+            <p class="mb-6 text-lg">
+                Hello! I'm a passionate data scientist with expertise in machine learning, statistical analysis, and data visualization. My journey in data science started with a strong foundation in programming and mathematics, which I've built upon to develop skills in extracting meaningful insights from complex datasets.
+            </p>
+            
+            <p class="mb-6 text-lg">
+                I specialize in developing machine learning models that solve real-world problems, creating insightful data visualizations, and communicating technical findings to both technical and non-technical audiences.
+            </p>
+        </div>
+    </section>
+    
+    <!-- Education & Certificates Section -->
+    <section class="bg-white shadow-lg rounded-lg p-8 mb-12" data-aos="fade-up">
+        <h2 class="text-2xl font-bold mb-8 text-blue-800">Education & Certifications</h2>
+        
+        <div class="mb-10">
+            <div class="education-item">
+                <h3 class="text-xl font-bold mb-1">Master's in Data Science</h3>
+                <div class="text-gray-600 mb-2">University of Data, 2019-2021</div>
+                <p class="text-gray-700">
+                    Focused on advanced machine learning techniques, statistical modeling, and big data technologies. Completed thesis on predictive analytics in healthcare.
+                </p>
+            </div>
+            
+            <div class="education-item">
+                <h3 class="text-xl font-bold mb-1">Bachelor's in Computer Science</h3>
+                <div class="text-gray-600 mb-2">Tech University, 2015-2019</div>
+                <p class="text-gray-700">
+                    Studied algorithms, data structures, and software engineering principles with a minor in Mathematics. Graduated with honors.
+                </p>
+            </div>
+            
+            <div class="education-item">
+                <h3 class="text-xl font-bold mb-1">Deep Learning Specialization</h3>
+                <div class="text-gray-600 mb-2">Coursera - deeplearning.ai, 2022</div>
+                <p class="text-gray-700">
+                    Completed a comprehensive program covering neural networks, computer vision, NLP, and deep learning best practices.
+                </p>
+            </div>
+            
+            <div class="education-item">
+                <h3 class="text-xl font-bold mb-1">Machine Learning Engineer Certification</h3>
+                <div class="text-gray-600 mb-2">AI Institute, 2023</div>
+                <p class="text-gray-700">
+                    Industry-recognized certification for designing, implementing, and deploying machine learning solutions.
+                </p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Technical Skills Section -->
+    <section class="bg-white shadow-lg rounded-lg p-8 mb-12" data-aos="fade-up">
+        <h2 class="text-2xl font-bold mb-8 text-blue-800">Technical Skills</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div>
+                <h3 class="text-xl font-semibold mb-4 text-gray-800">Programming Languages</h3>
+                <div class="space-y-4">
+                    <div class="tech-badge flex items-center p-3 bg-blue-50 rounded-lg">
+                        <div class="w-10 h-10 flex-shrink-0 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold mr-3">Py</div>
+                        <div>
+                            <h4 class="font-medium">Python</h4>
+                            <p class="text-sm text-gray-600">Primary language for data analysis</p>
+                        </div>
+                    </div>
+                    
+                    <div class="tech-badge flex items-center p-3 bg-blue-50 rounded-lg">
+                        <div class="w-10 h-10 flex-shrink-0 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold mr-3">R</div>
+                        <div>
+                            <h4 class="font-medium">R</h4>
+                            <p class="text-sm text-gray-600">Statistical analysis & reporting</p>
+                        </div>
+                    </div>
+                    
+                    <div class="tech-badge flex items-center p-3 bg-blue-50 rounded-lg">
+                        <div class="w-10 h-10 flex-shrink-0 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold mr-3">SQL</div>
+                        <div>
+                            <h4 class="font-medium">SQL</h4>
+                            <p class="text-sm text-gray-600">Database querying & management</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <h3 class="text-xl font-semibold mb-4 text-gray-800">Data Science & ML</h3>
+                <div class="space-y-4">
+                    <div class="tech-badge flex items-center p-3 bg-green-50 rounded-lg">
+                        <div class="w-10 h-10 flex-shrink-0 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-bold mr-3">ML</div>
+                        <div>
+                            <h4 class="font-medium">Machine Learning</h4>
+                            <p class="text-sm text-gray-600">scikit-learn, XGBoost</p>
+                        </div>
+                    </div>
+                    
+                    <div class="tech-badge flex items-center p-3 bg-green-50 rounded-lg">
+                        <div class="w-10 h-10 flex-shrink-0 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-bold mr-3">DL</div>
+                        <div>
+                            <h4 class="font-medium">Deep Learning</h4>
+                            <p class="text-sm text-gray-600">TensorFlow, PyTorch, Keras</p>
+                        </div>
+                    </div>
+                    
+                    <div class="tech-badge flex items-center p-3 bg-green-50 rounded-lg">
+                        <div class="w-10 h-10 flex-shrink-0 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-bold mr-3">NLP</div>
+                        <div>
+                            <h4 class="font-medium">Natural Language Processing</h4>
+                            <p class="text-sm text-gray-600">NLTK, spaCy, Transformers</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <h3 class="text-xl font-semibold mb-4 text-gray-800">Tools & Technologies</h3>
+                <div class="space-y-4">
+                    <div class="tech-badge flex items-center p-3 bg-purple-50 rounded-lg">
+                        <div class="w-10 h-10 flex-shrink-0 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-bold mr-3">DB</div>
+                        <div>
+                            <h4 class="font-medium">Databases</h4>
+                            <p class="text-sm text-gray-600">PostgreSQL, MongoDB, Redis</p>
+                        </div>
+                    </div>
+                    
+                    <div class="tech-badge flex items-center p-3 bg-purple-50 rounded-lg">
+                        <div class="w-10 h-10 flex-shrink-0 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-bold mr-3">VIZ</div>
+                        <div>
+                            <h4 class="font-medium">Data Visualization</h4>
+                            <p class="text-sm text-gray-600">Matplotlib, Seaborn, Plotly, D3.js</p>
+                        </div>
+                    </div>
+                    
+                    <div class="tech-badge flex items-center p-3 bg-purple-50 rounded-lg">
+                        <div class="w-10 h-10 flex-shrink-0 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-bold mr-3">DE</div>
+                        <div>
+                            <h4 class="font-medium">Data Engineering</h4>
+                            <p class="text-sm text-gray-600">Spark, Airflow, Docker</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Data Science Workflow Section -->
+    <section class="bg-white shadow-lg rounded-lg p-8 mb-12" data-aos="fade-up">
+        <h2 class="text-2xl font-bold mb-8 text-blue-800">My Data Science Workflow</h2>
+        
+        <div class="relative">
+            <div class="flex overflow-x-auto py-8 space-x-4">
+                <div class="flex-shrink-0 w-64 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-6 text-center">
+                    <div class="text-3xl mb-4">1</div>
+                    <h3 class="text-xl font-bold mb-2">Problem Definition</h3>
+                    <p class="text-sm opacity-90">Clearly define the problem and determine success metrics</p>
+                </div>
+                
+                <div class="flex-shrink-0 w-64 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-lg p-6 text-center">
+                    <div class="text-3xl mb-4">2</div>
+                    <h3 class="text-xl font-bold mb-2">Data Collection</h3>
+                    <p class="text-sm opacity-90">Gather relevant data from various sources</p>
+                </div>
+                
+                <div class="flex-shrink-0 w-64 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg p-6 text-center">
+                    <div class="text-3xl mb-4">3</div>
+                    <h3 class="text-xl font-bold mb-2">Data Cleaning</h3>
+                    <p class="text-sm opacity-90">Handle missing values, outliers, and inconsistencies</p>
+                </div>
+                
+                <div class="flex-shrink-0 w-64 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-lg p-6 text-center">
+                    <div class="text-3xl mb-4">4</div>
+                    <h3 class="text-xl font-bold mb-2">Exploratory Analysis</h3>
+                    <p class="text-sm opacity-90">Understand patterns, relationships, and insights</p>
+                </div>
+                
+                <div class="flex-shrink-0 w-64 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg p-6 text-center">
+                    <div class="text-3xl mb-4">5</div>
+                    <h3 class="text-xl font-bold mb-2">Feature Engineering</h3>
+                    <p class="text-sm opacity-90">Create meaningful features for modeling</p>
+                </div>
+                
+                <div class="flex-shrink-0 w-64 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg p-6 text-center">
+                    <div class="text-3xl mb-4">6</div>
+                    <h3 class="text-xl font-bold mb-2">Modeling</h3>
+                    <p class="text-sm opacity-90">Apply machine learning algorithms</p>
+                </div>
+                
+                <div class="flex-shrink-0 w-64 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-lg p-6 text-center">
+                    <div class="text-3xl mb-4">7</div>
+                    <h3 class="text-xl font-bold mb-2">Evaluation</h3>
+                    <p class="text-sm opacity-90">Measure performance against metrics</p>
+                </div>
+                
+                <div class="flex-shrink-0 w-64 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg p-6 text-center">
+                    <div class="text-3xl mb-4">8</div>
+                    <h3 class="text-xl font-bold mb-2">Deployment</h3>
+                    <p class="text-sm opacity-90">Implement the solution in production</p>
+                </div>
+            </div>
+            <div class="absolute left-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-white to-transparent w-8 h-full pointer-events-none"></div>
+            <div class="absolute right-0 top-1/2 transform -translate-y-1/2 bg-gradient-to-l from-white to-transparent w-8 h-full pointer-events-none"></div>
+        </div>
+    </section>
+    
+    <!-- Contact Section -->
+    <section class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-lg shadow-xl p-8 mb-12" data-aos="fade-up">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+                <h2 class="text-2xl font-bold mb-6">Get in Touch</h2>
+                <p class="mb-6 opacity-90">
+                    I'm always open to discussing data science projects, research opportunities, or potential collaborations. Feel free to reach out!
+                </p>
+                
+                <div class="space-y-4">
+                    <div class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        <a href="mailto:your.email@example.com" class="hover:underline">your.email@example.com</a>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                        </svg>
+                        <a href="https://linkedin.com/in/yourusername" target="_blank" class="hover:underline">linkedin.com/in/yourusername</a>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <a href="https://twitter.com/yourusername" target="_blank" class="hover:underline">@yourusername</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white/10 backdrop-blur-sm rounded-lg p-6">
+                <h3 class="text-xl font-bold mb-4">Quick Message</h3>
+                <form class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1 opacity-90">Name</label>
+                        <input type="text" class="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 text-white" placeholder="Your name">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-1 opacity-90">Email</label>
+                        <input type="email" class="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 text-white" placeholder="Your email">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-1 opacity-90">Message</label>
+                        <textarea rows="4" class="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50 text-white" placeholder="Your message"></textarea>
+                    </div>
+                    
+                    <button type="button" class="w-full px-4 py-2 bg-white text-blue-600 font-medium rounded-md hover:bg-blue-50 transition-colors">Send Message</button>
+                </form>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %} 

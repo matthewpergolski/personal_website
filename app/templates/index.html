@@ -1,0 +1,467 @@
+{% extends 'base.html' %}
+
+{% block title %}Home | Data Science Portfolio{% endblock %}
+
+{% block styles %}
+<style>
+    #particles-js {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        z-index: -1;
+    }
+    
+    .hero-content {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .text-shadow {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+    
+    .skill-bar {
+        height: 10px;
+        border-radius: 5px;
+        margin-bottom: 8px;
+        transition: width 1.5s ease-in-out;
+    }
+    
+    .timeline-container {
+        position: relative;
+    }
+    
+    .timeline-container::after {
+        content: '';
+        position: absolute;
+        width: 4px;
+        background-color: #3b82f6;
+        top: 0;
+        bottom: 0;
+        left: 50%;
+        margin-left: -2px;
+    }
+    
+    .timeline-item {
+        position: relative;
+        width: 50%;
+        padding: 0 40px 20px 40px;
+    }
+    
+    .timeline-item::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background-color: white;
+        border: 4px solid #3b82f6;
+        border-radius: 50%;
+        top: 0;
+        z-index: 1;
+    }
+    
+    .timeline-item:nth-child(odd) {
+        left: 0;
+    }
+    
+    .timeline-item:nth-child(even) {
+        left: 50%;
+    }
+    
+    .timeline-item:nth-child(odd)::after {
+        right: -10px;
+    }
+    
+    .timeline-item:nth-child(even)::after {
+        left: -10px;
+    }
+    
+    .stats-card {
+        transition: all 0.3s;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Particle Background -->
+<div id="particles-js"></div>
+
+<div class="max-w-5xl mx-auto">
+    <!-- Hero Section -->
+    <section class="py-20 mb-16 text-center hero-content">
+        <div class="bg-black/30 backdrop-blur-sm p-8 rounded-xl inline-block max-w-3xl mx-auto shadow-xl">
+            <h1 class="text-5xl font-bold mb-4 text-white text-shadow">Matthew Pergolski</h1>
+            <p class="text-xl text-white mb-8 max-w-2xl mx-auto text-shadow">Transforming data into insights through machine learning, statistical analysis, and visualization</p>
+            <div class="bg-white/90 backdrop-blur-md p-6 rounded-lg shadow-lg inline-block">
+                <div class="typewriter inline-block">
+                    <span id="typewriter-text" class="text-xl font-mono text-blue-700"></span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Profile Section -->
+    <section class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm shadow-lg rounded-lg p-8 mb-16" data-aos="fade-up">
+        {% if profile.error %}
+            <div class="text-red-500 text-center p-4">
+                {{ profile.error }}
+            </div>
+        {% else %}
+            <div class="flex flex-col md:flex-row items-start gap-12">
+                <div class="w-full md:w-1/3">
+                    <div class="w-48 h-48 mx-auto md:mx-0 overflow-hidden rounded-full border-4 border-blue-500 dark:border-blue-400 shadow-xl">
+                        <img src="{{ profile.avatar_url }}" alt="{{ profile.name }}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="mt-6 text-center md:text-left">
+                        <h2 class="text-3xl font-bold mb-2">{{ profile.name }}</h2>
+                        <h3 class="text-xl text-gray-600 dark:text-gray-300 mb-4">@{{ profile.login }}</h3>
+                        {% if profile.bio %}
+                            <p class="text-gray-700 dark:text-gray-300 mb-4">{{ profile.bio }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="mt-4 text-center md:text-left">
+                        <a href="{{ profile.html_url }}" target="_blank" 
+                           class="inline-block bg-gray-800 dark:bg-blue-700 text-white px-6 py-2 rounded-md hover:bg-gray-700 dark:hover:bg-blue-600 transition-colors">
+                            View on GitHub
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="w-full md:w-2/3">
+                    <h3 class="text-2xl font-bold mb-6 text-blue-800">Data Science Skills</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="font-semibold">Python</span>
+                                <span>95%</span>
+                            </div>
+                            <div class="bg-gray-200 rounded-full">
+                                <div class="skill-bar bg-blue-600" style="width: 0%" data-width="95%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="font-semibold">Machine Learning</span>
+                                <span>90%</span>
+                            </div>
+                            <div class="bg-gray-200 rounded-full">
+                                <div class="skill-bar bg-green-600" style="width: 0%" data-width="90%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="font-semibold">Data Analysis</span>
+                                <span>92%</span>
+                            </div>
+                            <div class="bg-gray-200 rounded-full">
+                                <div class="skill-bar bg-purple-600" style="width: 0%" data-width="92%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="font-semibold">Data Visualization</span>
+                                <span>88%</span>
+                            </div>
+                            <div class="bg-gray-200 rounded-full">
+                                <div class="skill-bar bg-yellow-600" style="width: 0%" data-width="88%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="font-semibold">Deep Learning</span>
+                                <span>85%</span>
+                            </div>
+                            <div class="bg-gray-200 rounded-full">
+                                <div class="skill-bar bg-red-600" style="width: 0%" data-width="85%"></div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="font-semibold">Statistical Analysis</span>
+                                <span>89%</span>
+                            </div>
+                            <div class="bg-gray-200 rounded-full">
+                                <div class="skill-bar bg-indigo-600" style="width: 0%" data-width="89%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8">
+                        <h4 class="text-xl font-semibold mb-4 text-blue-800">GitHub Statistics</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="stats-card bg-blue-50 p-4 rounded-lg text-center shadow">
+                                <div class="text-3xl font-bold text-blue-700">{{ profile.public_repos }}</div>
+                                <div class="text-sm text-gray-600">Repositories</div>
+                            </div>
+                            <div class="stats-card bg-green-50 p-4 rounded-lg text-center shadow">
+                                <div class="text-3xl font-bold text-green-700">{{ profile.followers }}</div>
+                                <div class="text-sm text-gray-600">Followers</div>
+                            </div>
+                            <div class="stats-card bg-purple-50 p-4 rounded-lg text-center shadow">
+                                <div class="text-3xl font-bold text-purple-700">{{ profile.following }}</div>
+                                <div class="text-sm text-gray-600">Following</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </section>
+
+    <!-- Data Science Journey Timeline -->
+    <section class="mb-16" data-aos="fade-up">
+        <h2 class="text-3xl font-bold mb-8 text-center">My Data Science Journey</h2>
+        
+        <div class="timeline-container py-8">
+            <div class="timeline-item" data-aos="fade-right">
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-bold mb-2 text-blue-800">Started Learning Python</h3>
+                    <div class="text-sm text-gray-500 mb-2">January 2021</div>
+                    <p class="text-gray-700">Began my journey in data science by learning Python fundamentals and basic data manipulation with pandas.</p>
+                </div>
+            </div>
+            
+            <div class="timeline-item" data-aos="fade-left">
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-bold mb-2 text-blue-800">Data Analysis & Visualization</h3>
+                    <div class="text-sm text-gray-500 mb-2">May 2021</div>
+                    <p class="text-gray-700">Mastered data analysis techniques using pandas, NumPy, and created visualizations with Matplotlib and Seaborn.</p>
+                </div>
+            </div>
+            
+            <div class="timeline-item" data-aos="fade-right">
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-bold mb-2 text-blue-800">Machine Learning Fundamentals</h3>
+                    <div class="text-sm text-gray-500 mb-2">September 2021</div>
+                    <p class="text-gray-700">Learned supervised and unsupervised learning algorithms using scikit-learn, working on various classification and regression problems.</p>
+                </div>
+            </div>
+            
+            <div class="timeline-item" data-aos="fade-left">
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-bold mb-2 text-blue-800">Deep Learning & Neural Networks</h3>
+                    <div class="text-sm text-gray-500 mb-2">January 2022</div>
+                    <p class="text-gray-700">Explored deep learning concepts with TensorFlow and Keras, building neural networks for image classification and NLP tasks.</p>
+                </div>
+            </div>
+            
+            <div class="timeline-item" data-aos="fade-right">
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-bold mb-2 text-blue-800">Real-World Projects</h3>
+                    <div class="text-sm text-gray-500 mb-2">Present</div>
+                    <p class="text-gray-700">Working on real-world data science projects and continuously learning new techniques and technologies.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Data Visualization Section -->
+    <section class="bg-white/90 backdrop-blur-sm shadow-lg rounded-lg p-8 mb-16" data-aos="fade-up">
+        <h2 class="text-3xl font-bold mb-8 text-center">Interactive Data Visualization</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+                <h3 class="text-xl font-bold mb-4 text-blue-800">Language Distribution</h3>
+                <div class="bg-gray-50 p-4 rounded-lg shadow">
+                    <canvas id="languageChart" width="400" height="300"></canvas>
+                </div>
+            </div>
+            <div>
+                <h3 class="text-xl font-bold mb-4 text-blue-800">Contribution Activity</h3>
+                <div class="bg-gray-50 p-4 rounded-lg shadow">
+                    <canvas id="contributionChart" width="400" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="text-center py-8 mb-16" data-aos="fade-up">
+        <h2 class="text-3xl font-bold mb-4">Explore My Projects</h2>
+        <p class="text-gray-600 mb-6 max-w-2xl mx-auto">Check out my data science projects, featuring machine learning models, data analysis case studies, and interactive visualizations</p>
+        <a href="/projects" class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors hover:shadow-lg">
+            View Projects
+        </a>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+<script>
+    // Initialize particles.js for background effect
+    particlesJS("particles-js", {
+        particles: {
+            number: { value: 80, density: { enable: true, value_area: 800 } },
+            color: { value: "#3b82f6" },
+            shape: { type: "circle" },
+            opacity: { value: 0.5, random: false },
+            size: { value: 3, random: true },
+            line_linked: {
+                enable: true,
+                distance: 150,
+                color: "#3b82f6",
+                opacity: 0.4,
+                width: 1
+            },
+            move: {
+                enable: true,
+                speed: 2,
+                direction: "none",
+                random: false,
+                straight: false,
+                out_mode: "out",
+                bounce: false,
+                attract: { enable: false, rotateX: 600, rotateY: 1200 }
+            }
+        },
+        interactivity: {
+            detect_on: "canvas",
+            events: {
+                onhover: { enable: true, mode: "grab" },
+                onclick: { enable: true, mode: "push" },
+                resize: true
+            },
+            modes: {
+                grab: { distance: 140, line_linked: { opacity: 1 } },
+                push: { particles_nb: 4 },
+                remove: { particles_nb: 2 }
+            }
+        },
+        retina_detect: true
+    });
+
+    // Typewriter effect
+    const texts = [
+        "Python Developer",
+        "Machine Learning Engineer",
+        "Data Scientist",
+        "Statistical Analyst",
+        "Data Visualization Expert"
+    ];
+    let textIndex = 0;
+    let charIndex = 0;
+    let isDeleting = false;
+    const typewriterElement = document.getElementById("typewriter-text");
+    
+    function typewriter() {
+        const currentText = texts[textIndex];
+        
+        if (isDeleting) {
+            typewriterElement.textContent = currentText.substring(0, charIndex - 1);
+            charIndex--;
+        } else {
+            typewriterElement.textContent = currentText.substring(0, charIndex + 1);
+            charIndex++;
+        }
+        
+        if (!isDeleting && charIndex === currentText.length) {
+            isDeleting = true;
+            setTimeout(typewriter, 1500);
+        } else if (isDeleting && charIndex === 0) {
+            isDeleting = false;
+            textIndex = (textIndex + 1) % texts.length;
+            setTimeout(typewriter, 500);
+        } else {
+            setTimeout(typewriter, isDeleting ? 50 : 100);
+        }
+    }
+    
+    window.addEventListener("load", () => {
+        // Start typewriter effect
+        typewriter();
+        
+        // Animate skill bars
+        setTimeout(() => {
+            document.querySelectorAll(".skill-bar").forEach(bar => {
+                const width = bar.getAttribute("data-width");
+                bar.style.width = width;
+            });
+        }, 500);
+        
+        // Language distribution chart
+        const languageCtx = document.getElementById('languageChart').getContext('2d');
+        new Chart(languageCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Python', 'JavaScript', 'R', 'SQL', 'Java'],
+                datasets: [{
+                    label: 'Language Distribution',
+                    data: [65, 15, 10, 7, 3],
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)',
+                        'rgba(153, 102, 255, 0.7)',
+                        'rgba(255, 99, 132, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 99, 132, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Repository Languages'
+                    }
+                }
+            }
+        });
+        
+        // Contribution chart
+        const contributionCtx = document.getElementById('contributionChart').getContext('2d');
+        new Chart(contributionCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Contributions',
+                    data: [65, 59, 80, 81, 56, 55, 40, 88, 96, 67, 90, 85],
+                    fill: true,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Monthly Contributions'
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %} 
