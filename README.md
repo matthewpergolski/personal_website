@@ -6,8 +6,14 @@ A modern personal website that showcases your GitHub profile, repositories, and 
 
 - **Profile Section**: Displays your GitHub profile information, including bio, followers, and repositories.
 - **GitHub Highlights**: Shows your repositories with details like stars, forks, and languages used.
+- **Interactive Resume**: YAML-driven interactive resume with skills visualization and timeline.
+- **AI Chatbot**: An interactive chatbot that helps visitors navigate and learn about your portfolio.
+  - Expandable chat interface with a Claude-like full-screen experience
+  - Dark mode support for all elements including the chatbot
+  - Quick-access suggestion buttons for common questions
 - **Responsive Design**: Looks great on desktop, tablet, and mobile devices.
 - **Interactive Elements**: Smooth animations and transitions for enhanced user experience.
+- **Dark/Light Mode**: Toggle between dark and light themes with persistent preference.
 
 ## Technology Stack
 
@@ -17,6 +23,10 @@ A modern personal website that showcases your GitHub profile, repositories, and 
   - Tailwind CSS for styling
   - JavaScript for interactivity
   - AOS (Animate On Scroll) for animations
+  - Chart.js for data visualization
+- **Data Management**: 
+  - YAML for structured content management
+  - PDF parsing for resume data extraction
 - **APIs**: GitHub API for fetching profile and repository data
 
 ## Getting Started
@@ -42,7 +52,7 @@ A modern personal website that showcases your GitHub profile, repositories, and 
 
 3. Install dependencies:
    ```bash
-   uv add flask pytest python-dotenv requests pytest-mock
+   uv add flask pytest python-dotenv requests pytest-mock pyyaml pypdf
    ```
 
 4. Create a `.env` file in the project root and add your GitHub token:
@@ -118,12 +128,96 @@ personal_website/
 │   ├── __init__.py        # Flask app initialization
 │   ├── routes.py          # Route definitions
 │   ├── github_api.py      # GitHub API integration
+│   ├── resume_utils.py    # Resume data loading and processing
+│   ├── data/              # YAML data files
+│   │   └── resume_data.yaml # Resume content
 │   ├── static/            # Static files (CSS, JS, images)
+│   │   └── js/            # JavaScript files
+│   │       ├── resume.js  # Resume interactive features
+│   │       └── chatbot.js # Chatbot functionality
 │   └── templates/         # HTML templates
 ├── tests/                 # Test directory
 │   ├── test_routes.py     # Tests for routes
-│   └── test_github_api.py # Tests for GitHub API integration
+│   ├── test_github_api.py # Tests for GitHub API integration
+│   └── test_resume_utils.py # Tests for resume utilities
 ├── pyproject.toml         # Project dependencies and metadata
 ├── main.py                # Application entry point
 ├── .env                   # Environment variables (GitHub token)
 └── README.md              # Project documentation 
+```
+
+## Resume Data Management
+
+The website uses a YAML-based approach for managing resume data:
+
+1. Structure your resume information in `app/data/resume_data.yaml`
+2. The data follows this general structure:
+   ```yaml
+   personal_info:
+     name: "Your Name"
+     title: "Your Professional Title"
+     # other personal details
+   
+   education:
+     - institution: "University Name"
+       degree: "Degree Title"
+       # other education details
+   
+   experience:
+     - company: "Company Name"
+       position: "Your Position"
+       # other job details
+   
+   skills:
+     technical:
+       - name: "Skill Name"
+         level: 85  # Percentage of proficiency
+   ```
+
+3. To extract data from your PDF resume, use the `extract_pdf_text()` utility in `resume_utils.py`:
+   ```python
+   from app.resume_utils import extract_pdf_text
+   
+   text = extract_pdf_text('path/to/your/resume.pdf')
+   # Then parse the text into the appropriate YAML structure
+   ```
+
+## Future Plans
+
+### RAG Integration for Enhanced Chatbot
+
+Future versions will include a Retrieval-Augmented Generation (RAG) capability to make the chatbot more intelligent:
+
+1. **Document Indexing**:
+   - Index all GitHub repositories, README files, and documentation
+   - Create embeddings of resume content for semantic search
+   - Store project descriptions and technical details in a vector database
+
+2. **Query Processing**:
+   - Implement semantic search to find relevant information based on user queries
+   - Retrieve context from the vector database to answer specific questions
+   - Combine retrieved information with LLM capabilities for coherent responses
+
+3. **User Experience**:
+   - Enable the chatbot to answer specific questions about projects, skills, and experience
+   - Allow users to ask technical questions about repository code
+   - Provide detailed information about project implementations and technologies used
+
+### Resume Data Extraction Process
+
+To streamline the resume data management, a future enhancement will include:
+
+1. **Automated Data Extraction**:
+   - Enhanced PDF parsing with section recognition using ML/NLP techniques
+   - Automatic categorization of resume sections (education, experience, skills)
+   - Extraction of key information like dates, titles, and descriptions
+
+2. **YAML Generation**:
+   - Conversion of extracted information into properly formatted YAML
+   - Validation of structure against a schema
+   - Diffing with existing YAML to show changes
+
+3. **Two-way Synchronization**:
+   - Generate PDF resume from YAML data (single source of truth)
+   - Update YAML when PDF changes (for compatibility with traditional resume workflows)
+   - Web interface for editing resume data directly

@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, send_from_directory
 from app.github_api import get_user_profile, get_repositories, get_visualization_data
+from app.resume_utils import get_resume_data
 import os
 
 # Create a blueprint without specific URL prefix since routes will be added at the app level
@@ -33,7 +34,8 @@ def dashboard():
 @bp.route('/resume')
 def resume():
     """Render the interactive resume page."""
-    return render_template('resume.html')
+    resume_data = get_resume_data()
+    return render_template('resume.html', resume_data=resume_data)
 
 @bp.route('/download-resume')
 def download_resume():

@@ -1,0 +1,100 @@
+personal_info:
+  name: "Matthew Pergolski"
+  title: "Data Scientist & Machine Learning Engineer"
+  contact:
+    email: "mlpergol@syr.edu"
+    github: "github.com/matthewpergolski"
+    location: "Hello, Wisconsin!"
+
+education:
+  - degree: "M.S. Applied Data Science"
+    institution: "Syracuse University"
+    years: "2021-2024"
+  - degree: "B.B.A." 
+    institution: "University of Wisconsin"
+    years: "2014-2017"
+
+skills:
+  technical:
+    - name: "Python"
+      proficiency: 95
+    - name: "Machine Learning"
+      proficiency: 90
+    - name: "Data Analysis"
+      proficiency: 92
+    - name: "Data Visualization"
+      proficiency: 88
+    - name: "Deep Learning"
+      proficiency: 85
+    - name: "NLP"
+      proficiency: 82
+    - name: "SQL"
+      proficiency: 90
+    - name: "Statistics"
+      proficiency: 85
+  
+experience:
+  - title: "Senior Data Scientist"
+    company: "Lockheed Martin"
+    period: "2023-Present"
+    description: "Led development of machine learning models for predictive analytics."
+    achievements:
+      - "Improved model accuracy by 15%"
+      - "Reduced false positives by 30%"
+      - "Implemented CI/CD pipelines for ML models"
+  
+  - title: "Data Scientist"
+    company: "Lockheed Martin"
+    period: "2022-2023"
+    description: "Built machine learning models for text analysis and customer insights."
+    achievements:
+      - "Built NLP models with 88% accuracy"
+      - "Created interactive dashboards"
+      - "Optimized data processing workflows"
+  
+  - title: "Manufacturing Planner"
+    company: "Lockheed Martin"
+    period: "2019-2022"
+    description: "Analyzed business data and created reports for decision making."
+    achievements:
+      - "Designed automated reporting system"
+      - "Created Excel and Power BI dashboards"
+      - "Reduced manual reporting time by 70%"
+
+  - title: "Manufacturing Planner Associate"
+    company: "Lockheed Martin"
+    period: "2018-2019"
+    description: "Analyzed business data and created reports for decision making."
+    achievements:
+      - "Designed automated reporting system"
+      - "Created Excel and Power BI dashboards"
+      - "Reduced manual reporting time by 70%"
+
+projects:
+  - title: "Time Series Forecasting"
+    description: "Developed LSTM models for predicting stock market trends with 85% accuracy."
+    tags: ["Python", "TensorFlow", "Time Series"]
+  
+  - title: "NLP for Customer Sentiment"
+    description: "Created a sentiment analysis system using BERT for customer reviews."
+    tags: ["Python", "BERT", "NLP"]
+
+highlights:
+  - icon: "lightbulb"
+    title: "5+ Years Experience"
+    description: "Professional experience in data science and machine learning"
+  
+  - icon: "flask"
+    title: "10+ Completed Projects"
+    description: "Applied data science to real-world problems"
+  
+  - icon: "book"
+    title: "Multiple Certifications"
+    description: "Advanced credentials in ML, deep learning, and data engineering"
+
+recommendations:
+  - quote: "Matthew is one of the most talented data scientists I've worked with. His ability to translate complex problems into actionable insights is exceptional."
+    author: "Director of Data Science, Company Name"
+  
+  - quote: "Working with Matthew was a game-changer for our team. His machine learning models helped us achieve unprecedented accuracy in our predictions."
+    author: "VP of Analytics, Previous Company" 

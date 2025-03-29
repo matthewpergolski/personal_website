@@ -143,8 +143,8 @@
             <!-- Front of card - Resume preview -->
             <div class="card-front bg-white dark:bg-gray-800 shadow-xl p-8 flex flex-col">
                 <div class="text-center mb-8">
-                    <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Matthew Pergolski</h2>
-                    <p class="text-xl text-gray-600 dark:text-gray-300">Data Scientist & Machine Learning Engineer</p>
+                    <h2 class="text-3xl font-bold text-gray-900 dark:text-white">{{ resume_data.personal_info.name }}</h2>
+                    <p class="text-xl text-gray-600 dark:text-gray-300">{{ resume_data.personal_info.title }}</p>
                 </div>
                 
                 <div class="flex-grow grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -157,63 +157,45 @@
                                     <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
                                     <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
                                 </svg>
-                                email@example.com
+                                {{ resume_data.personal_info.contact.email }}
                             </li>
                             <li class="flex items-center">
                                 <svg class="h-4 w-4 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.477 0 10c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0110 4.836c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.933.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C17.14 18.163 20 14.418 20 10c0-5.523-4.477-10-10-10z" clip-rule="evenodd"></path>
                                 </svg>
-                                github.com/username
+                                {{ resume_data.personal_info.contact.github }}
                             </li>
                             <li class="flex items-center">
                                 <svg class="h-4 w-4 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
                                 </svg>
-                                City, State
+                                {{ resume_data.personal_info.contact.location }}
                             </li>
                         </ul>
                         
                         <h3 class="text-xl font-bold mt-6 mb-4 text-blue-600 dark:text-blue-400">Education</h3>
                         <div class="space-y-3">
+                            {% for edu in resume_data.education %}
                             <div>
-                                <div class="font-semibold text-gray-800 dark:text-white">M.S. Data Science</div>
-                                <div class="text-sm text-gray-600 dark:text-gray-300">University Name • 2019-2021</div>
+                                <div class="font-semibold text-gray-800 dark:text-white">{{ edu.degree }}</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-300">{{ edu.institution }} • {{ edu.years }}</div>
                             </div>
-                            <div>
-                                <div class="font-semibold text-gray-800 dark:text-white">B.S. Computer Science</div>
-                                <div class="text-sm text-gray-600 dark:text-gray-300">University Name • 2015-2019</div>
-                            </div>
+                            {% endfor %}
                         </div>
                         
                         <h3 class="text-xl font-bold mt-6 mb-4 text-blue-600 dark:text-blue-400">Skills</h3>
                         <div class="space-y-2">
+                            {% for skill in resume_data.skills.technical[:3] %}
                             <div>
                                 <div class="flex justify-between text-sm">
-                                    <span class="text-gray-700 dark:text-gray-300">Python</span>
-                                    <span class="text-gray-600 dark:text-gray-400">95%</span>
+                                    <span class="text-gray-700 dark:text-gray-300">{{ skill.name }}</span>
+                                    <span class="text-gray-600 dark:text-gray-400">{{ skill.proficiency }}%</span>
                                 </div>
                                 <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full">
-                                    <div class="skill-bar bg-blue-600" data-width="95%" style="width: 0%"></div>
+                                    <div class="skill-bar bg-blue-600" data-width="{{ skill.proficiency }}%" style="width: 0%"></div>
                                 </div>
                             </div>
-                            <div>
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-700 dark:text-gray-300">Machine Learning</span>
-                                    <span class="text-gray-600 dark:text-gray-400">90%</span>
-                                </div>
-                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full">
-                                    <div class="skill-bar bg-green-600" data-width="90%" style="width: 0%"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-700 dark:text-gray-300">Data Analysis</span>
-                                    <span class="text-gray-600 dark:text-gray-400">92%</span>
-                                </div>
-                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full">
-                                    <div class="skill-bar bg-purple-600" data-width="92%" style="width: 0%"></div>
-                                </div>
-                            </div>
+                            {% endfor %}
                         </div>
                     </div>
                     
@@ -222,57 +204,37 @@
                         <h3 class="text-xl font-bold mb-4 text-blue-600 dark:text-blue-400">Professional Experience</h3>
                         
                         <div class="space-y-6">
+                            {% for job in resume_data.experience %}
                             <div class="experience-item">
-                                <div class="font-semibold text-gray-800 dark:text-white">Senior Data Scientist</div>
-                                <div class="text-sm text-gray-600 dark:text-gray-300">Company Name • 2021-Present</div>
+                                <div class="font-semibold text-gray-800 dark:text-white">{{ job.title }}</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-300">{{ job.company }} • {{ job.period }}</div>
                                 <ul class="mt-2 text-sm text-gray-700 dark:text-gray-300 list-disc pl-4">
-                                    <li>Led development of machine learning models for predictive analytics</li>
-                                    <li>Engineered data pipelines processing over 1TB of data daily</li>
-                                    <li>Improved model accuracy by 15% through feature engineering</li>
+                                    {% for achievement in job.achievements %}
+                                    <li>{{ achievement }}</li>
+                                    {% endfor %}
                                 </ul>
                             </div>
-                            
-                            <div class="experience-item">
-                                <div class="font-semibold text-gray-800 dark:text-white">Data Scientist</div>
-                                <div class="text-sm text-gray-600 dark:text-gray-300">Previous Company • 2019-2021</div>
-                                <ul class="mt-2 text-sm text-gray-700 dark:text-gray-300 list-disc pl-4">
-                                    <li>Built NLP models for sentiment analysis and text classification</li>
-                                    <li>Created interactive dashboards using Plotly and Dash</li>
-                                    <li>Optimized data processing workflows reducing runtime by 40%</li>
-                                </ul>
-                            </div>
+                            {% endfor %}
                         </div>
                         
                         <h3 class="text-xl font-bold mt-6 mb-4 text-blue-600 dark:text-blue-400">Projects</h3>
                         
                         <div class="space-y-4">
+                            {% for project in resume_data.projects %}
                             <div>
                                 <div class="font-semibold text-gray-800 dark:text-white">
-                                    Time Series Forecasting
+                                    {{ project.title }}
                                 </div>
                                 <p class="text-sm text-gray-700 dark:text-gray-300">
-                                    Developed LSTM models for predicting stock market trends with 85% accuracy.
+                                    {{ project.description }}
                                 </p>
                                 <div class="flex flex-wrap gap-2 mt-1">
-                                    <span class="tag text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full">Python</span>
-                                    <span class="tag text-xs px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full">TensorFlow</span>
-                                    <span class="tag text-xs px-2 py-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 rounded-full">Time Series</span>
+                                    {% for tag in project.tags %}
+                                    <span class="tag text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full">{{ tag }}</span>
+                                    {% endfor %}
                                 </div>
                             </div>
-                            
-                            <div>
-                                <div class="font-semibold text-gray-800 dark:text-white">
-                                    NLP for Customer Sentiment
-                                </div>
-                                <p class="text-sm text-gray-700 dark:text-gray-300">
-                                    Created a sentiment analysis system using BERT for customer reviews.
-                                </p>
-                                <div class="flex flex-wrap gap-2 mt-1">
-                                    <span class="tag text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full">Python</span>
-                                    <span class="tag text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full">BERT</span>
-                                    <span class="tag text-xs px-2 py-1 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-full">NLP</span>
-                                </div>
-                            </div>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
@@ -287,6 +249,7 @@
                 <h3 class="text-2xl font-bold mb-6">Resume Highlights</h3>
                 
                 <div class="space-y-6 max-w-md">
+                    {% for highlight in resume_data.highlights %}
                     <div class="flex items-center">
                         <div class="flex items-center justify-center h-12 w-12 rounded-md bg-white/20 mr-4">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -294,34 +257,11 @@
                             </svg>
                         </div>
                         <div>
-                            <h4 class="text-lg font-medium">5+ Years Experience</h4>
-                            <p class="text-white/80">Professional experience in data science and machine learning</p>
+                            <h4 class="text-lg font-medium">{{ highlight.title }}</h4>
+                            <p class="text-white/80">{{ highlight.description }}</p>
                         </div>
                     </div>
-                    
-                    <div class="flex items-center">
-                        <div class="flex items-center justify-center h-12 w-12 rounded-md bg-white/20 mr-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="text-lg font-medium">10+ Completed Projects</h4>
-                            <p class="text-white/80">Applied data science to real-world problems</p>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-center">
-                        <div class="flex items-center justify-center h-12 w-12 rounded-md bg-white/20 mr-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="text-lg font-medium">Multiple Certifications</h4>
-                            <p class="text-white/80">Advanced credentials in ML, deep learning, and data engineering</p>
-                        </div>
-                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -424,26 +364,21 @@
     </section>
     
     <!-- Recommendations -->
-    <section class="bg-gradient-to-r from-indigo-600 to-blue-500 text-white rounded-lg shadow-xl p-8 mb-12" data-aos="fade-up">
-        <h2 class="text-2xl font-bold mb-8 text-center">Recommendations</h2>
+    <section class="bg-gradient-to-r from-indigo-600 to-blue-500 text-white rounded-lg shadow-xl p-8 mb-20" data-aos="fade-up">
+        <h2 class="text-3xl font-bold mb-8 text-center">Recommendations</h2>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            {% for recommendation in resume_data.recommendations %}
             <div class="bg-white/10 backdrop-blur-sm p-6 rounded-lg resume-section">
                 <div class="text-lg italic mb-4">
-                    "Matthew is one of the most talented data scientists I've worked with. His ability to translate complex problems into actionable insights is exceptional."
+                    "{{ recommendation.quote }}"
                 </div>
-                <div class="font-semibold">— Director of Data Science, Company Name</div>
+                <div class="font-semibold">— {{ recommendation.author }}</div>
             </div>
-            
-            <div class="bg-white/10 backdrop-blur-sm p-6 rounded-lg resume-section">
-                <div class="text-lg italic mb-4">
-                    "Working with Matthew was a game-changer for our team. His machine learning models helped us achieve unprecedented accuracy in our predictions."
-                </div>
-                <div class="font-semibold">— VP of Analytics, Previous Company</div>
-            </div>
+            {% endfor %}
         </div>
         
-        <div class="mt-8 text-center">
+        <div class="mt-10 text-center pb-4">
             <a href="/download-resume" class="inline-flex items-center px-6 py-3 bg-white text-indigo-600 rounded-lg hover:bg-blue-50 transition-colors shadow-md font-semibold">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -453,6 +388,70 @@
         </div>
     </section>
 </div>
+
+<!-- AI Chatbot UI -->
+<div class="fixed bottom-6 right-6 z-50">
+    <!-- Chat Button -->
+    <button id="chatButton" class="w-16 h-16 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center hover:bg-blue-700 transition-all duration-300 focus:outline-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+        </svg>
+    </button>
+    
+    <!-- Chat Window -->
+    <div id="chatWindow" class="hidden fixed bottom-24 right-6 w-96 h-[32rem] bg-white dark:bg-gray-800 rounded-lg shadow-2xl flex flex-col overflow-hidden border border-gray-200 dark:border-gray-700 transition-all duration-300 transform scale-95 opacity-0">
+        <!-- Chat Header -->
+        <div class="bg-blue-600 text-white p-4 flex items-center justify-between">
+            <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714a2.25 2.25 0 01-.659 1.591L9.5 14.5m3.25-11.396c.251.023.501.05.75.082m-1.5-.082a24.301 24.301 0 00-4.5 0m3.75 11.396l-3.944 3.944a.75.75 0 01-1.06 0L3.22 13.5m9.5 0l3.944 3.944a.75.75 0 001.06 0L22 13.5" />
+                </svg>
+                <h3 class="font-semibold">Portfolio Assistant</h3>
+            </div>
+            <button id="closeChat" class="text-white hover:text-gray-200 focus:outline-none">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Chat Messages -->
+        <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4">
+            <!-- Welcome Message -->
+            <div class="flex items-start max-w-3/4">
+                <div class="bg-blue-100 dark:bg-blue-900 p-3 rounded-lg">
+                    <p class="text-gray-800 dark:text-gray-200">Hi there! I'm your portfolio assistant. Ask me anything about Matthew's projects, experience, or skills!</p>
+                </div>
+            </div>
+            
+            <!-- Sample suggestions -->
+            <div class="flex flex-wrap gap-2 mt-4 justify-center">
+                <button class="chat-suggestion px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-blue-600 dark:text-blue-400 rounded-full hover:bg-blue-50 dark:hover:bg-gray-600 transition-colors">
+                    Tell me about your skills
+                </button>
+                <button class="chat-suggestion px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-blue-600 dark:text-blue-400 rounded-full hover:bg-blue-50 dark:hover:bg-gray-600 transition-colors">
+                    What projects have you worked on?
+                </button>
+                <button class="chat-suggestion px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-blue-600 dark:text-blue-400 rounded-full hover:bg-blue-50 dark:hover:bg-gray-600 transition-colors">
+                    Summarize your experience
+                </button>
+            </div>
+        </div>
+        
+        <!-- Chat Input -->
+        <div class="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-900">
+            <div class="flex items-center">
+                <input id="chatInput" type="text" placeholder="Ask me anything..." class="flex-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button id="sendMessage" class="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-700 focus:outline-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                    </svg>
+                </button>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Coming soon: Chat with my resume, GitHub repositories, and portfolio!</p>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -460,6 +459,13 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <!-- AOS animations -->
 <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+
+<!-- Pass resume data to JavaScript -->
+<script>
+    // Create a global variable with the resume data
+    window.resumeData = {{ resume_data|tojson|safe }};
+</script>
+
 <!-- Custom resume script -->
 <script src="{{ url_for('static', filename='js/resume.js') }}"></script>
 {% endblock %} 
