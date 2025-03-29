@@ -1,1 +1,0 @@
-# This file can be empty, it just indicates that the tests directory is a Python package 

@@ -78,6 +78,36 @@
         left: -10px;
     }
     
+    .timeline-content {
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        background-color: white;
+        transition: all 0.3s ease;
+    }
+    
+    .dark .timeline-content {
+        background-color: #1f2937;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+    
+    .dark .timeline-item::after {
+        background-color: #1f2937;
+        border-color: #60a5fa;
+    }
+
+    .dark .timeline-title {
+        color: #f3f4f6 !important;
+    }
+    
+    .dark .timeline-date {
+        color: #9ca3af !important;
+    }
+    
+    .dark .timeline-text {
+        color: #d1d5db !important;
+    }
+    
     .stats-card {
         transition: all 0.3s;
     }
@@ -85,6 +115,18 @@
     .stats-card:hover {
         transform: translateY(-10px);
         box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .dark .stats-card {
+        background-color: #1f2937 !important;
+    }
+    
+    .dark .stats-number {
+        color: #60a5fa !important;
+    }
+    
+    .dark .stats-label {
+        color: #9ca3af !important;
     }
 </style>
 {% endblock %}
@@ -99,9 +141,9 @@
         <div class="bg-black/30 backdrop-blur-sm p-8 rounded-xl inline-block max-w-3xl mx-auto shadow-xl">
             <h1 class="text-5xl font-bold mb-4 text-white text-shadow">Matthew Pergolski</h1>
             <p class="text-xl text-white mb-8 max-w-2xl mx-auto text-shadow">Transforming data into insights through machine learning, statistical analysis, and visualization</p>
-            <div class="bg-white/90 backdrop-blur-md p-6 rounded-lg shadow-lg inline-block">
+            <div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md p-6 rounded-lg shadow-lg inline-block">
                 <div class="typewriter inline-block">
-                    <span id="typewriter-text" class="text-xl font-mono text-blue-700"></span>
+                    <span id="typewriter-text" class="text-xl font-mono text-blue-700 dark:text-blue-400"></span>
                 </div>
             </div>
         </div>
@@ -135,84 +177,84 @@
                 </div>
                 
                 <div class="w-full md:w-2/3">
-                    <h3 class="text-2xl font-bold mb-6 text-blue-800">Data Science Skills</h3>
+                    <h3 class="text-2xl font-bold mb-6 text-blue-800 dark:text-blue-400">Data Science Skills</h3>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                         <div>
                             <div class="flex justify-between mb-1">
-                                <span class="font-semibold">Python</span>
-                                <span>95%</span>
+                                <span class="font-semibold dark:text-gray-300">Python</span>
+                                <span class="dark:text-gray-300">95%</span>
                             </div>
-                            <div class="bg-gray-200 rounded-full">
+                            <div class="bg-gray-200 dark:bg-gray-700 rounded-full">
                                 <div class="skill-bar bg-blue-600" style="width: 0%" data-width="95%"></div>
                             </div>
                         </div>
                         
                         <div>
                             <div class="flex justify-between mb-1">
-                                <span class="font-semibold">Machine Learning</span>
-                                <span>90%</span>
+                                <span class="font-semibold dark:text-gray-300">Machine Learning</span>
+                                <span class="dark:text-gray-300">90%</span>
                             </div>
-                            <div class="bg-gray-200 rounded-full">
+                            <div class="bg-gray-200 dark:bg-gray-700 rounded-full">
                                 <div class="skill-bar bg-green-600" style="width: 0%" data-width="90%"></div>
                             </div>
                         </div>
                         
                         <div>
                             <div class="flex justify-between mb-1">
-                                <span class="font-semibold">Data Analysis</span>
-                                <span>92%</span>
+                                <span class="font-semibold dark:text-gray-300">Data Analysis</span>
+                                <span class="dark:text-gray-300">92%</span>
                             </div>
-                            <div class="bg-gray-200 rounded-full">
+                            <div class="bg-gray-200 dark:bg-gray-700 rounded-full">
                                 <div class="skill-bar bg-purple-600" style="width: 0%" data-width="92%"></div>
                             </div>
                         </div>
                         
                         <div>
                             <div class="flex justify-between mb-1">
-                                <span class="font-semibold">Data Visualization</span>
-                                <span>88%</span>
+                                <span class="font-semibold dark:text-gray-300">Data Visualization</span>
+                                <span class="dark:text-gray-300">88%</span>
                             </div>
-                            <div class="bg-gray-200 rounded-full">
+                            <div class="bg-gray-200 dark:bg-gray-700 rounded-full">
                                 <div class="skill-bar bg-yellow-600" style="width: 0%" data-width="88%"></div>
                             </div>
                         </div>
                         
                         <div>
                             <div class="flex justify-between mb-1">
-                                <span class="font-semibold">Deep Learning</span>
-                                <span>85%</span>
+                                <span class="font-semibold dark:text-gray-300">Deep Learning</span>
+                                <span class="dark:text-gray-300">85%</span>
                             </div>
-                            <div class="bg-gray-200 rounded-full">
+                            <div class="bg-gray-200 dark:bg-gray-700 rounded-full">
                                 <div class="skill-bar bg-red-600" style="width: 0%" data-width="85%"></div>
                             </div>
                         </div>
                         
                         <div>
                             <div class="flex justify-between mb-1">
-                                <span class="font-semibold">Statistical Analysis</span>
-                                <span>89%</span>
+                                <span class="font-semibold dark:text-gray-300">Statistical Analysis</span>
+                                <span class="dark:text-gray-300">89%</span>
                             </div>
-                            <div class="bg-gray-200 rounded-full">
+                            <div class="bg-gray-200 dark:bg-gray-700 rounded-full">
                                 <div class="skill-bar bg-indigo-600" style="width: 0%" data-width="89%"></div>
                             </div>
                         </div>
                     </div>
                     
                     <div class="mt-8">
-                        <h4 class="text-xl font-semibold mb-4 text-blue-800">GitHub Statistics</h4>
+                        <h4 class="text-xl font-semibold mb-4 text-blue-800 dark:text-blue-400">GitHub Statistics</h4>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div class="stats-card bg-blue-50 p-4 rounded-lg text-center shadow">
-                                <div class="text-3xl font-bold text-blue-700">{{ profile.public_repos }}</div>
-                                <div class="text-sm text-gray-600">Repositories</div>
+                                <div class="stats-number text-3xl font-bold text-blue-700">{{ profile.public_repos }}</div>
+                                <div class="stats-label text-sm text-gray-600">Repositories</div>
                             </div>
                             <div class="stats-card bg-green-50 p-4 rounded-lg text-center shadow">
-                                <div class="text-3xl font-bold text-green-700">{{ profile.followers }}</div>
-                                <div class="text-sm text-gray-600">Followers</div>
+                                <div class="stats-number text-3xl font-bold text-green-700">{{ profile.followers }}</div>
+                                <div class="stats-label text-sm text-gray-600">Followers</div>
                             </div>
                             <div class="stats-card bg-purple-50 p-4 rounded-lg text-center shadow">
-                                <div class="text-3xl font-bold text-purple-700">{{ profile.following }}</div>
-                                <div class="text-sm text-gray-600">Following</div>
+                                <div class="stats-number text-3xl font-bold text-purple-700">{{ profile.following }}</div>
+                                <div class="stats-label text-sm text-gray-600">Following</div>
                             </div>
                         </div>
                     </div>
@@ -223,65 +265,69 @@
 
     <!-- Data Science Journey Timeline -->
     <section class="mb-16" data-aos="fade-up">
-        <h2 class="text-3xl font-bold mb-8 text-center">My Data Science Journey</h2>
+        <h2 class="text-3xl font-bold mb-8 text-center text-gray-900 dark:text-white">My Data Science Journey</h2>
         
         <div class="timeline-container py-8">
             <div class="timeline-item" data-aos="fade-right">
-                <div class="bg-white p-6 rounded-lg shadow-lg">
-                    <h3 class="text-xl font-bold mb-2 text-blue-800">Started Learning Python</h3>
-                    <div class="text-sm text-gray-500 mb-2">January 2021</div>
-                    <p class="text-gray-700">Began my journey in data science by learning Python fundamentals and basic data manipulation with pandas.</p>
+                <div class="timeline-content">
+                    <h3 class="timeline-title text-xl font-bold mb-2 text-blue-800 dark:text-blue-400">Started Learning Python</h3>
+                    <div class="timeline-date text-sm text-gray-500 dark:text-gray-400 mb-2">January 2021</div>
+                    <p class="timeline-text text-gray-700 dark:text-gray-300">Began my journey in data science by learning Python fundamentals and basic data manipulation with pandas.</p>
                 </div>
             </div>
             
             <div class="timeline-item" data-aos="fade-left">
-                <div class="bg-white p-6 rounded-lg shadow-lg">
-                    <h3 class="text-xl font-bold mb-2 text-blue-800">Data Analysis & Visualization</h3>
-                    <div class="text-sm text-gray-500 mb-2">May 2021</div>
-                    <p class="text-gray-700">Mastered data analysis techniques using pandas, NumPy, and created visualizations with Matplotlib and Seaborn.</p>
+                <div class="timeline-content">
+                    <h3 class="timeline-title text-xl font-bold mb-2 text-blue-800 dark:text-blue-400">Data Analysis & Visualization</h3>
+                    <div class="timeline-date text-sm text-gray-500 dark:text-gray-400 mb-2">May 2021</div>
+                    <p class="timeline-text text-gray-700 dark:text-gray-300">Mastered data analysis techniques using pandas, NumPy, and created visualizations with Matplotlib and Seaborn.</p>
                 </div>
             </div>
             
             <div class="timeline-item" data-aos="fade-right">
-                <div class="bg-white p-6 rounded-lg shadow-lg">
-                    <h3 class="text-xl font-bold mb-2 text-blue-800">Machine Learning Fundamentals</h3>
-                    <div class="text-sm text-gray-500 mb-2">September 2021</div>
-                    <p class="text-gray-700">Learned supervised and unsupervised learning algorithms using scikit-learn, working on various classification and regression problems.</p>
+                <div class="timeline-content">
+                    <h3 class="timeline-title text-xl font-bold mb-2 text-blue-800 dark:text-blue-400">Machine Learning Fundamentals</h3>
+                    <div class="timeline-date text-sm text-gray-500 dark:text-gray-400 mb-2">September 2021</div>
+                    <p class="timeline-text text-gray-700 dark:text-gray-300">Learned supervised and unsupervised learning algorithms using scikit-learn, working on various classification and regression problems.</p>
                 </div>
             </div>
             
             <div class="timeline-item" data-aos="fade-left">
-                <div class="bg-white p-6 rounded-lg shadow-lg">
-                    <h3 class="text-xl font-bold mb-2 text-blue-800">Deep Learning & Neural Networks</h3>
-                    <div class="text-sm text-gray-500 mb-2">January 2022</div>
-                    <p class="text-gray-700">Explored deep learning concepts with TensorFlow and Keras, building neural networks for image classification and NLP tasks.</p>
+                <div class="timeline-content">
+                    <h3 class="timeline-title text-xl font-bold mb-2 text-blue-800 dark:text-blue-400">Deep Learning & Neural Networks</h3>
+                    <div class="timeline-date text-sm text-gray-500 dark:text-gray-400 mb-2">January 2022</div>
+                    <p class="timeline-text text-gray-700 dark:text-gray-300">Explored deep learning concepts with TensorFlow and Keras, building neural networks for image classification and NLP tasks.</p>
                 </div>
             </div>
             
             <div class="timeline-item" data-aos="fade-right">
-                <div class="bg-white p-6 rounded-lg shadow-lg">
-                    <h3 class="text-xl font-bold mb-2 text-blue-800">Real-World Projects</h3>
-                    <div class="text-sm text-gray-500 mb-2">Present</div>
-                    <p class="text-gray-700">Working on real-world data science projects and continuously learning new techniques and technologies.</p>
+                <div class="timeline-content">
+                    <h3 class="timeline-title text-xl font-bold mb-2 text-blue-800 dark:text-blue-400">Real-World Projects</h3>
+                    <div class="timeline-date text-sm text-gray-500 dark:text-gray-400 mb-2">Present</div>
+                    <p class="timeline-text text-gray-700 dark:text-gray-300">Working on real-world data science projects and continuously learning new techniques and technologies.</p>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Data Visualization Section -->
-    <section class="bg-white/90 backdrop-blur-sm shadow-lg rounded-lg p-8 mb-16" data-aos="fade-up">
-        <h2 class="text-3xl font-bold mb-8 text-center">Interactive Data Visualization</h2>
+    <section class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm shadow-lg rounded-lg p-8 mb-16" data-aos="fade-up">
+        <h2 class="text-3xl font-bold mb-8 text-center text-gray-900 dark:text-white">GitHub Repository Analytics</h2>
+        
+        <div class="mb-4 text-center">
+            <p class="text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">Explore my GitHub data through visualizations highlighting language usage and contribution patterns</p>
+        </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-                <h3 class="text-xl font-bold mb-4 text-blue-800">Language Distribution</h3>
-                <div class="bg-gray-50 p-4 rounded-lg shadow">
+                <h3 class="text-xl font-bold mb-4 text-blue-800 dark:text-blue-400">Language Distribution</h3>
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg shadow">
                     <canvas id="languageChart" width="400" height="300"></canvas>
                 </div>
             </div>
             <div>
-                <h3 class="text-xl font-bold mb-4 text-blue-800">Contribution Activity</h3>
-                <div class="bg-gray-50 p-4 rounded-lg shadow">
+                <h3 class="text-xl font-bold mb-4 text-blue-800 dark:text-blue-400">Contribution Activity</h3>
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg shadow">
                     <canvas id="contributionChart" width="400" height="300"></canvas>
                 </div>
             </div>
@@ -392,6 +438,11 @@
             });
         }, 500);
         
+        // Check if we're in dark mode
+        const isDarkMode = document.documentElement.classList.contains('dark');
+        const textColor = isDarkMode ? '#f3f4f6' : '#374151';
+        const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+        
         // Language distribution chart
         const languageCtx = document.getElementById('languageChart').getContext('2d');
         new Chart(languageCtx, {
@@ -423,10 +474,14 @@
                 plugins: {
                     legend: {
                         position: 'right',
+                        labels: {
+                            color: textColor
+                        }
                     },
                     title: {
                         display: true,
-                        text: 'Repository Languages'
+                        text: 'Repository Languages',
+                        color: textColor
                     }
                 }
             }
@@ -451,17 +506,49 @@
                 responsive: true,
                 scales: {
                     y: {
-                        beginAtZero: true
+                        beginAtZero: true,
+                        grid: {
+                            color: gridColor
+                        },
+                        ticks: {
+                            color: textColor
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: gridColor
+                        },
+                        ticks: {
+                            color: textColor
+                        }
                     }
                 },
                 plugins: {
+                    legend: {
+                        labels: {
+                            color: textColor
+                        }
+                    },
                     title: {
                         display: true,
-                        text: 'Monthly Contributions'
+                        text: 'Monthly Contributions',
+                        color: textColor
                     }
                 }
             }
         });
+        
+        // Add dark mode toggle listener for charts
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        if (darkModeToggle) {
+            darkModeToggle.addEventListener('click', () => {
+                // Wait for DOM to update with the new dark mode state
+                setTimeout(() => {
+                    // Reload the page to reinitialize charts with correct colors
+                    window.location.reload();
+                }, 100);
+            });
+        }
     });
 </script>
 {% endblock %} 

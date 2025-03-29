@@ -1,0 +1,465 @@
+{% extends 'base.html' %}
+
+{% block title %}Resume | Matthew Pergolski{% endblock %}
+
+{% block styles %}
+<style>
+    .resume-section {
+        transition: all 0.3s ease;
+    }
+    
+    .resume-section:hover {
+        transform: translateY(-5px);
+    }
+    
+    .skill-bar {
+        height: 8px;
+        border-radius: 4px;
+        transition: width 1.5s ease-in-out;
+    }
+    
+    .tag {
+        transition: all 0.2s;
+    }
+    
+    .tag:hover {
+        transform: translateY(-3px);
+    }
+    
+    .experience-item {
+        position: relative;
+        padding-left: 28px;
+    }
+    
+    .experience-item::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 8px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #3b82f6;
+    }
+    
+    /* 3D Card flip effect */
+    .card-container {
+        perspective: 1000px;
+        height: 500px;
+    }
+    
+    .card-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        text-align: center;
+        transition: transform 0.8s;
+        transform-style: preserve-3d;
+    }
+    
+    .card-container:hover .card-inner {
+        transform: rotateY(180deg);
+    }
+    
+    .card-front, .card-back {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        -webkit-backface-visibility: hidden; /* Safari */
+        backface-visibility: hidden;
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    
+    .card-back {
+        transform: rotateY(180deg);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+    }
+    
+    .timeline-dot {
+        transition: all 0.3s ease;
+    }
+    
+    .timeline-content {
+        transition: all 0.3s ease;
+    }
+    
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.05);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+    
+    .animate-pulse {
+        animation: pulse 0.5s ease-in-out;
+    }
+    
+    .cursor {
+        display: inline-block;
+        width: 2px;
+        height: 1em;
+        background-color: currentColor;
+        margin-left: 2px;
+        animation: blink 1s step-end infinite;
+    }
+    
+    @keyframes blink {
+        from, to {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <!-- Header with download button -->
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-4xl font-bold text-gray-800 dark:text-white resume-title">Interactive Resume</h1>
+        <a href="/download-resume" class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Download PDF
+        </a>
+    </div>
+    
+    <!-- 3D Card with resume preview and interactions -->
+    <div class="card-container mb-12" data-aos="fade-up">
+        <div class="card-inner">
+            <!-- Front of card - Resume preview -->
+            <div class="card-front bg-white dark:bg-gray-800 shadow-xl p-8 flex flex-col">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Matthew Pergolski</h2>
+                    <p class="text-xl text-gray-600 dark:text-gray-300">Data Scientist & Machine Learning Engineer</p>
+                </div>
+                
+                <div class="flex-grow grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <!-- Left column -->
+                    <div class="col-span-1">
+                        <h3 class="text-xl font-bold mb-4 text-blue-600 dark:text-blue-400">Contact</h3>
+                        <ul class="space-y-3 text-gray-700 dark:text-gray-300">
+                            <li class="flex items-center">
+                                <svg class="h-4 w-4 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
+                                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
+                                </svg>
+                                email@example.com
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="h-4 w-4 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.477 0 10c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0110 4.836c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.933.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C17.14 18.163 20 14.418 20 10c0-5.523-4.477-10-10-10z" clip-rule="evenodd"></path>
+                                </svg>
+                                github.com/username
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="h-4 w-4 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                                </svg>
+                                City, State
+                            </li>
+                        </ul>
+                        
+                        <h3 class="text-xl font-bold mt-6 mb-4 text-blue-600 dark:text-blue-400">Education</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <div class="font-semibold text-gray-800 dark:text-white">M.S. Data Science</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-300">University Name • 2019-2021</div>
+                            </div>
+                            <div>
+                                <div class="font-semibold text-gray-800 dark:text-white">B.S. Computer Science</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-300">University Name • 2015-2019</div>
+                            </div>
+                        </div>
+                        
+                        <h3 class="text-xl font-bold mt-6 mb-4 text-blue-600 dark:text-blue-400">Skills</h3>
+                        <div class="space-y-2">
+                            <div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-700 dark:text-gray-300">Python</span>
+                                    <span class="text-gray-600 dark:text-gray-400">95%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full">
+                                    <div class="skill-bar bg-blue-600" data-width="95%" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-700 dark:text-gray-300">Machine Learning</span>
+                                    <span class="text-gray-600 dark:text-gray-400">90%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full">
+                                    <div class="skill-bar bg-green-600" data-width="90%" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-700 dark:text-gray-300">Data Analysis</span>
+                                    <span class="text-gray-600 dark:text-gray-400">92%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full">
+                                    <div class="skill-bar bg-purple-600" data-width="92%" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right columns (spans 2) -->
+                    <div class="col-span-2">
+                        <h3 class="text-xl font-bold mb-4 text-blue-600 dark:text-blue-400">Professional Experience</h3>
+                        
+                        <div class="space-y-6">
+                            <div class="experience-item">
+                                <div class="font-semibold text-gray-800 dark:text-white">Senior Data Scientist</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-300">Company Name • 2021-Present</div>
+                                <ul class="mt-2 text-sm text-gray-700 dark:text-gray-300 list-disc pl-4">
+                                    <li>Led development of machine learning models for predictive analytics</li>
+                                    <li>Engineered data pipelines processing over 1TB of data daily</li>
+                                    <li>Improved model accuracy by 15% through feature engineering</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="experience-item">
+                                <div class="font-semibold text-gray-800 dark:text-white">Data Scientist</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-300">Previous Company • 2019-2021</div>
+                                <ul class="mt-2 text-sm text-gray-700 dark:text-gray-300 list-disc pl-4">
+                                    <li>Built NLP models for sentiment analysis and text classification</li>
+                                    <li>Created interactive dashboards using Plotly and Dash</li>
+                                    <li>Optimized data processing workflows reducing runtime by 40%</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <h3 class="text-xl font-bold mt-6 mb-4 text-blue-600 dark:text-blue-400">Projects</h3>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <div class="font-semibold text-gray-800 dark:text-white">
+                                    Time Series Forecasting
+                                </div>
+                                <p class="text-sm text-gray-700 dark:text-gray-300">
+                                    Developed LSTM models for predicting stock market trends with 85% accuracy.
+                                </p>
+                                <div class="flex flex-wrap gap-2 mt-1">
+                                    <span class="tag text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full">Python</span>
+                                    <span class="tag text-xs px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full">TensorFlow</span>
+                                    <span class="tag text-xs px-2 py-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 rounded-full">Time Series</span>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="font-semibold text-gray-800 dark:text-white">
+                                    NLP for Customer Sentiment
+                                </div>
+                                <p class="text-sm text-gray-700 dark:text-gray-300">
+                                    Created a sentiment analysis system using BERT for customer reviews.
+                                </p>
+                                <div class="flex flex-wrap gap-2 mt-1">
+                                    <span class="tag text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full">Python</span>
+                                    <span class="tag text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full">BERT</span>
+                                    <span class="tag text-xs px-2 py-1 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-full">NLP</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-4 text-sm text-gray-500 dark:text-gray-400">
+                    <em>Hover or touch to flip for resume highlights</em>
+                </div>
+            </div>
+            
+            <!-- Back of card - Interactive highlights -->
+            <div class="card-back bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
+                <h3 class="text-2xl font-bold mb-6">Resume Highlights</h3>
+                
+                <div class="space-y-6 max-w-md">
+                    <div class="flex items-center">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-md bg-white/20 mr-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-medium">5+ Years Experience</h4>
+                            <p class="text-white/80">Professional experience in data science and machine learning</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-md bg-white/20 mr-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-medium">10+ Completed Projects</h4>
+                            <p class="text-white/80">Applied data science to real-world problems</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-md bg-white/20 mr-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-medium">Multiple Certifications</h4>
+                            <p class="text-white/80">Advanced credentials in ML, deep learning, and data engineering</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Skills visualization -->
+    <section class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8 mb-12" data-aos="fade-up">
+        <h2 class="text-2xl font-bold mb-8 text-gray-800 dark:text-white">Skills Visualization</h2>
+        
+        <div class="h-80">
+            <canvas id="skillsRadarChart"></canvas>
+        </div>
+    </section>
+    
+    <!-- Experience timeline -->
+    <section class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8 mb-12" data-aos="fade-up">
+        <h2 class="text-2xl font-bold mb-8 text-gray-800 dark:text-white">Work History</h2>
+        
+        <div class="relative">
+            <!-- Timeline track -->
+            <div class="absolute top-0 bottom-0 left-1/2 w-1 bg-blue-200 dark:bg-blue-900 transform -translate-x-1/2"></div>
+            
+            <div class="space-y-12 relative">
+                <!-- Timeline item 1 -->
+                <div class="flex justify-between items-center timeline-item">
+                    <div class="w-5/12 pr-8 text-right timeline-content">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Senior Data Scientist</h3>
+                        <p class="text-blue-600 dark:text-blue-400">Company Name</p>
+                        <p class="text-gray-600 dark:text-gray-300">2021 - Present</p>
+                        <div class="mt-2 text-gray-700 dark:text-gray-300">
+                            Led development of machine learning models for predictive analytics.
+                        </div>
+                    </div>
+                    
+                    <div class="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center w-8 h-8 rounded-full border-4 border-blue-600 bg-white dark:bg-gray-800 timeline-dot"></div>
+                    
+                    <div class="w-5/12 pl-8 timeline-content">
+                        <div class="resume-section bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg shadow">
+                            <h4 class="font-semibold text-gray-800 dark:text-white">Key Achievements</h4>
+                            <ul class="mt-2 space-y-1 text-sm text-gray-700 dark:text-gray-300">
+                                <li>• Improved model accuracy by 15%</li>
+                                <li>• Reduced false positives by 30%</li>
+                                <li>• Implemented CI/CD pipelines for ML models</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Timeline item 2 -->
+                <div class="flex justify-between items-center timeline-item">
+                    <div class="w-5/12 pr-8 text-right timeline-content">
+                        <div class="resume-section bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg shadow">
+                            <h4 class="font-semibold text-gray-800 dark:text-white">Key Achievements</h4>
+                            <ul class="mt-2 space-y-1 text-sm text-gray-700 dark:text-gray-300">
+                                <li>• Built NLP models with 88% accuracy</li>
+                                <li>• Created interactive dashboards</li>
+                                <li>• Optimized data processing workflows</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center w-8 h-8 rounded-full border-4 border-blue-600 bg-white dark:bg-gray-800 timeline-dot"></div>
+                    
+                    <div class="w-5/12 pl-8 timeline-content">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Data Scientist</h3>
+                        <p class="text-blue-600 dark:text-blue-400">Previous Company</p>
+                        <p class="text-gray-600 dark:text-gray-300">2019 - 2021</p>
+                        <div class="mt-2 text-gray-700 dark:text-gray-300">
+                            Built machine learning models for text analysis and customer insights.
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Timeline item 3 -->
+                <div class="flex justify-between items-center timeline-item">
+                    <div class="w-5/12 pr-8 text-right timeline-content">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Data Analyst</h3>
+                        <p class="text-blue-600 dark:text-blue-400">First Company</p>
+                        <p class="text-gray-600 dark:text-gray-300">2017 - 2019</p>
+                        <div class="mt-2 text-gray-700 dark:text-gray-300">
+                            Analyzed business data and created reports for decision making.
+                        </div>
+                    </div>
+                    
+                    <div class="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center w-8 h-8 rounded-full border-4 border-blue-600 bg-white dark:bg-gray-800 timeline-dot"></div>
+                    
+                    <div class="w-5/12 pl-8 timeline-content">
+                        <div class="resume-section bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg shadow">
+                            <h4 class="font-semibold text-gray-800 dark:text-white">Key Achievements</h4>
+                            <ul class="mt-2 space-y-1 text-sm text-gray-700 dark:text-gray-300">
+                                <li>• Designed automated reporting system</li>
+                                <li>• Created Excel and Power BI dashboards</li>
+                                <li>• Reduced manual reporting time by 70%</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Recommendations -->
+    <section class="bg-gradient-to-r from-indigo-600 to-blue-500 text-white rounded-lg shadow-xl p-8 mb-12" data-aos="fade-up">
+        <h2 class="text-2xl font-bold mb-8 text-center">Recommendations</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="bg-white/10 backdrop-blur-sm p-6 rounded-lg resume-section">
+                <div class="text-lg italic mb-4">
+                    "Matthew is one of the most talented data scientists I've worked with. His ability to translate complex problems into actionable insights is exceptional."
+                </div>
+                <div class="font-semibold">— Director of Data Science, Company Name</div>
+            </div>
+            
+            <div class="bg-white/10 backdrop-blur-sm p-6 rounded-lg resume-section">
+                <div class="text-lg italic mb-4">
+                    "Working with Matthew was a game-changer for our team. His machine learning models helped us achieve unprecedented accuracy in our predictions."
+                </div>
+                <div class="font-semibold">— VP of Analytics, Previous Company</div>
+            </div>
+        </div>
+        
+        <div class="mt-8 text-center">
+            <a href="/download-resume" class="inline-flex items-center px-6 py-3 bg-white text-indigo-600 rounded-lg hover:bg-blue-50 transition-colors shadow-md font-semibold">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Download Resume PDF
+            </a>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Chart.js for radar chart -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- AOS animations -->
+<script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<!-- Custom resume script -->
+<script src="{{ url_for('static', filename='js/resume.js') }}"></script>
+{% endblock %} 
