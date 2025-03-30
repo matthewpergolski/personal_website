@@ -42,8 +42,8 @@ experience:
     period: "2023-Present"
     description: "Led development of machine learning models for predictive analytics."
     achievements:
-      - "Improved model accuracy by 15%"
-      - "Reduced false positives by 30%"
+      - "Deployed AI/ML apps on Tanzu, OpenShift, and AI Factory"
+      - "Integrated LLMs into process workflows"
       - "Implemented CI/CD pipelines for ML models"
   
   - title: "Data Scientist"
@@ -51,7 +51,7 @@ experience:
     period: "2022-2023"
     description: "Built machine learning models for text analysis and customer insights."
     achievements:
-      - "Built NLP models with 88% accuracy"
+      - "Built image extraction models with 88% accuracy"
       - "Created interactive dashboards"
       - "Optimized data processing workflows"
   
@@ -75,7 +75,7 @@ experience:
 
 projects:
   - title: "Time Series Forecasting"
-    description: "Developed LSTM models for predicting stock market trends with 85% accuracy."
+    description: "Developed LSTM models for predicting governemnt contracting trends with 85% accuracy."
     tags: ["Python", "TensorFlow", "Time Series"]
   
   - title: "NLP for Customer Sentiment"
@@ -93,7 +93,7 @@ highlights:
   
   - icon: "book"
     title: "Multiple Certifications"
-    description: "Advanced credentials in ML, deep learning, and data engineering"
+    description: "Credentials in ML, deep learning, and data engineering"
 
 recommendations:
   - quote: "Matthew is one of the most talented data scientists I've worked with. His ability to translate complex problems into actionable insights is exceptional."
@@ -105,9 +105,13 @@ recommendations:
 certifications:
   - title: "Deep Learning Specialization"
     issuer: "Coursera - deeplearning.ai"
-    year: "2022"
-    description: "Completed a comprehensive program covering neural networks, computer vision, NLP, and deep learning best practices."
-  - title: "Machine Learning Engineer Certification"
-    issuer: "AI Institute"
     year: "2023"
-    description: "Industry-recognized certification for designing, implementing, and deploying machine learning solutions." 
+    description: "Completed a comprehensive program covering neural networks, computer vision, NLP, and deep learning best practices."
+  # - title: "Machine Learning Engineer Certification"
+  #   issuer: "AI Institute"
+  #   year: "2023"
+  #   description: "Industry-recognized certification for designing, implementing, and deploying machine learning solutions." 
+  - title: "AWS Cloud Technical Essentials"
+    issuer: "Coursera"
+    year: "2022"
+    description: "Industry-recognized certification for AWS training."
