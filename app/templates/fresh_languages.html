@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}GitHub Languages | My Portfolio{% endblock %}
+
+{% block styles %}
+<style>
+    .lang-card {
+        background-color: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .dark .lang-card {
+        background-color: #1e293b;
+    }
+    
+    .lang-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    .chart-area {
+        height: 450px;
+        max-width: 800px;
+        margin: 0 auto;
+        position: relative;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <h1 class="text-4xl font-bold mb-2 text-center text-gray-900 dark:text-white">My GitHub Language Profile</h1>
+    <p class="text-xl text-center text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
+        Analysis of programming languages used across my GitHub repositories
+    </p>
+    
+    <!-- Language Distribution Card -->
+    <div class="lang-card">
+        <h2 class="text-2xl font-bold mb-6 text-blue-700 dark:text-blue-400">Repository Language Distribution</h2>
+        
+        <div class="chart-area">
+            <!-- Store data in a data attribute to avoid template/JS linting issues -->
+            <div id="chartDataContainer" 
+                 data-chart-data='{% if viz_data and viz_data.language_distribution %}{{ viz_data.language_distribution|tojson|safe }}{% else %}{}{% endif %}'
+                 data-is-sample='{% if viz_data and viz_data.is_sample_data %}true{% else %}false{% endif %}'
+                 class="hidden"></div>
+                 
+            <canvas id="langChart" aria-label="Language distribution chart" role="img"></canvas>
+            <div id="fallbackContent" class="hidden flex items-center justify-center h-full text-gray-400 dark:text-gray-500">No language data available</div>
+        </div>
+        
+        <div class="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+            {% if viz_data and viz_data.is_sample_data %}
+            <div class="inline-flex items-center bg-blue-50 dark:bg-blue-900/30 px-4 py-2 rounded-lg">
+                <svg class="w-5 h-5 mr-2 text-blue-500 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                </svg>
+                <span>Using sample data for demonstration purposes</span>
+            </div>
+            {% else %}
+            <p>Data reflects actual GitHub repository analysis performed on {{ now.strftime('%B %d, %Y') }}</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- GitHub Link -->
+    <div class="text-center my-10">
+        <a href="https://github.com/matthewpergolski" target="_blank" rel="noopener noreferrer"
+           class="inline-flex items-center px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg shadow transition-colors"
+           aria-label="View my GitHub profile">
+            <svg class="w-6 h-6 mr-2" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385c.6.105.825-.255.825-.57c0-.285-.015-1.23-.015-2.235c-3.015.555-3.795-.735-4.035-1.41c-.135-.345-.72-1.41-1.23-1.695c-.42-.225-1.02-.78-.015-.795c.945-.015 1.62.87 1.845 1.23c1.08 1.815 2.805 1.305 3.495.99c.105-.78.42-1.305.765-1.605c-2.67-.3-5.46-1.335-5.46-5.925c0-1.305.465-2.385 1.23-3.225c-.12-.3-.54-1.53.12-3.18c0 0 1.005-.315 3.3 1.23c.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23c.66 1.65.24 2.88.12 3.18c.765.84 1.23 1.905 1.23 3.225c0 4.605-2.805 5.625-5.475 5.925c.435.375.81 1.095.81 2.22c0 1.605-.015 2.895-.015 3.3c0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+            View My GitHub Profile
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Import Chart.js library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+<!-- Import our chart script -->
+<script src="{{ url_for('static', filename='js/language_chart.js') }}"></script>
+{% endblock %} 

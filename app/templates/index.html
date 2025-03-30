@@ -315,20 +315,33 @@
         <h2 class="text-3xl font-bold mb-8 text-center text-gray-900 dark:text-white">GitHub Repository Analytics</h2>
         
         <div class="mb-4 text-center">
-            <p class="text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">Explore my GitHub data through visualizations highlighting language usage and contribution patterns</p>
+            <p class="text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">Explore my GitHub data through visualizations highlighting language usage across repositories</p>
         </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-                <h3 class="text-xl font-bold mb-4 text-blue-800 dark:text-blue-400">Language Distribution</h3>
-                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg shadow">
-                    <canvas id="languageChart" width="400" height="300"></canvas>
+        <div class="mx-auto max-w-4xl">
+            <div class="bg-gray-50 dark:bg-gray-900 p-6 rounded-xl shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-blue-800 dark:text-blue-400">Language Distribution</h3>
+                    <div class="text-sm">
+                        <span id="totalRepos" class="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full"></span>
+                    </div>
                 </div>
-            </div>
-            <div>
-                <h3 class="text-xl font-bold mb-4 text-blue-800 dark:text-blue-400">Contribution Activity</h3>
-                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg shadow">
-                    <canvas id="contributionChart" width="400" height="300"></canvas>
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                    <div class="lg:col-span-3 relative">
+                        <canvas id="languageChart" height="300"></canvas>
+                        <div id="centerStats" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+                            <div id="totalLines" class="text-2xl font-bold text-gray-800 dark:text-gray-200"></div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">bytes of code</div>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2">
+                        <div class="h-full flex flex-col justify-center">
+                            <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-3">Top Languages</h4>
+                            <div id="language-bars" class="space-y-4">
+                                <!-- Language bars will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -445,96 +458,185 @@
         
         // Language distribution chart
         const languageCtx = document.getElementById('languageChart').getContext('2d');
-        new Chart(languageCtx, {
-            type: 'pie',
+        
+        // Get the actual language data from Flask
+        const languageData = {{ viz_data.language_distribution|tojson|safe }};
+        console.log('Language distribution:', languageData);
+        
+        // Extract labels and values
+        const languageLabels = Object.keys(languageData);
+        const languageValues = Object.values(languageData);
+        
+        // Calculate total bytes and display in center
+        const totalRepos = {{ profile.public_repos }};
+        document.getElementById('totalRepos').textContent = `${totalRepos} Repositories`;
+        
+        // Estimate total bytes based on the percentages (simplified calculation)
+        const totalBytes = {{ viz_data.total_bytes|default(50000000) }};
+        const formattedBytes = totalBytes > 1000000 
+            ? `${(totalBytes / 1000000).toFixed(1)}M` 
+            : totalBytes > 1000 
+                ? `${(totalBytes / 1000).toFixed(1)}K` 
+                : totalBytes;
+        document.getElementById('totalLines').textContent = formattedBytes;
+        
+        // Define a completely different color palette with highly distinct colors
+        const languageColors = {
+            'Python': '#3776AB',               // Python blue
+            'HTML': '#E34F26',                 // HTML red/orange
+            'Jupyter Notebook': '#6C5CE7',     // Vibrant purple
+            'JavaScript': '#F7DF1E',           // JavaScript yellow
+            'CSS': '#264DE4',                  // CSS blue
+            'R': '#276DC3',                    // R blue
+            'Shell': '#4EAA25',                // Shell green
+            'TypeScript': '#007ACC',           // TypeScript blue
+            'Java': '#007396',                 // Java blue
+            'Other': '#718096'                 // Medium gray
+        };
+        
+        // Color mapping with gradients for the chart
+        const createGradient = (ctx, colorHex) => {
+            // Convert hex to RGB for gradient manipulation
+            const r = parseInt(colorHex.slice(1, 3), 16);
+            const g = parseInt(colorHex.slice(3, 5), 16);
+            const b = parseInt(colorHex.slice(5, 7), 16);
+            
+            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            // Lighter version at top
+            gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.8)`);
+            // Darker version at bottom
+            gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 1.0)`);
+            return gradient;
+        };
+        
+        // Create gradient colors for each language
+        const chartColors = languageLabels.map(lang => 
+            createGradient(languageCtx, languageColors[lang] || languageColors['Other'])
+        );
+        
+        // Border colors (darker versions)
+        const borderColors = languageLabels.map(lang => {
+            const baseColor = languageColors[lang] || languageColors['Other'];
+            return baseColor;
+        });
+        
+        // Create the chart with animations
+        const languageChart = new Chart(languageCtx, {
+            type: 'doughnut',
             data: {
-                labels: ['Python', 'JavaScript', 'R', 'SQL', 'Java'],
+                labels: languageLabels,
                 datasets: [{
-                    label: 'Language Distribution',
-                    data: [65, 15, 10, 7, 3],
-                    backgroundColor: [
-                        'rgba(54, 162, 235, 0.7)',
-                        'rgba(255, 206, 86, 0.7)',
-                        'rgba(75, 192, 192, 0.7)',
-                        'rgba(153, 102, 255, 0.7)',
-                        'rgba(255, 99, 132, 0.7)'
-                    ],
-                    borderColor: [
-                        'rgba(54, 162, 235, 1)',
-                        'rgba(255, 206, 86, 1)',
-                        'rgba(75, 192, 192, 1)',
-                        'rgba(153, 102, 255, 1)',
-                        'rgba(255, 99, 132, 1)'
-                    ],
-                    borderWidth: 1
+                    data: languageValues,
+                    backgroundColor: chartColors,
+                    borderColor: borderColors,
+                    borderWidth: 2,
+                    hoverOffset: 15
                 }]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                layout: {
+                    padding: 20
+                },
                 plugins: {
                     legend: {
-                        position: 'right',
-                        labels: {
-                            color: textColor
-                        }
+                        display: false // Hide legend since we're using custom bars
                     },
-                    title: {
-                        display: true,
-                        text: 'Repository Languages',
-                        color: textColor
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                return `${label}: ${value}%`;
+                            }
+                        },
+                        titleFont: {
+                            size: 14,
+                            weight: 'bold'
+                        },
+                        bodyFont: {
+                            size: 13
+                        },
+                        padding: 10,
+                        backgroundColor: isDarkMode ? 'rgba(30, 41, 59, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                        titleColor: isDarkMode ? '#e2e8f0' : '#1e293b',
+                        bodyColor: isDarkMode ? '#cbd5e1' : '#334155',
+                        borderColor: isDarkMode ? '#475569' : '#e2e8f0',
+                        borderWidth: 1
                     }
+                },
+                animation: {
+                    animateRotate: true,
+                    animateScale: true,
+                    duration: 1500,
+                    easing: 'easeOutQuart'
                 }
             }
         });
         
-        // Contribution chart
-        const contributionCtx = document.getElementById('contributionChart').getContext('2d');
-        new Chart(contributionCtx, {
-            type: 'line',
-            data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                datasets: [{
-                    label: 'Contributions',
-                    data: [65, 59, 80, 81, 56, 55, 40, 88, 96, 67, 90, 85],
-                    fill: true,
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    tension: 0.3
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: gridColor
-                        },
-                        ticks: {
-                            color: textColor
-                        }
-                    },
-                    x: {
-                        grid: {
-                            color: gridColor
-                        },
-                        ticks: {
-                            color: textColor
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        labels: {
-                            color: textColor
-                        }
-                    },
-                    title: {
-                        display: true,
-                        text: 'Monthly Contributions',
-                        color: textColor
-                    }
-                }
+        // Create the horizontal bars representing languages
+        const languageBarsContainer = document.getElementById('language-bars');
+        
+        // Sort languages by percentage (descending)
+        const sortedLanguages = [...languageLabels]
+            .map(lang => ({ name: lang, value: languageData[lang] }))
+            .sort((a, b) => b.value - a.value);
+            
+        // Create a horizontal bar for each language
+        sortedLanguages.forEach(lang => {
+            // Create container for the language
+            const langContainer = document.createElement('div');
+            
+            // Create header with language name and percentage
+            const header = document.createElement('div');
+            header.className = 'flex justify-between text-sm mb-1';
+            
+            // Language name with color indicator
+            const nameSpan = document.createElement('div');
+            nameSpan.innerHTML = `<span class="inline-block w-3 h-3 rounded-full mr-2" style="background-color: ${languageColors[lang.name] || languageColors['Other']}"></span>${lang.name}`;
+            nameSpan.className = 'font-medium text-gray-700 dark:text-gray-300';
+            
+            // Percentage value
+            const valueSpan = document.createElement('span');
+            valueSpan.textContent = `${lang.value}%`;
+            valueSpan.className = 'text-gray-600 dark:text-gray-400';
+            
+            header.appendChild(nameSpan);
+            header.appendChild(valueSpan);
+            langContainer.appendChild(header);
+            
+            // Create the progress bar
+            const progressContainer = document.createElement('div');
+            progressContainer.className = 'w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5';
+            
+            const progressBar = document.createElement('div');
+            progressBar.className = 'h-2.5 rounded-full';
+            progressBar.style.width = '0%'; // Start at 0 for animation
+            progressBar.style.backgroundColor = languageColors[lang.name] || languageColors['Other'];
+            
+            progressContainer.appendChild(progressBar);
+            langContainer.appendChild(progressContainer);
+            
+            // Add to the container
+            languageBarsContainer.appendChild(langContainer);
+            
+            // Animate the bar
+            setTimeout(() => {
+                progressBar.style.transition = 'width 1s ease-out';
+                progressBar.style.width = `${lang.value}%`;
+            }, 100);
+        });
+        
+        // Add interaction - highlight segment on hover
+        languageCtx.canvas.addEventListener('mousemove', (e) => {
+            const activeElements = languageChart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false);
+            
+            if (activeElements && activeElements.length) {
+                languageCtx.canvas.style.cursor = 'pointer';
+            } else {
+                languageCtx.canvas.style.cursor = 'default';
             }
         });
         

@@ -1,8 +1,16 @@
 from flask import Flask
+import logging
+import os
 
 def create_app(test_config=None):
     """Create and configure the Flask application."""
     app = Flask(__name__, instance_relative_config=True)
+    
+    # Configure logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
     
     app.config.from_mapping(
         SECRET_KEY='dev',
@@ -18,5 +26,8 @@ def create_app(test_config=None):
     # Register blueprints - use the root URL prefix for simpler routing
     from app import routes
     app.register_blueprint(routes.bp, url_prefix='')
+    
+    # Log app initialization
+    app.logger.info("Flask application initialized")
     
     return app 

@@ -1,13 +1,13 @@
 # Personal Website with GitHub Highlights
 
-A modern personal website that showcases your GitHub profile, repositories, and contributions with an interactive and responsive design. This project is built with Flask and uses the GitHub API to automatically display your profile information, repositories, and other GitHub activity.
+A modern personal website that showcases my GitHub profile, repositories, and contributions with an interactive and responsive design. This project is built with Flask and uses the GitHub API to automatically display my profile information, repositories, and other GitHub activity.
 
 ## Features
 
-- **Profile Section**: Displays your GitHub profile information, including bio, followers, and repositories.
-- **GitHub Highlights**: Shows your repositories with details like stars, forks, and languages used.
+- **Profile Section**: Displays my GitHub profile information, including bio, followers, and repositories.
+- **GitHub Highlights**: Shows my repositories with details like stars, forks, and languages used.
 - **Interactive Resume**: YAML-driven interactive resume with skills visualization and timeline.
-- **AI Chatbot**: An interactive chatbot that helps visitors navigate and learn about your portfolio.
+- **AI Chatbot**: An interactive chatbot that helps visitors navigate and learn about my portfolio.
   - Expandable chat interface with a Claude-like full-screen experience
   - Dark mode support for all elements including the chatbot
   - Quick-access suggestion buttons for common questions
@@ -27,6 +27,7 @@ A modern personal website that showcases your GitHub profile, repositories, and 
 - **Data Management**: 
   - YAML for structured content management
   - PDF parsing for resume data extraction
+  - Response caching for API efficiency
 - **APIs**: GitHub API for fetching profile and repository data
 
 ## Getting Started
@@ -41,7 +42,7 @@ A modern personal website that showcases your GitHub profile, repositories, and 
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/personal-website.git
+   git clone https://github.com/matthewpergolski/personal-website.git
    cd personal-website
    ```
 
@@ -50,9 +51,13 @@ A modern personal website that showcases your GitHub profile, repositories, and 
    uv init --python 3.12
    ```
 
-3. Install dependencies:
+3. Install dependencies using uv sync:
    ```bash
-   uv add flask pytest python-dotenv requests pytest-mock pyyaml pypdf
+   # Add dependencies to pyproject.toml
+   uv add flask pytest python-dotenv requests pytest-mock pyyaml pypdf responses
+   
+   # Or sync from existing pyproject.toml
+   uv sync
    ```
 
 4. Create a `.env` file in the project root and add your GitHub token:
@@ -67,9 +72,9 @@ A modern personal website that showcases your GitHub profile, repositories, and 
    uv run python main.py
    ```
 
-2. Open your browser and navigate to `http://localhost:5000`
+2. Open your browser and navigate to `http://localhost:5001`
 
-3. You should see your GitHub profile information and repositories displayed on the site.
+3. You should see my GitHub profile information and repositories displayed on the site.
 
 ### Running Tests
 
@@ -85,7 +90,7 @@ uv run pytest
 1. Create a Heroku account at [heroku.com](https://www.heroku.com/)
 2. Install the Heroku CLI: `brew install heroku/brew/heroku`
 3. Login to Heroku: `heroku login`
-4. Create a new Heroku app: `heroku create your-app-name`
+4. Create a new Heroku app: `heroku create my-app-name`
 5. Add a Procfile to the project root:
    ```
    web: gunicorn main:app
@@ -99,7 +104,7 @@ uv run pytest
    ```bash
    git push heroku main
    ```
-9. Open your app: `heroku open`
+9. Open my app: `heroku open`
 
 ### Vercel Deployment
 
@@ -129,7 +134,7 @@ personal_website/
 │   ├── routes.py          # Route definitions
 │   ├── github_api.py      # GitHub API integration
 │   ├── resume_utils.py    # Resume data loading and processing
-│   ├── data/              # YAML data files
+│   ├── cache/             # API response cache storage
 │   │   └── resume_data.yaml # Resume content
 │   ├── static/            # Static files (CSS, JS, images)
 │   │   └── js/            # JavaScript files
@@ -140,9 +145,13 @@ personal_website/
 │   ├── test_routes.py     # Tests for routes
 │   ├── test_github_api.py # Tests for GitHub API integration
 │   └── test_resume_utils.py # Tests for resume utilities
+├── test_github_api.py     # Additional API tests
 ├── pyproject.toml         # Project dependencies and metadata
+├── uv.lock                # Lock file for dependencies
 ├── main.py                # Application entry point
+├── setup.sh               # Setup script for environment
 ├── .env                   # Environment variables (GitHub token)
+├── .env.example           # Example environment file
 └── README.md              # Project documentation 
 ```
 
@@ -150,12 +159,12 @@ personal_website/
 
 The website uses a YAML-based approach for managing resume data:
 
-1. Structure your resume information in `app/data/resume_data.yaml`
+1. Structure my resume information in `app/data/resume_data.yaml`
 2. The data follows this general structure:
    ```yaml
    personal_info:
-     name: "Your Name"
-     title: "Your Professional Title"
+     name: "Matthew Pergolski"
+     title: "Professional Title"
      # other personal details
    
    education:
@@ -165,7 +174,7 @@ The website uses a YAML-based approach for managing resume data:
    
    experience:
      - company: "Company Name"
-       position: "Your Position"
+       position: "Position"
        # other job details
    
    skills:
@@ -174,11 +183,11 @@ The website uses a YAML-based approach for managing resume data:
          level: 85  # Percentage of proficiency
    ```
 
-3. To extract data from your PDF resume, use the `extract_pdf_text()` utility in `resume_utils.py`:
+3. To extract data from my PDF resume, use the `extract_pdf_text()` utility in `resume_utils.py`:
    ```python
    from app.resume_utils import extract_pdf_text
    
-   text = extract_pdf_text('path/to/your/resume.pdf')
+   text = extract_pdf_text('path/to/my/resume.pdf')
    # Then parse the text into the appropriate YAML structure
    ```
 
@@ -189,7 +198,7 @@ The website uses a YAML-based approach for managing resume data:
 Future versions will include a Retrieval-Augmented Generation (RAG) capability to make the chatbot more intelligent:
 
 1. **Document Indexing**:
-   - Index all GitHub repositories, README files, and documentation
+   - Index all of my GitHub repositories, README files, and documentation
    - Create embeddings of resume content for semantic search
    - Store project descriptions and technical details in a vector database
 
@@ -221,3 +230,15 @@ To streamline the resume data management, a future enhancement will include:
    - Generate PDF resume from YAML data (single source of truth)
    - Update YAML when PDF changes (for compatibility with traditional resume workflows)
    - Web interface for editing resume data directly
+
+## Advanced Features
+
+### GitHub API Caching
+
+The website implements an efficient caching mechanism for GitHub API calls:
+
+- **Cache Duration**: API responses are cached for 1 hour by default
+- **Cache Storage**: JSON files stored in the `app/cache/` directory
+- **Automatic Refresh**: Cache automatically refreshes when expired
+- **Language Aggregation**: Language data is aggregated across repositories
+- **Performance**: Reduces API calls and improves page load times

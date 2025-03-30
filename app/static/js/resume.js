@@ -19,6 +19,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to ensure the recommendations section is fully visible
     function ensureRecommendationSectionVisibility() {
+        // Recommendation section is now commented out in the HTML, so we don't need to do anything
+        // This function is kept for future use when the recommendations section is un-commented
+        
+        // Uncomment this when recommendations are added back to the template
+        /*
         const recommendationsSection = document.querySelector('section.bg-gradient-to-r.from-indigo-600.to-blue-500');
         if (recommendationsSection) {
             // Ensure section has enough bottom margin
@@ -28,6 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Force recalculation of layout
             document.documentElement.style.setProperty('--recommendations-visibility', 'visible');
         }
+        */
     }
 
     // Animate skill bars
@@ -350,146 +356,132 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Initialize the radar chart for skills
 function initSkillsChart() {
-    const ctx = document.getElementById('skillsRadarChart').getContext('2d');
-    
-    // Check if Chart object exists
-    if (typeof Chart === 'undefined') {
-        console.error('Chart.js is not loaded');
+    // Check if the skills and radar chart element exist
+    if (!window.resumeData || !document.getElementById('skillsRadarChart')) {
         return;
     }
-    
-    // Create a gradient background
-    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-    gradient.addColorStop(0, 'rgba(59, 130, 246, 0.3)');
-    gradient.addColorStop(1, 'rgba(147, 51, 234, 0.1)');
-    
-    // Get skills data from window object if available (populated by Flask template)
-    let skillLabels = [];
-    let skillValues = [];
-    
-    if (window.resumeData && window.resumeData.skills && window.resumeData.skills.technical) {
-        // Use the data passed from the server
-        window.resumeData.skills.technical.forEach(skill => {
-            skillLabels.push(skill.name);
-            skillValues.push(skill.proficiency);
-        });
-    } else {
-        // Fallback to default values
-        skillLabels = [
-            'Python',
-            'Machine Learning',
-            'Data Analysis',
-            'Data Visualization',
-            'Deep Learning',
-            'NLP',
-            'SQL',
-            'Statistics'
-        ];
-        skillValues = [95, 90, 92, 88, 85, 82, 90, 85];
-    }
-    
-    window.skillsChart = new Chart(ctx, {
-        type: 'radar',
-        data: {
-            labels: skillLabels,
-            datasets: [{
-                label: 'Skills Proficiency',
-                data: skillValues,
-                backgroundColor: gradient,
-                borderColor: 'rgba(59, 130, 246, 1)',
-                pointBackgroundColor: 'rgba(59, 130, 246, 1)',
-                pointBorderColor: '#fff',
-                pointHoverBackgroundColor: '#fff',
-                pointHoverBorderColor: 'rgba(59, 130, 246, 1)',
-                borderWidth: 2,
-                pointRadius: 4,
-                pointHoverRadius: 6
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'top',
-                    labels: {
-                        color: isDarkMode() ? '#f3f4f6' : '#374151',
-                        font: {
-                            size: 14,
-                            weight: 'bold'
+
+    try {
+        // Get skills data from resume data object
+        const technicalSkills = window.resumeData?.skills?.technical || [];
+        let skillLabels = [];
+        let skillValues = [];
+
+        // Check if we have skills data
+        if (technicalSkills.length > 0) {
+            // Extract skill names and proficiency values
+            skillLabels = technicalSkills.map(skill => skill.name);
+            skillValues = technicalSkills.map(skill => skill.proficiency);
+        } else {
+            // Fallback to default labels and values
+            skillLabels = ['Python', 'Machine Learning', 'Data Analysis', 'Data Visualization', 'SQL', 'Statistics', 'NLP'];
+            skillValues = [95, 90, 92, 88, 85, 89, 83];
+        }
+
+        // Get the canvas and create the chart context
+        const ctx = document.getElementById('skillsRadarChart').getContext('2d');
+        const isDarkTheme = document.documentElement.classList.contains('dark');
+        
+        // Set colors based on theme
+        const textColor = isDarkTheme ? '#f3f4f6' : '#374151';
+        const gridColor = isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+        
+        // Create gradient background
+        const backgroundColor = function(context) {
+            const gradient = context.chart.ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, isDarkTheme ? 'rgba(59, 130, 246, 0.5)' : 'rgba(59, 130, 246, 0.2)');
+            gradient.addColorStop(1, isDarkTheme ? 'rgba(37, 99, 235, 0.1)' : 'rgba(59, 130, 246, 0.05)');
+            return gradient;
+        };
+        
+        // Create the chart
+        const radarChart = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: skillLabels,
+                datasets: [{
+                    label: 'Skills Proficiency',
+                    data: skillValues,
+                    fill: true,
+                    backgroundColor: backgroundColor,
+                    borderColor: isDarkTheme ? 'rgba(96, 165, 250, 1)' : 'rgba(59, 130, 246, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: isDarkTheme ? 'rgba(96, 165, 250, 1)' : 'rgba(59, 130, 246, 1)',
+                    pointBorderColor: isDarkTheme ? '#1e293b' : '#ffffff',
+                    pointHoverBackgroundColor: '#ffffff',
+                    pointHoverBorderColor: 'rgba(59, 130, 246, 1)',
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 1.5,
+                scales: {
+                    r: {
+                        min: 50,
+                        max: 100,
+                        beginAtZero: false,
+                        angleLines: {
+                            color: gridColor
+                        },
+                        grid: {
+                            color: gridColor
+                        },
+                        pointLabels: {
+                            color: textColor,
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            padding: 10
+                        },
+                        ticks: {
+                            backdropColor: 'transparent',
+                            color: textColor,
+                            showLabelBackdrop: false,
+                            stepSize: 10,
+                            font: {
+                                size: 10
+                            }
                         }
                     }
                 },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return `Proficiency: ${context.raw}%`;
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            color: textColor,
+                            font: {
+                                size: 14
+                            },
+                            boxWidth: 15,
+                            padding: 15
                         }
                     },
-                    backgroundColor: isDarkMode() ? 'rgba(17, 24, 39, 0.8)' : 'rgba(255, 255, 255, 0.8)',
-                    titleColor: isDarkMode() ? '#f3f4f6' : '#1f2937',
-                    bodyColor: isDarkMode() ? '#f3f4f6' : '#1f2937',
-                    borderColor: isDarkMode() ? '#f3f4f6' : '#e5e7eb',
-                    borderWidth: 1,
-                    padding: 10,
-                    displayColors: false
-                }
-            },
-            scales: {
-                r: {
-                    angleLines: {
-                        color: isDarkMode() ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-                        lineWidth: 1
-                    },
-                    grid: {
-                        color: isDarkMode() ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
-                        circular: true
-                    },
-                    pointLabels: {
-                        color: isDarkMode() ? '#f3f4f6' : '#374151',
-                        font: {
-                            size: 12,
-                            weight: 'bold'
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.label}: ${context.raw}% proficiency`;
+                            }
                         }
-                    },
-                    ticks: {
-                        backdropColor: 'transparent',
-                        color: isDarkMode() ? '#f3f4f6' : '#374151',
-                        z: 100,
-                        font: {
-                            size: 10
-                        }
-                    },
-                    suggestedMin: 50,
-                    suggestedMax: 100,
-                    beginAtZero: false
-                }
-            },
-            animation: {
-                duration: 2000,
-                easing: 'easeOutQuart'
-            },
-            elements: {
-                line: {
-                    tension: 0.2 // Smooth the lines slightly
+                    }
+                },
+                elements: {
+                    line: {
+                        tension: 0.2
+                    }
                 }
             }
-        }
-    });
-    
-    // Add animation to the chart on hover
-    const canvas = document.getElementById('skillsRadarChart');
-    canvas.addEventListener('mouseenter', () => {
-        window.skillsChart.options.scales.r.ticks.font.size = 12;
-        window.skillsChart.options.scales.r.pointLabels.font.size = 14;
-        window.skillsChart.update();
-    });
-    
-    canvas.addEventListener('mouseleave', () => {
-        window.skillsChart.options.scales.r.ticks.font.size = 10;
-        window.skillsChart.options.scales.r.pointLabels.font.size = 12;
-        window.skillsChart.update();
-    });
+        });
+        
+        // Store the chart instance in the window object for future reference
+        window.skillsChart = radarChart;
+    } catch (error) {
+        console.error('Error initializing skills chart:', error);
+    }
 }
 
 // Check if dark mode is currently enabled
@@ -514,4 +506,56 @@ function updateChartColors() {
     window.skillsChart.options.plugins.tooltip.borderColor = isDark ? '#f3f4f6' : '#e5e7eb';
     
     window.skillsChart.update();
+}
+
+// Add function to handle skill pulse animation
+function pulseSkill(element) {
+    // Add pulse animation to the container with more noticeable effect
+    element.classList.add('bg-blue-100', 'dark:bg-blue-900/30', 'scale-105', 'shadow-md');
+    
+    // Find the skill bar inside this container
+    const skillBar = element.querySelector('.skill-bar');
+    if (skillBar) {
+        // Add a quick animation to the skill bar with more dramatic effect
+        skillBar.style.transition = 'width 0.4s ease-in-out, background-color 0.4s ease';
+        
+        // Store the original properties
+        const targetWidth = skillBar.getAttribute('data-width');
+        const originalBgColor = skillBar.style.backgroundColor;
+        
+        // First expand the bar
+        skillBar.style.width = '100%';
+        skillBar.style.backgroundColor = '#4338ca'; // Indigo-700 color
+        
+        // Then contract and then expand to target width with color change
+        setTimeout(() => {
+            skillBar.style.width = '10%';
+            skillBar.style.backgroundColor = '#ef4444'; // Red-500 color
+            
+            setTimeout(() => {
+                skillBar.style.width = targetWidth;
+                skillBar.style.backgroundColor = '#3b82f6'; // Blue-500 color
+                
+                // Remove highlight after animation completes
+                setTimeout(() => {
+                    element.classList.remove('bg-blue-100', 'dark:bg-blue-900/30', 'scale-105', 'shadow-md');
+                    skillBar.style.backgroundColor = originalBgColor;
+                }, 700);
+            }, 300);
+        }, 400);
+        
+        // Show a tooltip or message (optional)
+        const tooltip = element.querySelector('.text-xs');
+        if (tooltip) {
+            tooltip.textContent = "Proficiency: " + targetWidth;
+            tooltip.classList.remove('opacity-0');
+            tooltip.classList.add('opacity-100');
+            
+            setTimeout(() => {
+                tooltip.textContent = "Click to see animation";
+                tooltip.classList.remove('opacity-100');
+                tooltip.classList.add('opacity-0');
+            }, 1500);
+        }
+    }
 } 

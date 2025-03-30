@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+
+{% block title %}GitHub Language Analytics | Data Science Portfolio{% endblock %}
+
+{% block styles %}
+<style>
+    .dashboard-card {
+        transition: all 0.3s ease;
+    }
+    
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    .dark .dashboard-card {
+        background-color: #1f2937 !important;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 450px;
+        width: 100%;
+        margin: 0 auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4">
+    <section class="py-8 mb-8 text-center">
+        <h1 class="text-4xl font-bold mb-4 text-gray-900 dark:text-white">GitHub Language Analytics</h1>
+        <p class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+            Explore the programming languages used across my GitHub repositories
+        </p>
+        
+        {% if viz_data.is_sample_data %}
+        <div class="mt-4 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 text-blue-800 dark:text-blue-200 rounded-lg p-4 max-w-3xl mx-auto">
+            <div class="flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                </svg>
+                <p>This visualization uses sample data. Connect a GitHub account to see actual repository data.</p>
+            </div>
+        </div>
+        {% endif %}
+    </section>
+    
+    <!-- Language Distribution Card -->
+    <div class="dashboard-card bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden mb-12">
+        <div class="p-6">
+            <h2 class="text-2xl font-bold mb-4 text-blue-800 dark:text-blue-400">Repository Language Distribution</h2>
+            <p class="text-gray-600 dark:text-gray-400 mb-6">Analysis of programming languages used across all GitHub repositories</p>
+            <div class="chart-container max-w-2xl mx-auto">
+                <canvas id="languagesChart"></canvas>
+            </div>
+            {% if not viz_data.is_sample_data %}
+            <div class="mt-4 text-sm text-gray-600 dark:text-gray-400 text-center">
+                <p>Data based on actual GitHub repository analysis</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- GitHub Link -->
+    <section class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-8 mb-12 text-center">
+        <h2 class="text-2xl font-bold mb-4 text-blue-800 dark:text-blue-400">Explore My Repositories</h2>
+        <p class="text-gray-600 dark:text-gray-300 mb-6">Check out my projects and contributions on GitHub</p>
+        
+        <a href="https://github.com/matthewpergolski" target="_blank" class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors shadow-md">
+            <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385c.6.105.825-.255.825-.57c0-.285-.015-1.23-.015-2.235c-3.015.555-3.795-.735-4.035-1.41c-.135-.345-.72-1.41-1.23-1.695c-.42-.225-1.02-.78-.015-.795c.945-.015 1.62.87 1.845 1.23c1.08 1.815 2.805 1.305 3.495.99c.105-.78.42-1.305.765-1.605c-2.67-.3-5.46-1.335-5.46-5.925c0-1.305.465-2.385 1.23-3.225c-.12-.3-.54-1.53.12-3.18c0 0 1.005-.315 3.3 1.23c.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23c.66 1.65.24 2.88.12 3.18c.765.84 1.23 1.905 1.23 3.225c0 4.605-2.805 5.625-5.475 5.925c.435.375.81 1.095.81 2.22c0 1.605-.015 2.895-.015 3.3c0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+            View GitHub Profile
+        </a>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get the visualization data
+        const vizData = {{ viz_data|tojson|safe }};
+        
+        // Check dark mode
+        const isDarkMode = document.documentElement.classList.contains('dark');
+        const textColor = isDarkMode ? '#f3f4f6' : '#374151';
+        
+        // Initialize chart
+        initLanguageChart(vizData.language_distribution, textColor, isDarkMode);
+        
+        // Handle dark mode toggle
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        if (darkModeToggle) {
+            darkModeToggle.addEventListener('click', function() {
+                setTimeout(function() {
+                    const isDarkMode = document.documentElement.classList.contains('dark');
+                    const textColor = isDarkMode ? '#f3f4f6' : '#374151';
+                    
+                    if (window.languageChart) {
+                        window.languageChart.destroy();
+                    }
+                    
+                    initLanguageChart(vizData.language_distribution, textColor, isDarkMode);
+                }, 50);
+            });
+        }
+    });
+    
+    function initLanguageChart(data, textColor, isDarkMode) {
+        const ctx = document.getElementById('languagesChart').getContext('2d');
+        
+        // Color palette for languages
+        const colorPalette = {
+            'Jupyter Notebook': 'rgba(243, 156, 18, 0.8)',  // Orange
+            'HTML': 'rgba(231, 76, 60, 0.8)',               // Red
+            'Python': 'rgba(52, 152, 219, 0.8)',            // Blue
+            'JavaScript': 'rgba(241, 196, 15, 0.8)',        // Yellow
+            'R': 'rgba(41, 128, 185, 0.8)',                 // Dark Blue
+            'CSS': 'rgba(155, 89, 182, 0.8)',               // Purple
+            'Shell': 'rgba(0, 0, 0, 0.7)',                  // Black/Gray
+            'TypeScript': 'rgba(52, 73, 94, 0.8)',          // Dark Slate
+            'Other': 'rgba(189, 195, 199, 0.8)'             // Light Gray
+        };
+        
+        // Generate colors for the chart
+        const colors = Object.keys(data).map(lang => 
+            colorPalette[lang] || 'rgba(201, 203, 207, 0.8)'
+        );
+        
+        window.languageChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: Object.keys(data),
+                datasets: [{
+                    data: Object.values(data),
+                    backgroundColor: colors,
+                    borderColor: isDarkMode ? '#1f2937' : '#ffffff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: textColor,
+                            font: {
+                                size: 14
+                            },
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                return `${label}: ${value}%`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %} 

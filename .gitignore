@@ -13,3 +13,22 @@ wheels/
 # Other
 .env 
 Matthew-L-Pergolski__Resume.pdf
+
+# Ignore these files and directories
+__pycache__/
+.venv/
+.env
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.DS_Store
+app/cache/
+
+# Don't ignore these files (useful utilities)
+!check_versions.py
+!start_app.sh
+!direct_github.py
