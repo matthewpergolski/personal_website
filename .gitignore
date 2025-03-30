@@ -10,18 +10,14 @@ wheels/
 # Virtual environments
 .venv
 
+# Environment files
+.env
+.env.production
+
 # Other
-.env 
 Matthew-L-Pergolski__Resume.pdf
 
 # Ignore these files and directories
-__pycache__/
-.venv/
-.env
-*.pyc
-*.pyo
-*.pyd
-.pytest_cache/
 .coverage
 .coverage.*
 htmlcov/
@@ -32,3 +28,4 @@ app/cache/
 !check_versions.py
 !start_app.sh
 !direct_github.py
+!.env.production.example
