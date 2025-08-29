@@ -1,0 +1,44 @@
+{
+  "summary": "Data scientist and AI/ML engineer focused on building useful, reliable systems that turn data into product value.",
+  "highlights": [
+    "Built ML models serving 200K+ users with 35% error reduction",
+    "Automated data pipelines and reporting, saving 20+ hours/week",
+    "Led cross-functional projects from data ingestion to deployment"
+  ],
+  "experience": [
+    {
+      "title": "Senior Automation/Artificial Intelligence Engineer",
+      "company": "Tech Company",
+      "period": "2022 - Present",
+      "bullets": [
+        "Led development of machine learning models serving 1M+ users",
+        "Reduced prediction error by 35% through feature engineering",
+        "Launched a document‑aware AI search tool that reduced ad‑hoc analytics requests ~40% and sped up decision‑making"
+      ]
+    },
+    {
+      "title": "Senior Data Scientist",
+      "company": "Analytics Firm",
+      "period": "2020 - 2022",
+      "bullets": [
+        "Developed predictive models for customer behavior analysis",
+        "Created automated reporting system saving 20 hours/week",
+        "Reduced prediction error by 35% through feature engineering"
+      ]
+    }
+  ],
+  "education": [
+    { "degree": "Master of Science in Data Science", "institution": "University Name", "period": "2018 - 2020" },
+    { "degree": "Bachelor of Science in Computer Science", "institution": "University Name", "period": "2014 - 2018" }
+  ],
+  "skills": {
+    "Programming": ["Python", "R", "SQL", "JavaScript"],
+    "ML": ["PyTorch", "TensorFlow", "XGBoost", "scikit-learn"],
+    "Data": ["Pandas", "NumPy", "Plotly", "Jupyter"],
+    "Infra": ["AWS", "Docker", "Git", "CI/CD"]
+  },
+  "snapshot": {
+    "years": 6,
+    "featuredProjects": 8
+  }
+}

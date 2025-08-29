@@ -1,0 +1,12 @@
+.devcontainer/
+.github/
+.venv/
+__pycache__/
+*.pyc
+envs.sh
+envs.sh.example
+data/messages/
+data/ratelimit/
+.sesskey
+.python-version
+

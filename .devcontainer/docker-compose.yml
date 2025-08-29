@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  dev:
+    build:
+      context: ../
+      dockerfile: .devcontainer/dockerfile
+    image: ${IMAGE_NAME:-vsocde-devcontainers}:${IMAGE_TAG:-latest}
+    platform: linux/amd64
+    volumes:
+      - ../:/workspaces/project
+      - ${DATA_VOLUME_PATH:-data_volume}:/workspaces/project/mnt
+    command: tail -f /dev/null
+volumes:
+  data_volume:

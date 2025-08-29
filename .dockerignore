@@ -1,0 +1,13 @@
+.git
+.github
+.venv
+__pycache__
+*.pyc
+.devcontainer
+data/messages
+data/ratelimit
+envs.sh
+envs.sh.example
+.python-version
+.sesskey
+

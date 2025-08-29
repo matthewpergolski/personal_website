@@ -1,0 +1,50 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Environment files (contains sensitive info)
+.env
+envs.sh
+.sesskey
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Database files
+*.db
+*.sqlite3
+
+# Static files (if generated)
+staticfiles/
+media/
+static/*.pdf
+data/static/*.pdf
+data/static/*.docx
+
+# Test coverage
+.coverage
+htmlcov/
+
+data/static/Matthew-L-Pergolski__Resume_Public.docx
+ 
+# Runtime data (should not be committed)
+data/ratelimit/
+data/messages/
