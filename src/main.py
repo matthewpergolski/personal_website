@@ -68,6 +68,9 @@ load_dotenv('envs.sh')
 
 # FastHTML App Configuration
 app = FastHTML(
+    # On Vercel's serverless runtime, the filesystem is read-only except for /tmp.
+    # Ensure FastHTML does not try to write the default .sesskey in CWD.
+    key_fname=("/tmp/.sesskey" if os.getenv("VERCEL") else ".sesskey"),
     title=os.getenv('SITE_TITLE', 'Professional Portfolio'),
     hdrs=(
         Link(rel="stylesheet", href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"),
