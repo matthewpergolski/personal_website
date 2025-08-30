@@ -24,6 +24,7 @@ from src.services.github import fetch_language_bytes_aggregate
 from src.services.content import load_experience
 from src.services.email import send_email
 import httpx
+from src.config import get_config
 
 async def verify_human(req: Request) -> tuple[bool, str]:
     """Verify Cloudflare Turnstile or hCaptcha token if configured.
@@ -65,6 +66,7 @@ async def verify_human(req: Request) -> tuple[bool, str]:
 
 # Load environment variables
 load_dotenv('envs.sh')
+CFG = get_config()
 
 # FastHTML App Configuration
 app = FastHTML(
@@ -1114,7 +1116,7 @@ def contact(req: Request):
                     ft.H3("Let's Connect"),
                     ft.P("I'm always interested in discussing new opportunities, interesting projects, or just having a chat about data science and AI."),
                     ft.H4("Contact Information"),
-                    ft.P("📧 Email: matthew@example.com"),
+                    ft.P(f"📧 Email: {CFG.public_email or ''}"),
                     ft.Div(
                         ft.A("💼 LinkedIn", href=ensure_url(os.getenv('LINKEDIN_URL')), cls="icon-link", target="_blank", rel="noopener noreferrer"),
                         ft.A("🐙 GitHub", href=ensure_url(f"https://github.com/{os.getenv('GITHUB_USERNAME')}") if os.getenv('GITHUB_USERNAME') else "https://github.com/", cls="icon-link", target="_blank", rel="noopener noreferrer"),

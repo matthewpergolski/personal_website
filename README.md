@@ -120,6 +120,26 @@ export RESUME_URL="https://docs.google.com/document/d/YOUR_FILE_ID/export?format
 # export SMTP_FROM=your_gmail@gmail.com
 # export SMTP_TO=your_hide_my_email@icloud.com   # or your inbox
 
+### Public site config (non‑secret)
+
+For non‑secret values that you want in source control (public email alias, default titles, links), add a `data/site.json` (see `data/site.json.example`):
+
+```
+{
+  "site_title": "Personal Portfolio",
+  "site_description": "AI/ML Engineer & Data Scientist",
+  "public_email": "contact@your-domain.com",
+  "linkedin_url": "https://linkedin.com/in/your-profile",
+  "github_username": "your-github-username",
+  "resume_url": "https://docs.../export?format=pdf"
+}
+```
+
+At runtime the app merges env vars with this JSON:
+- Env vars override JSON (e.g., `PUBLIC_EMAIL`, `SITE_TITLE`).
+- `PUBLIC_EMAIL` or `CONTACT_EMAIL`/`SMTP_TO` populate the Contact page.
+- Keep secrets (tokens, SMTP credentials) in env vars only.
+
 # Optional bot protection (Turnstile preferred)
 # export TURNSTILE_SITE_KEY="1x00000000000000000000AA"   # test key
 # export TURNSTILE_SECRET_KEY="1x0000000000000000000000000000000AA"  # test secret
