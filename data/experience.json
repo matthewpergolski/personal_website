@@ -8,8 +8,8 @@
   "experience": [
     {
       "title": "Senior Automation/Artificial Intelligence Engineer",
-      "company": "Tech Company",
-      "period": "2022 - Present",
+      "company": "Defense Contractor",
+      "period": "2025 - Present",
       "bullets": [
         "Led development of machine learning models serving 1M+ users",
         "Reduced prediction error by 35% through feature engineering",
@@ -18,8 +18,8 @@
     },
     {
       "title": "Senior Data Scientist",
-      "company": "Analytics Firm",
-      "period": "2020 - 2022",
+      "company": "Defense Contractor",
+      "period": "2023 - 2025",
       "bullets": [
         "Developed predictive models for customer behavior analysis",
         "Created automated reporting system saving 20 hours/week",
@@ -28,8 +28,8 @@
     }
   ],
   "education": [
-    { "degree": "Master of Science in Data Science", "institution": "University Name", "period": "2018 - 2020" },
-    { "degree": "Bachelor of Science in Computer Science", "institution": "University Name", "period": "2014 - 2018" }
+    { "degree": "M.S. in Applied Data Science", "institution": "Syracuse University", "period": "2024" },
+    { "degree": "B.B.A. in Operations/Supply Chain Management", "institution": "University of Wisconsin", "period": "2017" }
   ],
   "skills": {
     "Programming": ["Python", "R", "SQL", "JavaScript"],

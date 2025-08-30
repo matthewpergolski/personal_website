@@ -46,6 +46,7 @@ echo "🌟 Starting FastHTML server on http://localhost:8000"
 echo "   Press Ctrl+C to stop the server"
 echo ""
 
-# Use UV to run the application with uvicorn directly
-cd /workspaces/fasthtml_sample_app
-PYTHONPATH=/workspaces/fasthtml_sample_app uv run uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+# Use UV to run the application with uvicorn directly (path‑agnostic)
+SCRIPT_DIR="$(cd -- "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd -P)"
+cd "$SCRIPT_DIR"
+PYTHONPATH="$SCRIPT_DIR" uv run uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload

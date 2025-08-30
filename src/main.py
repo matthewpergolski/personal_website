@@ -163,19 +163,14 @@ app = FastHTML(
             }
 
             .hero-title {
-                font-size: 3rem;
+                /* Responsive but preserves desktop size */
+                font-size: clamp(1.75rem, 6vw + .25rem, 3rem);
                 font-weight: 700;
                 margin-bottom: 1rem;
             }
 
-            @media (max-width: 768px) {
-                .hero-title {
-                    font-size: 2rem;
-                }
-            }
-
             .hero-subtitle {
-                font-size: 1.25rem;
+                font-size: clamp(1rem, 3.2vw, 1.25rem);
                 opacity: 0.9;
                 margin-bottom: 2rem;
             }
@@ -204,7 +199,7 @@ app = FastHTML(
                 box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                 position: sticky;
                 top: 0;
-                z-index: 100;
+                z-index: 1000; /* keep above hero visuals */
             }
 
             .nav-container {
@@ -238,7 +233,9 @@ app = FastHTML(
                 .nav-container { gap: .5rem; }
                 .nav-toggle { display: inline-flex; align-items:center; justify-content:center; padding:.5rem .75rem; border:1px solid var(--border-color); border-radius:8px; background:var(--surface-1); color:var(--text-color); }
                 .nav-links { display: none; }
-                .nav.open .nav-links { display: flex; flex-direction: column; gap: 1rem; padding-top: .5rem; }
+                .nav.open .nav-links { display: flex; flex-direction: column; gap: .5rem; padding-top: .5rem; }
+                .nav.open .nav-actions { display: none !important; }
+                .nav-link { padding:.5rem 0; font-size: 1.05rem; }
                 .nav-actions { display: none; }
             }
 
@@ -292,7 +289,10 @@ app = FastHTML(
             @media (max-width: 640px){ .about-hero { grid-template-columns: 1fr; text-align:center; } }
 
             .hero-cta { display:flex; gap:.75rem; flex-wrap:wrap; }
-            @media (max-width: 640px){ .hero-cta { justify-content:center; } }
+            @media (max-width: 640px){
+                .hero-cta { justify-content:center; }
+                .hero-cta .btn { width: 100%; max-width: 320px; }
+            }
 
             /* Stats */
             .stats-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .75rem; }
