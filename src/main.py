@@ -156,7 +156,7 @@ app = FastHTML(
                 background: radial-gradient(1200px 600px at 10% -10%, rgba(255,255,255,0.15), transparent),
                             linear-gradient(135deg, var(--primary-color) 0%, #1d4ed8 100%);
                 color: white;
-                padding: 4rem 0;
+                padding: clamp(2rem, 8vw, 4rem) 0;
                 text-align: center;
                 position: relative;
                 overflow: hidden;
@@ -176,10 +176,11 @@ app = FastHTML(
             }
 
             .hero-description {
-                font-size: 1.1rem;
+                font-size: clamp(.95rem, 2.8vw, 1.1rem);
                 opacity: 0.8;
                 max-width: 600px;
                 margin: 0 auto;
+                line-height: 1.55;
             }
 
             .avatar {
@@ -231,12 +232,25 @@ app = FastHTML(
 
             @media (max-width: 768px) {
                 .nav-container { gap: .5rem; }
-                .nav-toggle { display: inline-flex; align-items:center; justify-content:center; padding:.5rem .75rem; border:1px solid var(--border-color); border-radius:8px; background:var(--surface-1); color:var(--text-color); }
-                .nav-links { display: none; }
-                .nav.open .nav-links { display: flex; flex-direction: column; gap: .5rem; padding-top: .5rem; }
+                .nav-toggle { display: inline-flex; align-items:center; justify-content:center; padding:.5rem .75rem; border:1px solid var(--border-color); border-radius:8px; background:var(--surface-1); color:var(--text-color); position: relative; z-index: 1002; }
+                .brand-sub { display: none; }
+                /* Off‑canvas menu */
+                .nav-links {
+                    display: flex; flex-direction: column; gap: .5rem;
+                    position: fixed; top: 0; right: 0; height: 100svh; width: min(82vw, 340px);
+                    background: var(--surface-1); border-left: 1px solid var(--border-color);
+                    padding: 4.5rem 1rem 1rem; box-shadow: -16px 0 40px rgba(0,0,0,.35);
+                    transform: translateX(100%); transition: transform .2s ease;
+                    z-index: 1001; overflow-y: auto;
+                }
+                .nav.open .nav-links { transform: translateX(0); }
+                body.nav-open::after { content:""; position: fixed; inset: 0; background: rgba(0,0,0,.45); backdrop-filter: blur(1px); z-index: 999; }
+                body.nav-open { overflow: hidden; }
                 .nav.open .nav-actions { display: none !important; }
                 .nav-link { padding:.5rem 0; font-size: 1.05rem; }
                 .nav-actions { display: none; }
+                /* Tone down background effects on mobile */
+                body { --starfield-opacity: .10; }
             }
 
             .nav-actions {
@@ -465,12 +479,32 @@ app = FastHTML(
                 document.documentElement.style.setProperty('--glow-y', e.clientY+'px');
               }catch(_){}
             });
-            // Mobile nav toggle
+            // Mobile nav toggle + close on link/escape
             document.addEventListener('click', function(e){
               var t = e.target;
+              var nav = document.querySelector('.nav');
               if (t && t.id === 'nav-toggle') {
+                if (nav) {
+                  var open = nav.classList.toggle('open');
+                  document.body.classList.toggle('nav-open', open);
+                }
+                return;
+              }
+              if (nav && nav.classList.contains('open')) {
+                var a = t.closest ? t.closest('.nav-links a') : null;
+                if (a) {
+                  nav.classList.remove('open');
+                  document.body.classList.remove('nav-open');
+                }
+              }
+            });
+            document.addEventListener('keydown', function(e){
+              if (e.key === 'Escape') {
                 var nav = document.querySelector('.nav');
-                if (nav) nav.classList.toggle('open');
+                if (nav && nav.classList.contains('open')) {
+                  nav.classList.remove('open');
+                  document.body.classList.remove('nav-open');
+                }
               }
             });
             // Starfield: layered parallax stars drifting across the viewport

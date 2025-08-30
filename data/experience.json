@@ -32,7 +32,7 @@
     { "degree": "B.B.A. in Operations/Supply Chain Management", "institution": "University of Wisconsin", "period": "2017" }
   ],
   "skills": {
-    "Programming": ["Python", "R", "SQL", "JavaScript"],
+    "Programming": ["Python", "R", "SQL"],
     "ML": ["PyTorch", "TensorFlow", "XGBoost", "scikit-learn"],
     "Data": ["Pandas", "NumPy", "Plotly", "Jupyter"],
     "Infra": ["AWS", "Docker", "Git", "CI/CD"]
