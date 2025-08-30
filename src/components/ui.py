@@ -86,3 +86,15 @@ def SiteFooter():
         ),
         cls="footer",
     )
+
+
+def MobileTabBar():
+    """Fixed bottom tab bar for mobile only (CSS controls visibility)."""
+    return Div(
+        A(Span("🏠", cls="tab-ico"), Span("Home", cls="tab-txt"), href="/", id="tab-home", cls="tab"),
+        A(Span("📦", cls="tab-ico"), Span("Projects", cls="tab-txt"), href="/projects", id="tab-projects", cls="tab"),
+        A(Span("👤", cls="tab-ico"), Span("About", cls="tab-txt"), href="/about", id="tab-about", cls="tab"),
+        A(Span("📄", cls="tab-ico"), Span("Resume", cls="tab-txt"), href="/resume", id="tab-resume", cls="tab"),
+        A(Span("✉️", cls="tab-ico"), Span("Contact", cls="tab-txt"), href="/contact", id="tab-contact", cls="tab"),
+        id="mobile-tabbar", cls="mobile-tabbar"
+    )

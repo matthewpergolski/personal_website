@@ -1,5 +1,5 @@
 import fasthtml.common as ft
-from src.components.ui import Navigation, SiteFooter
+from src.components.ui import Navigation, SiteFooter, MobileTabBar
 
 
 def render_page(title: str, *content):
@@ -9,5 +9,6 @@ def render_page(title: str, *content):
         # Subtle asteroid-belt canvas (fixed, behind content)
         ft.Canvas(id="asteroid-belt"),
         *content,
+        MobileTabBar(),
         SiteFooter(),
     )

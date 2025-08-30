@@ -293,6 +293,19 @@ app = FastHTML(
                 padding: 4rem 0;
             }
 
+            /* Mobile bottom tab bar */
+            .mobile-tabbar { display:none; }
+            .mobile-tabbar { position: fixed; left:0; right:0; bottom:0; height: 64px; display:none; background: rgba(15,23,42,.86); border-top: 1px solid var(--border-color); backdrop-filter: blur(10px); z-index: 999; align-items:center; justify-content: space-around; padding: 0 max(8px, env(safe-area-inset-left)) calc(max(6px, env(safe-area-inset-bottom))); }
+            .mobile-tabbar .tab { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; color: var(--muted-text); text-decoration:none; font-weight:600; font-size:.8rem; padding:.35rem .4rem; border-radius:8px; }
+            .mobile-tabbar .tab-ico { font-size: 1.15rem; line-height:1; }
+            .mobile-tabbar .tab.active { color:#fff; background: rgba(37,99,235,.22); }
+            @media (max-width: 768px) {
+                .mobile-tabbar { display:flex; }
+                body { padding-bottom: 74px; }
+                /* Hide when menu is open */
+                .nav.open ~ .mobile-tabbar { transform: translateY(110%); transition: transform .2s ease; }
+            }
+
             .section-title {
                 font-size: 2.5rem;
                 font-weight: 700;
@@ -543,6 +556,44 @@ app = FastHTML(
                 }
               }
             });
+            // Highlight active tab in the bottom tab bar
+            document.addEventListener('DOMContentLoaded', function(){
+              try{
+                var p = location.pathname || '/';
+                var id = p.startsWith('/projects') ? 'tab-projects'
+                      : p.startsWith('/about') ? 'tab-about'
+                      : p.startsWith('/resume') ? 'tab-resume'
+                      : p.startsWith('/contact') ? 'tab-contact'
+                      : 'tab-home';
+                var el = document.getElementById(id);
+                if (el) el.classList.add('active');
+              }catch(_){ }
+            });
+
+            // Basic edge-swipe gestures (open from right edge, close by swiping right on panel)
+            (function(){
+              var startX=0, startY=0, trackingOpen=false, trackingClose=false;
+              document.addEventListener('touchstart', function(e){
+                try{
+                  var t=e.touches&&e.touches[0]; if(!t) return;
+                  startX=t.clientX; startY=t.clientY;
+                  var nav=document.querySelector('.nav'); var links=document.getElementById('nav-links');
+                  var edge=24;
+                  if(nav && !nav.classList.contains('open') && startX > (window.innerWidth-edge)) trackingOpen=true;
+                  else if(nav && nav.classList.contains('open') && links && links.contains(e.target)) trackingClose=true;
+                }catch(_){}
+              }, {passive:true});
+              document.addEventListener('touchmove', function(e){
+                try{
+                  var t=e.touches&&e.touches[0]; if(!t) return; var dx=t.clientX-startX; var dy=t.clientY-startY;
+                  if(Math.abs(dy) > 40) { trackingOpen=false; trackingClose=false; return; }
+                  var nav=document.querySelector('.nav');
+                  if(trackingOpen && dx < -50) { if(nav){ nav.classList.add('open'); document.body.classList.add('nav-open'); try{var b=document.getElementById('nav-toggle'); if(b) b.setAttribute('aria-expanded','true');}catch(_){} } trackingOpen=false; }
+                  if(trackingClose && dx > 50) { if(nav){ nav.classList.remove('open'); document.body.classList.remove('nav-open'); try{var b=document.getElementById('nav-toggle'); if(b) b.setAttribute('aria-expanded','false');}catch(_){} } trackingClose=false; }
+                }catch(_){}
+              }, {passive:true});
+              document.addEventListener('touchend', function(){ trackingOpen=false; trackingClose=false; }, {passive:true});
+            })();
 
             // Basic edge-swipe gestures (open from right edge, close by swiping right on panel)
             (function(){
