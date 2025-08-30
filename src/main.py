@@ -184,15 +184,18 @@ app = FastHTML(
             }
 
             .avatar {
-                width: 112px;
-                height: 112px;
+                width: 160px;
+                height: 160px;
                 border-radius: 50%;
-                box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-                border: 3px solid rgba(255,255,255,0.7);
+                box-shadow: 0 0 0 2px rgba(37,99,235,.28), 0 10px 30px rgba(0,0,0,0.25);
+                border: 3px solid rgba(255,255,255,0.75);
                 margin-bottom: 1rem;
+                transition: box-shadow .2s ease, transform .2s ease;
             }
-            .avatar-lg { width: 144px; height: 144px; }
-            @media (max-width: 640px){ .avatar-lg { width: 96px; height: 96px; } }
+            .avatar:hover { box-shadow: 0 0 0 3px rgba(37,99,235,.45), 0 14px 36px rgba(0,0,0,.35); transform: translateY(-1px) scale(1.01); }
+            .avatar:active { transform: scale(.995); }
+            .avatar-lg { width: 160px; height: 160px; }
+            @media (max-width: 640px){ .avatar-lg { width: 112px; height: 112px; } }
 
             .nav {
                 background: var(--surface-1);
@@ -202,6 +205,10 @@ app = FastHTML(
                 top: 0;
                 z-index: 1000; /* keep above hero visuals */
             }
+            .nav-toggle { display: none; }
+            .menu-hint { display: none; }
+            .nav-close { display: none; }
+            .nav-toggle { cursor: pointer; }
 
             .nav-container {
                 display: flex;
@@ -251,6 +258,12 @@ app = FastHTML(
                 .nav-actions { display: none; }
                 /* Tone down background effects on mobile */
                 body { --starfield-opacity: .10; }
+                /* In-panel close button */
+                .nav-close { display:inline-flex; position: absolute; top: .9rem; right: .9rem; height: 36px; width: 36px; align-items:center; justify-content:center; border-radius:10px; border:1px solid var(--border-color); background: var(--surface-1); color: var(--text-color); font-size: 1.25rem; }
+                .nav-close:active { transform: scale(.98); }
+                /* Wiggle animation for first-time users */
+                @keyframes wiggle { 0%{ transform: rotate(0) translateY(0); } 30%{ transform: rotate(7deg) translateY(-1px);} 60%{ transform: rotate(-7deg) translateY(-1px);} 100%{ transform: rotate(0) translateY(0);} }
+                .nav-toggle.nudge { animation: wiggle .7s ease-in-out 0s 2; }
             }
 
             .nav-actions {
@@ -479,22 +492,45 @@ app = FastHTML(
                 document.documentElement.style.setProperty('--glow-y', e.clientY+'px');
               }catch(_){}
             });
-            // Mobile nav toggle + close on link/escape
+            // Mobile nav toggle + close on link/escape/outside; first-time wiggle
+            document.addEventListener('DOMContentLoaded', function(){
+              try{
+                var seen = localStorage.getItem('menu_hint_seen') === '1';
+                var btn = document.getElementById('nav-toggle');
+                if (btn && !seen && window.innerWidth <= 768) {
+                  btn.classList.add('nudge');
+                  setTimeout(function(){ try{ btn.classList.remove('nudge'); localStorage.setItem('menu_hint_seen','1'); }catch(_){} }, 1600);
+                }
+              }catch(_){ }
+            });
+
             document.addEventListener('click', function(e){
               var t = e.target;
               var nav = document.querySelector('.nav');
+              var links = document.getElementById('nav-links');
+              if (t && (t.id === 'nav-close')) {
+                if (nav) {
+                  nav.classList.remove('open');
+                  document.body.classList.remove('nav-open');
+                  try{ var b = document.getElementById('nav-toggle'); if(b) b.setAttribute('aria-expanded','false'); }catch(_){}
+                }
+                return;
+              }
               if (t && t.id === 'nav-toggle') {
                 if (nav) {
                   var open = nav.classList.toggle('open');
                   document.body.classList.toggle('nav-open', open);
+                  try{ var btn = document.getElementById('nav-toggle'); if(btn) btn.setAttribute('aria-expanded', open?'true':'false'); }catch(_){}
                 }
                 return;
               }
               if (nav && nav.classList.contains('open')) {
-                var a = t.closest ? t.closest('.nav-links a') : null;
-                if (a) {
+                var withinLinks = links && (links.contains(t) || (t.closest && t.closest('#nav-links')));
+                var isToggle = (t.id === 'nav-toggle');
+                if (!withinLinks && !isToggle) {
                   nav.classList.remove('open');
                   document.body.classList.remove('nav-open');
+                  try{ var btn = document.getElementById('nav-toggle'); if(btn) btn.setAttribute('aria-expanded','false'); }catch(_){}
                 }
               }
             });
@@ -507,6 +543,31 @@ app = FastHTML(
                 }
               }
             });
+
+            // Basic edge-swipe gestures (open from right edge, close by swiping right on panel)
+            (function(){
+              var startX=0, startY=0, trackingOpen=false, trackingClose=false;
+              document.addEventListener('touchstart', function(e){
+                try{
+                  var t=e.touches&&e.touches[0]; if(!t) return;
+                  startX=t.clientX; startY=t.clientY;
+                  var nav=document.querySelector('.nav'); var links=document.getElementById('nav-links');
+                  var edge=24;
+                  if(nav && !nav.classList.contains('open') && startX > (window.innerWidth-edge)) trackingOpen=true;
+                  else if(nav && nav.classList.contains('open') && links && links.contains(e.target)) trackingClose=true;
+                }catch(_){}
+              }, {passive:true});
+              document.addEventListener('touchmove', function(e){
+                try{
+                  var t=e.touches&&e.touches[0]; if(!t) return; var dx=t.clientX-startX; var dy=t.clientY-startY;
+                  if(Math.abs(dy) > 40) { trackingOpen=false; trackingClose=false; return; }
+                  var nav=document.querySelector('.nav');
+                  if(trackingOpen && dx < -50) { if(nav){ nav.classList.add('open'); document.body.classList.add('nav-open'); try{var b=document.getElementById('nav-toggle'); if(b) b.setAttribute('aria-expanded','true');}catch(_){} } trackingOpen=false; }
+                  if(trackingClose && dx > 50) { if(nav){ nav.classList.remove('open'); document.body.classList.remove('nav-open'); try{var b=document.getElementById('nav-toggle'); if(b) b.setAttribute('aria-expanded','false');}catch(_){} } trackingClose=false; }
+                }catch(_){}
+              }, {passive:true});
+              document.addEventListener('touchend', function(){ trackingOpen=false; trackingClose=false; }, {passive:true});
+            })();
             // Starfield: layered parallax stars drifting across the viewport
             function initBelt(){
               if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
