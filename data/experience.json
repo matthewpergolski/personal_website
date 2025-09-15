@@ -1,14 +1,14 @@
 {
   "summary": "Data scientist and AI/ML engineer focused on building useful, reliable systems that turn data into product value.",
   "highlights": [
-    "Built ML models serving 200K+ users with 35% error reduction",
+    "Built ML models serving ~100K users",
     "Automated data pipelines and reporting, saving 20+ hours/week",
     "Led cross-functional projects from data ingestion to deployment"
   ],
   "experience": [
     {
       "title": "Senior Automation/Artificial Intelligence Engineer",
-      "company": "Defense Contractor",
+      "company": "Lockheed Martin",
       "period": "2025 - Present",
       "bullets": [
         "Led development of machine learning models serving Manufacturing Engineers on the production floor",
@@ -18,7 +18,7 @@
     },
     {
       "title": "Senior Data Scientist",
-      "company": "Defense Contractor",
+      "company": "Lockheed Martin",
       "period": "2023 - 2025",
       "bullets": [
         "Developed predictive models for subassembly quality on the production floor",
