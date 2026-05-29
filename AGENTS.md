@@ -54,7 +54,11 @@ Do not bulk-read generated or lock files unless the task requires dependency or 
 
 ## Memory Bank
 
-If a `memory-bank/` directory exists, read it in this order only when the task needs broader project history:
+`memory-bank/` is local agent working memory and is intentionally gitignored. It should help long-running project continuity without becoming a second README.
+
+If `memory-bank/` does not exist and the task would benefit from durable project context, initialize it with the files below. Keep each file short, factual, and easy to skim.
+
+Read or update memory-bank files in this order only when the task needs broader project history:
 
 1. `projectbrief.md`
 2. `productContext.md`
@@ -63,7 +67,9 @@ If a `memory-bank/` directory exists, read it in this order only when the task n
 5. `activeContext.md`
 6. `progress.md`
 
-If the user explicitly says "update memory bank", review all memory-bank files and update current state, next steps, and notable decisions.
+Update the memory bank when natural project progression creates useful continuity: architecture decisions, deployment changes, security posture, active blockers, or next steps. Do not log routine command output, transient debugging notes, or details already captured in tracked docs.
+
+If the user explicitly says "update memory bank", review all memory-bank files and update current state, next steps, and notable decisions. When files get long, compact them by preserving current decisions and removing stale narrative.
 
 ## Agent Skill Scaffolding
 

@@ -46,8 +46,8 @@ htmlcov/
 .ruff_cache/
 
 data/static/Matthew-L-Pergolski__Resume_Public.docx
- 
+
 # Runtime data (should not be committed)
 data/ratelimit/
 data/messages/
-.vercel
+memory-bank/
