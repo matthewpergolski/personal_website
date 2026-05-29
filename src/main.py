@@ -418,6 +418,12 @@ app = FastHTML(
                 align-items: center;
             }
 
+            @media (max-width: 768px) {
+                .nav-actions { display: none !important; }
+                .nav-container { justify-content: space-between; }
+                .nav-toggle { margin-left: auto; }
+            }
+
             .icon-link {
                 display: inline-flex;
                 align-items: center;
@@ -492,6 +498,26 @@ app = FastHTML(
             @media (max-width: 900px) {
                 .highlight-grid { grid-template-columns: 1fr; }
                 .highlight-card { min-height: auto; }
+            }
+
+            .resume-callout {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 1rem;
+                margin: -1.5rem auto 2rem;
+                padding: 1rem 1.25rem;
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                background: var(--surface-1);
+            }
+
+            .resume-callout p { color: var(--muted-text); margin: .15rem 0 0; }
+            .resume-callout .btn { flex: 0 0 auto; white-space: nowrap; }
+
+            @media (max-width: 700px) {
+                .resume-callout { align-items: stretch; flex-direction: column; }
+                .resume-callout .btn { text-align: center; }
             }
 
             /* About hero */
@@ -899,19 +925,32 @@ async def home():
         fetch_github_projects(),
     )
     # Build top languages from aggregated byte counts
-    items = sorted((lang_bytes or {}).items(), key=lambda x: x[1], reverse=True)
+    items = sorted(
+        [(name, value) for name, value in (lang_bytes or {}).items() if value > 0],
+        key=lambda x: x[1],
+        reverse=True,
+    )
     top = items[:8]
     if len(items) > 8:
         others_total = sum(v for _, v in items[8:])
         top.append(("Others", others_total))
-    labels = [k for k, _ in top]
-    values = [v for _, v in top]
+    labels_bytes = [k for k, _ in top]
+    values_bytes = [v for _, v in top]
     # Repo counts by primary language (for metric toggle)
     lang_counts = {}
     for r in repos or []:
         lang = r.get("language") or "Other"
         lang_counts[lang] = lang_counts.get(lang, 0) + 1
-    values_cnt = [lang_counts.get(k, 0) for k in labels]
+    repo_items = sorted(
+        [(name, value) for name, value in lang_counts.items() if value > 0],
+        key=lambda x: x[1],
+        reverse=True,
+    )
+    repo_top = repo_items[:8]
+    if len(repo_items) > 8:
+        repo_top.append(("Others", sum(v for _, v in repo_items[8:])))
+    labels_repos = [k for k, _ in repo_top]
+    values_repos = [v for _, v in repo_top]
 
     # Load highlights content
     highlights = []
@@ -972,11 +1011,12 @@ async def home():
             Script(f"""
                 (function(){{
                   if(!window.Plotly) return;
-                  const labels = {json.dumps(labels)};
-                  const valuesBytes = {json.dumps(values)};
-                  const valuesCnt = {json.dumps(values_cnt)};
+                  const labelsBytes = {json.dumps(labels_bytes)};
+                  const valuesBytes = {json.dumps(values_bytes)};
+                  const labelsRepos = {json.dumps(labels_repos)};
+                  const valuesRepos = {json.dumps(values_repos)};
                   const ghUser = {json.dumps(os.getenv("GITHUB_USERNAME") or "")};
-                  if(!labels.length) return;
+                  if(!labelsBytes.length && !labelsRepos.length) return;
                   function fmtBytes(n) {{
                     const units=['B','KB','MB','GB']; let i=0, x=n; while(x>1024 && i<units.length-1){{x/=1024; i++;}} return (Math.round(x*10)/10)+' '+units[i];
                   }}
@@ -985,11 +1025,13 @@ async def home():
                     const arr=[]; for(let i=0;i<n;i++) arr.push(palette[i%palette.length]); return arr;
                   }}
                   let metric='repos';
-                  function getVals(){{ return metric==='bytes' ? valuesBytes : valuesCnt; }}
+                  function getLabels(){{ return metric==='bytes' ? labelsBytes : labelsRepos; }}
+                  function getVals(){{ return metric==='bytes' ? valuesBytes : valuesRepos; }}
                   function render(kind) {{
                     const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-color').trim() || '#e2e8f0';
                     const bg = 'rgba(0,0,0,0)';
                     let data, layout;
+                    const labels = getLabels();
                     const v = getVals();
                     if(kind==='bar') {{
                       data=[{{ type:'bar', orientation:'h', x:v, y:labels, marker:{{color:colors(v.length)}}, hovertemplate: metric==='bytes' ? '%{{y}}: %{{x:,}} bytes<extra></extra>' : '%{{y}}: %{{x}} repos<extra></extra>' }}];
@@ -999,8 +1041,8 @@ async def home():
                       data=[{{ type:'treemap', labels:labels, parents:labels.map(_=>''), values:v, marker:{{colors:colors(v.length)}}, hovertemplate: metric==='bytes' ? '%{{label}}<br>%{{value:,}} bytes<extra></extra>' : '%{{label}}<br>%{{value}} repos<extra></extra>' }}];
                       layout={{ paper_bgcolor:bg, plot_bgcolor:bg, margin:{{t:10,b:10,l:10,r:10}}, font:{{color:textColor}} }};
                     }} else {{
-                      data=[{{ type:'pie', hole:.5, labels, values:v, marker:{{colors:colors(v.length)}}, textinfo:'label+percent', textposition:'inside', hovertemplate: metric==='bytes' ? '%{{label}}: %{{value:,}} bytes (%{{percent}})<extra></extra>' : '%{{label}}: %{{value}} repos (%{{percent}})<extra></extra>' }}];
-                      layout={{ paper_bgcolor:bg, plot_bgcolor:bg, showlegend:true, legend:{{ font:{{color:textColor}} }}, margin:{{t:10,b:10,l:10,r:10}}, font:{{color:textColor}}, uniformtext:{{mode:'hide', minsize:12}} }};
+                      data=[{{ type:'pie', hole:.5, labels, values:v, marker:{{colors:colors(v.length)}}, textinfo:'label+percent', textposition:'outside', automargin:true, hovertemplate: metric==='bytes' ? '%{{label}}: %{{value:,}} bytes (%{{percent}})<extra></extra>' : '%{{label}}: %{{value}} repos (%{{percent}})<extra></extra>' }}];
+                      layout={{ paper_bgcolor:bg, plot_bgcolor:bg, showlegend:true, legend:{{ font:{{color:textColor}}, orientation:'h', y:-.12 }}, margin:{{t:24,b:80,l:72,r:72}}, font:{{color:textColor}}, uniformtext:{{mode:'show', minsize:11}} }};
                     }}
                     Plotly.newPlot('lang-chart', data, layout, {{displayModeBar:false, responsive:true}}).then(function(g) {{
                       g.on('plotly_click', function(ev) {{
@@ -1037,7 +1079,7 @@ async def home():
             """),
             cls="section",
         )
-        if labels and values
+        if labels_bytes and values_bytes
         else Div()
     )
 
@@ -1366,6 +1408,16 @@ def resume():
         "Resume - Matthew L. Pergolski",
         ft.Section(
             ft.H2("Professional Resume", cls="section-title"),
+            ft.Div(
+                ft.Div(
+                    ft.H3("Want the PDF version?"),
+                    ft.P(
+                        "Download the formatted resume, or browse the expanded experience details below."
+                    ),
+                ),
+                ft.A("Download Resume", href="/resume/download", cls="btn"),
+                cls="resume-callout",
+            ),
             ft.Div(left_col, right_col, cls="grid-2-1"),
             cls="container section",
         ),
