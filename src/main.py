@@ -38,7 +38,7 @@ from starlette.requests import Request
 import time
 from captcha.image import ImageCaptcha
 from src.services.github import fetch_github_profile, fetch_github_projects
-from src.components.ui import HeroSection, ensure_url
+from src.components.ui import HeroSection, display_role_title, ensure_url
 from src.utils.render import render_page
 from src.services.github import fetch_language_bytes_aggregate
 from src.services.content import load_experience
@@ -229,34 +229,104 @@ app = FastHTML(
             }
 
             .hero-section {
-                background: radial-gradient(1200px 600px at 10% -10%, rgba(255,255,255,0.15), transparent),
-                            linear-gradient(135deg, var(--primary-color) 0%, #1d4ed8 100%);
-                color: white;
-                padding: clamp(2rem, 8vw, 4rem) 0;
-                text-align: center;
+                background:
+                    radial-gradient(900px 420px at 18% 10%, rgba(96,165,250,.22), transparent 65%),
+                    radial-gradient(740px 360px at 88% 16%, rgba(251,191,36,.10), transparent 60%),
+                    linear-gradient(180deg, rgba(15,23,42,.02), transparent);
+                color: var(--text-color);
+                padding: 4.5rem 0 4rem;
+                text-align: left;
                 position: relative;
                 overflow: hidden;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .hero-layout {
+                display: grid;
+                grid-template-columns: minmax(0, 1.35fr) minmax(260px, .65fr);
+                gap: 2rem;
+                align-items: center;
+            }
+
+            .hero-copy { max-width: 780px; }
+
+            .hero-kicker {
+                color: var(--primary-color);
+                font-weight: 700;
+                margin-bottom: .75rem;
+                text-transform: uppercase;
+                font-size: .85rem;
+            }
+
+            .hero-actions {
+                display: flex;
+                gap: .75rem;
+                flex-wrap: wrap;
+                margin-top: 1.5rem;
+            }
+
+            .hero-aside {
+                display: grid;
+                justify-items: center;
+                gap: 1rem;
+            }
+
+            .hero-current {
+                width: min(100%, 360px);
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                padding: 1rem;
+                background: color-mix(in srgb, var(--surface-1) 82%, transparent);
+            }
+
+            .hero-meta-label,
+            .hero-meta-sub {
+                display: block;
+                color: var(--muted-text);
+                font-size: .9rem;
+            }
+
+            .hero-meta-main {
+                display: block;
+                color: var(--text-color);
+                font-weight: 800;
+                line-height: 1.2;
+                margin: .25rem 0;
             }
 
             .hero-title {
-                /* Responsive but preserves desktop size */
-                font-size: clamp(1.75rem, 6vw + .25rem, 3rem);
+                font-size: 3rem;
+                font-weight: 700;
+                line-height: 1.05;
+                margin-bottom: .85rem;
+            }
+
+            .hero-subtitle {
+                color: var(--primary-color);
+                font-size: 1.15rem;
                 font-weight: 700;
                 margin-bottom: 1rem;
             }
 
-            .hero-subtitle {
-                font-size: clamp(1rem, 3.2vw, 1.25rem);
-                opacity: 0.9;
-                margin-bottom: 2rem;
+            .hero-description {
+                color: var(--text-color);
+                font-size: 1.05rem;
+                max-width: 760px;
+                line-height: 1.55;
             }
 
-            .hero-description {
-                font-size: clamp(.95rem, 2.8vw, 1.1rem);
-                opacity: 0.8;
-                max-width: 600px;
-                margin: 0 auto;
-                line-height: 1.55;
+            @media (max-width: 800px) {
+                .hero-section { padding: 3rem 0; }
+                .hero-layout { grid-template-columns: 1fr; text-align: center; }
+                .hero-actions { justify-content: center; }
+                .hero-title { font-size: 2.25rem; }
+                .hero-description {
+                    display: -webkit-box;
+                    -webkit-line-clamp: 5;
+                    -webkit-box-orient: vertical;
+                    overflow: hidden;
+                }
+                .hero-aside .avatar-lg { display: none; }
             }
 
             .avatar {
@@ -388,6 +458,40 @@ app = FastHTML(
                 text-align: center;
                 margin-bottom: 3rem;
                 color: var(--text-color);
+            }
+
+            .highlight-grid {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 1rem;
+            }
+
+            .highlight-card {
+                min-height: 190px;
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                padding: 1.25rem;
+                background: var(--surface-1);
+                box-shadow: 0 10px 30px rgba(0,0,0,.12);
+            }
+
+            .highlight-index {
+                display: block;
+                color: var(--primary-color);
+                font-size: .85rem;
+                font-weight: 800;
+                margin-bottom: .8rem;
+            }
+
+            .highlight-copy {
+                color: var(--text-color);
+                font-weight: 650;
+                line-height: 1.5;
+            }
+
+            @media (max-width: 900px) {
+                .highlight-grid { grid-template-columns: 1fr; }
+                .highlight-card { min-height: auto; }
             }
 
             /* About hero */
@@ -811,19 +915,30 @@ async def home():
 
     # Load highlights content
     highlights = []
+    experience_data = {}
     try:
         from pathlib import Path
 
-        data = load_experience(Path(__file__).resolve().parent.parent)
-        if data and isinstance(data.get("highlights"), list):
-            highlights = [str(x) for x in data["highlights"]][:6]
+        experience_data = load_experience(Path(__file__).resolve().parent.parent) or {}
+        if isinstance(experience_data.get("highlights"), list):
+            highlights = [str(x) for x in experience_data["highlights"]][:6]
     except Exception:
         pass
 
     highlights_section = (
         Section(
             H2("Highlights", cls="section-title"),
-            Div(Div(*[P(f"• {h}") for h in highlights], cls="card"), cls="container"),
+            Div(
+                *[
+                    Div(
+                        Span(f"{idx:02d}", cls="highlight-index"),
+                        P(h, cls="highlight-copy"),
+                        cls="highlight-card",
+                    )
+                    for idx, h in enumerate(highlights[:3], start=1)
+                ],
+                cls="container highlight-grid",
+            ),
             cls="section",
         )
         if highlights
@@ -928,7 +1043,7 @@ async def home():
 
     return render_page(
         "Matthew L. Pergolski - Data Scientist & AI/ML Engineer",
-        HeroSection(profile),
+        HeroSection(profile, experience_data),
         highlights_section,
         chart_section,
     )
@@ -1094,7 +1209,7 @@ async def about():
         ft.Div(
             *[
                 ft.Div(
-                    ft.H4(r.get("title", "Role")),
+                    ft.H4(display_role_title(r.get("title"))),
                     ft.P(
                         f"{r.get('company', 'Company')} • {r.get('period', '')}",
                         style="color: var(--secondary-color);",
@@ -1202,7 +1317,7 @@ def resume():
             bullets = r.get("bullets") or []
             exp_blocks.append(
                 ft.Div(
-                    ft.H4(r.get("title", "Role")),
+                    ft.H4(display_role_title(r.get("title"))),
                     ft.P(
                         f"{r.get('company', 'Company')} • {r.get('period', '')}",
                         style="color: var(--secondary-color);",
