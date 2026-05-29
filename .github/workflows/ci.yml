@@ -29,3 +29,9 @@ jobs:
 
       - name: Run tests
         run: uv run pytest -q
+
+      - name: Smoke test resume source sync
+        if: ${{ vars.RESUME_SOURCE_URL != '' }}
+        env:
+          RESUME_SOURCE_URL: ${{ vars.RESUME_SOURCE_URL }}
+        run: uv run python scripts/sync_resume_content.py --output /tmp/resume-sync-smoke.json

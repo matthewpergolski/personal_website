@@ -205,6 +205,7 @@ At runtime the app merges env vars with this JSON:
 - `scripts/sync_resume_content.py` parses a Google Docs, Google Drive PDF/DOCX, PDF, DOCX, or text resume source into `data/experience.json`.
 - Set `RESUME_SOURCE_URL` as a GitHub repository variable or secret, then run the `Sync resume content` workflow manually or let the daily schedule check for changes.
 - The workflow opens a PR only when the generated `data/experience.json` changes; unchanged content preserves the previous sync timestamp to avoid noisy PRs.
+- Synced raw `resume_text` redacts email addresses and phone numbers before it is written.
 - Local dry run:
   ```bash
   uv run python scripts/sync_resume_content.py --input tests/fixtures/resume_sample.txt --dry-run

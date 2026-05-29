@@ -56,6 +56,60 @@ def test_parse_resume_text_preserves_timestamp_when_content_is_unchanged():
     assert parsed["resume_source"]["synced_at"] == "2026-05-01T12:00:00+00:00"
 
 
+def test_parse_resume_text_handles_company_heading_then_title():
+    text = """
+Work Experience
+Lockheed Martin, Remote 04/25-Present
+A/AI Machine Learning Engineer Senior (40 hours per week, full-time schedule)
+* Led development of machine learning models
+Lockheed Martin, Orlando, FL 01/18-11/19 Manufacturing Planner Associate
+* Maintained production systems integrity
+
+Additional Information
+Software
+* Application Software: R, Python, SQL
+Other Qualifications
+* Lean Six Sigma Green Belt Certified
+"""
+
+    data = parse_resume_text(text)
+
+    assert data["experience"] == [
+        {
+            "title": "A/AI Machine Learning Engineer Senior (40 hours per week, full-time schedule)",
+            "company": "Lockheed Martin",
+            "period": "04/25-Present",
+            "bullets": ["Led development of machine learning models"],
+            "location": "Remote",
+        },
+        {
+            "title": "Manufacturing Planner Associate",
+            "company": "Lockheed Martin",
+            "period": "01/18-11/19",
+            "bullets": ["Maintained production systems integrity"],
+            "location": "Orlando, FL",
+        },
+    ]
+    assert "Software" not in {entry["title"] for entry in data["experience"]}
+    assert data["skills"]["Application Software"] == ["R", "Python", "SQL"]
+
+
+def test_parse_resume_text_redacts_contact_details_from_raw_resume_text():
+    text = """
+Matthew L. Pergolski
+matthew@example.com | 555-123-4567
+Professional Summary
+Data scientist focused on useful systems.
+"""
+
+    data = parse_resume_text(text)
+
+    assert "matthew@example.com" not in data["resume_text"]
+    assert "555-123-4567" not in data["resume_text"]
+    assert "[email redacted]" in data["resume_text"]
+    assert "[phone redacted]" in data["resume_text"]
+
+
 def test_parsed_resume_json_is_serializable():
     data = parse_resume_text(FIXTURE.read_text())
     json.dumps(data)

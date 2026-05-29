@@ -48,9 +48,12 @@ SECTION_ALIASES = {
     },
     "education": {"education", "academic background"},
     "skills": {
+        "additional information",
         "skills",
         "technical skills",
         "core skills",
+        "other qualifications",
+        "software",
         "tools",
         "technologies",
     },
@@ -58,12 +61,18 @@ SECTION_ALIASES = {
 
 
 BULLET_PREFIX_RE = re.compile(r"^[\s\-\*\u2022\u25e6\u2013\u2014]+")
+EMAIL_RE = re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.IGNORECASE)
+PHONE_RE = re.compile(
+    r"(?<!\w)(?:\+?1[\s.-]?)?(?:\(?\d{3}\)?[\s.-]?)\d{3}[\s.-]?\d{4}(?!\w)"
+)
+DATE_PART = (
+    r"(?:\d{1,2}/\d{2,4}|"
+    r"(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)?\.?\s*\d{4}|"
+    r"\d{4})"
+)
 DATE_RE = re.compile(
-    r"(?P<period>(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)?\.?\s*"
-    r"\d{4}\s*(?:-|–|—|to)\s*(?:Present|Current|Now|"
-    r"(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)?\.?\s*\d{4})|"
-    r"\d{4}\s*(?:-|–|—|to)\s*(?:Present|Current|Now|\d{4})|"
-    r"\d{4})",
+    rf"(?P<period>{DATE_PART}\s*(?:-|–|—|to)\s*(?:Present|Current|Now|{DATE_PART})|"
+    rf"{DATE_PART})",
     re.IGNORECASE,
 )
 
@@ -212,6 +221,11 @@ def split_sections(text: str) -> dict[str, list[str]]:
     return sections
 
 
+def redact_contact_details(text: str) -> str:
+    text = EMAIL_RE.sub("[email redacted]", text)
+    return PHONE_RE.sub("[phone redacted]", text)
+
+
 def strip_bullet(line: str) -> str:
     return BULLET_PREFIX_RE.sub("", line).strip()
 
@@ -273,9 +287,32 @@ def parse_experience_line(line: str) -> tuple[str, str, str]:
     return cleaned, "", period
 
 
+def parse_company_heading(line: str) -> dict[str, str] | None:
+    cleaned = strip_bullet(line)
+    date_match = DATE_RE.search(cleaned)
+    if not date_match:
+        return None
+
+    before = cleaned[: date_match.start()].strip(" ,-|")
+    after = cleaned[date_match.end() :].strip(" ,-|")
+    parts = [part.strip() for part in before.split(",") if part.strip()]
+    if not parts:
+        return None
+    if len(parts) < 2 and not after:
+        return None
+
+    return {
+        "company": parts[0],
+        "location": ", ".join(parts[1:]),
+        "period": date_match.group("period").strip(),
+        "title_after": after,
+    }
+
+
 def parse_experience(sections: dict[str, list[str]]) -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
     current: dict[str, Any] | None = None
+    pending_heading: dict[str, str] | None = None
 
     for line in sections.get("experience", []):
         body = strip_bullet(line)
@@ -291,6 +328,36 @@ def parse_experience(sections: dict[str, list[str]]) -> list[dict[str, Any]]:
                 }
                 entries.append(current)
             current.setdefault("bullets", []).append(body)
+            continue
+
+        heading = parse_company_heading(line)
+        if heading:
+            title = heading["title_after"]
+            pending_heading = heading
+            if title:
+                current = {
+                    "title": title,
+                    "company": heading["company"],
+                    "period": heading["period"],
+                    "bullets": [],
+                }
+                if heading["location"]:
+                    current["location"] = heading["location"]
+                entries.append(current)
+                pending_heading = None
+            continue
+
+        if pending_heading:
+            current = {
+                "title": body,
+                "company": pending_heading["company"],
+                "period": pending_heading["period"],
+                "bullets": [],
+            }
+            if pending_heading["location"]:
+                current["location"] = pending_heading["location"]
+            entries.append(current)
+            pending_heading = None
             continue
 
         title, company, period = parse_experience_line(line)
@@ -404,9 +471,10 @@ def parse_resume_text(
         "synced_at": datetime.now(UTC).replace(microsecond=0).isoformat(),
         "parser": "scripts/sync_resume_content.py",
     }
-    data["resume_text"] = "\n".join(
+    cleaned_resume_text = "\n".join(
         clean_line(line) for line in text.splitlines() if clean_line(line)
     )
+    data["resume_text"] = redact_contact_details(cleaned_resume_text)
     existing_synced_at = (existing.get("resume_source") or {}).get("synced_at")
     if existing_synced_at and without_synced_at(existing) == without_synced_at(data):
         data["resume_source"]["synced_at"] = existing_synced_at
