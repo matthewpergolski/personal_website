@@ -1,0 +1,27 @@
+Matthew L. Pergolski
+Data Scientist | AI/ML Engineer
+
+Professional Summary
+Data scientist and AI/ML engineer focused on building reliable systems that turn manufacturing data into product value.
+
+Highlights
+- Built ML models serving roughly 100K users
+- Automated reporting and saved 20+ hours per week
+
+Professional Experience
+Senior Automation/Artificial Intelligence Engineer | Lockheed Martin | 2025 - Present
+- Led development of machine learning models serving Manufacturing Engineers on the production floor
+- Launched a document-aware AI search tool that reduced ad-hoc analytics requests by about 40%
+
+Senior Data Scientist | Lockheed Martin | 2023 - 2025
+- Developed predictive models for subassembly quality on the production floor
+- Created automated reporting systems saving 20 hours per week
+
+Education
+M.S. in Applied Data Science | Syracuse University | 2024
+B.B.A. in Operations/Supply Chain Management | University of Wisconsin | 2017
+
+Technical Skills
+Programming: Python, R, SQL
+ML: PyTorch, TensorFlow, XGBoost, scikit-learn
+Data: Pandas, NumPy, Plotly, Jupyter

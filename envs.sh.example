@@ -13,6 +13,10 @@ export LINKEDIN_URL="https://linkedin.com/in/your-profile"
 # Resume (Google link)
 export RESUME_URL="https://docs.google.com/document/d/YOUR_FILE_ID/export?format=pdf"
 
+# Optional: editable resume source for scripts/sync_resume_content.py and the
+# GitHub Actions sync workflow. Prefer a Google Docs edit/share URL.
+# export RESUME_SOURCE_URL="https://docs.google.com/document/d/YOUR_FILE_ID/edit"
+
 # Optional: Override static directory (default: data/static)
 # export STATIC_DIR="/workspaces/project/data/static"
 

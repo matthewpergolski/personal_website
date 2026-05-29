@@ -20,7 +20,7 @@ A visually stunning and technically impressive portfolio website built exclusive
 - **Backend/API**: Python 3.12 ASGI app built with FastHTML/Starlette. Routes and API endpoints live in `src/main.py`; Vercel enters through `api/index.py`.
 - **UI framework**: FastHTML server-rendered components, in-page CSS, and small vanilla JavaScript helpers. There is no React/Vue frontend.
 - **Chat/RAG**: Free-first local retrieval over committed portfolio data, with optional Hugging Face Inference API response polishing.
-- **Data sources**: `data/experience.json`, optional public `data/site.json`, and GitHub REST API calls through `httpx`.
+- **Data sources**: `data/experience.json`, optional public `data/site.json`, an optional Google Docs/Drive resume source sync, and GitHub REST API calls through `httpx`.
 - **Deployment/hosting**: Vercel Git integration using `vercel.json` and the Vercel Python runtime.
 - **Dependencies**: Managed by `uv` through `pyproject.toml` and `uv.lock`.
 - **Quality tooling**: Ruff formatting/linting, pytest, pre-commit, and GitHub Actions.
@@ -81,7 +81,8 @@ fasthtml-portfolio/
 │   └── site.json.example    # Optional public site config template
 ├── tests/                   # pytest coverage
 ├── scripts/
-│   └── push-vercel-envs     # Sync selected envs.sh values to Vercel
+│   ├── push-vercel-envs     # Sync selected envs.sh values to Vercel
+│   └── sync_resume_content.py # Parse resume source into data/experience.json
 ├── AGENTS.md                # Shared coding-agent instructions
 ├── app.sh                  # Application launcher script
 ├── envs.sh.example         # Environment template
@@ -113,6 +114,11 @@ export SITE_DESCRIPTION="Brief professional description"
 # Resume (external link preferred)
 # For Google Docs: https://docs.google.com/document/d/YOUR_FILE_ID/export?format=pdf
 export RESUME_URL="https://docs.google.com/document/d/YOUR_FILE_ID/export?format=pdf"
+
+# Optional resume source for the content sync workflow.
+# Prefer a Google Docs edit/share URL so the sync can fetch plain text.
+# RESUME_URL stays the public download link used by /download-resume.
+# export RESUME_SOURCE_URL="https://docs.google.com/document/d/YOUR_FILE_ID/edit"
 
 # SMTP (contact form)
 # Gmail example (use App Password):
@@ -193,6 +199,22 @@ At runtime the app merges env vars with this JSON:
 ### Content (single source of truth)
 - `data/experience.json` drives About + Resume (summary, highlights, experience, education, skills, snapshot stats).
 - Home Highlights render from the same file; update once, reflected everywhere.
+- The chat assistant also retrieves from this same file, including synced `resume_text` when present.
+
+### Resume source sync
+- `scripts/sync_resume_content.py` parses a Google Docs, Google Drive PDF/DOCX, PDF, DOCX, or text resume source into `data/experience.json`.
+- Set `RESUME_SOURCE_URL` as a GitHub repository variable or secret, then run the `Sync resume content` workflow manually or let the daily schedule check for changes.
+- The workflow opens a PR only when the generated `data/experience.json` changes; unchanged content preserves the previous sync timestamp to avoid noisy PRs.
+- Synced raw `resume_text` redacts email addresses and phone numbers before it is written.
+- Local dry run:
+  ```bash
+  uv run python scripts/sync_resume_content.py --input tests/fixtures/resume_sample.txt --dry-run
+  ```
+- Local sync from the configured source:
+  ```bash
+  RESUME_SOURCE_URL="https://docs.google.com/document/d/YOUR_FILE_ID/edit" uv run python scripts/sync_resume_content.py
+  ```
+- `RESUME_URL` is still the public resume download link. `RESUME_SOURCE_URL` is the editable source used to refresh site and chat content.
 
 ### Email + Contact
 - POST `/contact` sends email via SMTP and on success redirects to `/contact?sent=1`.

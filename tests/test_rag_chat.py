@@ -1,5 +1,6 @@
 import pytest
 
+import src.services.rag.simple_chat as simple_chat
 from src.services.rag.simple_chat import handle_chat_payload, retrieve_sources
 
 
@@ -8,6 +9,23 @@ def test_retrieve_sources_finds_experience_context():
 
     labels = [source.label for source in sources]
     assert any("Experience" in label for label in labels)
+
+
+def test_retrieve_sources_can_use_synced_resume_text(monkeypatch):
+    monkeypatch.setattr(
+        simple_chat,
+        "load_experience",
+        lambda _root: {
+            "summary": "General portfolio summary.",
+            "resume_text": "Patent analytics roadmap with ontology cleanup and claim clustering.",
+        },
+    )
+    monkeypatch.setattr(simple_chat, "_load_site_json", lambda: {})
+
+    sources = retrieve_sources("claim clustering ontology")
+
+    assert sources[0].label == "Resume text"
+    assert "claim clustering" in sources[0].text
 
 
 @pytest.mark.asyncio

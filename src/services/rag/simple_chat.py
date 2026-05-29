@@ -75,6 +75,23 @@ def _load_site_json() -> dict[str, Any]:
     return {}
 
 
+def _chunk_text(text: str, *, max_chars: int = 1200) -> list[str]:
+    paragraphs = [line.strip() for line in text.splitlines() if line.strip()]
+    chunks: list[str] = []
+    current = ""
+    for paragraph in paragraphs:
+        candidate = f"{current}\n{paragraph}".strip() if current else paragraph
+        if len(candidate) <= max_chars:
+            current = candidate
+            continue
+        if current:
+            chunks.append(current)
+        current = paragraph[:max_chars]
+    if current:
+        chunks.append(current)
+    return chunks
+
+
 def _experience_sources() -> list[ChatSource]:
     data = load_experience(ROOT_DIR) or {}
     site = _load_site_json()
@@ -120,6 +137,11 @@ def _experience_sources() -> list[ChatSource]:
                 ", ".join(f"{key}: {value}" for key, value in snapshot.items()),
             )
         )
+
+    resume_text = str(data.get("resume_text") or "").strip()
+    for index, chunk in enumerate(_chunk_text(resume_text)[:6], start=1):
+        label = "Resume text" if index == 1 else f"Resume text {index}"
+        sources.append(ChatSource(label, chunk))
 
     if site:
         public_bits = [

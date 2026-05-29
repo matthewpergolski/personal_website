@@ -1,0 +1,64 @@
+name: Sync resume content
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 10 * * *"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      RESUME_SOURCE_URL: ${{ secrets.RESUME_SOURCE_URL || vars.RESUME_SOURCE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+
+      - name: Install Python dependencies
+        run: uv sync --frozen --dev
+
+      - name: Validate resume source URL
+        run: |
+          if [ -z "$RESUME_SOURCE_URL" ]; then
+            echo "Set RESUME_SOURCE_URL as a repository variable or secret."
+            exit 1
+          fi
+
+      - name: Sync resume content
+        run: uv run python scripts/sync_resume_content.py
+
+      - name: Create pull request when content changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- data/experience.json; then
+            echo "No resume content changes detected."
+            exit 0
+          fi
+
+          branch="automation/sync-resume-content"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin "$branch:refs/remotes/origin/$branch" || true
+          git checkout -B "$branch"
+          git add data/experience.json
+          git commit -m "chore: sync resume content"
+          git push --force-with-lease origin "$branch"
+
+          gh pr create \
+            --base main \
+            --head "$branch" \
+            --title "chore: sync resume content" \
+            --body "Updates structured portfolio and RAG content from the configured resume source." \
+            || gh pr edit "$branch" \
+              --title "chore: sync resume content" \
+              --body "Updates structured portfolio and RAG content from the configured resume source."
