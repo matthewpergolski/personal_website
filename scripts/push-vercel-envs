@@ -10,6 +10,13 @@ set -euo pipefail
 
 environment="${1:-production}"
 env_file="${2:-envs.sh}"
+tmpfiles=()
+
+cleanup() {
+  rm -f "${tmpfiles[@]}"
+}
+
+trap cleanup EXIT
 
 if [[ ! "$environment" =~ ^(production|preview|development)$ ]]; then
   echo "Usage: $0 [production|preview|development] [env-file]" >&2
@@ -60,6 +67,11 @@ keys=(
   RATE_GLOBAL_PER_DAY
   CONTACT_MIN_SECONDS
   CONTACT_MIN_MSG_LEN
+  HUGGINGFACE_API_KEY
+  HF_TOKEN
+  HUGGINGFACE_CHAT_MODEL
+  RAG_MAX_RESPONSE_TOKENS
+  RAG_TEMPERATURE
 )
 
 for key in "${keys[@]}"; do
@@ -68,6 +80,8 @@ for key in "${keys[@]}"; do
   fi
 
   tmpfile="$(mktemp)"
+  tmpfiles+=("$tmpfile")
+  chmod 600 "$tmpfile"
   printf "%s" "${!key}" > "$tmpfile"
 
   sensitive_args=()

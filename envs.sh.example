@@ -35,3 +35,10 @@ export RATE_GLOBAL_PER_DAY=50
 
 # Optional: CAPTCHA hash secret. If omitted, the app uses SESSION_SECRET/session key.
 # export CAPTCHA_SECRET="replace-with-a-long-random-string"
+
+# Optional: free-first chat generation. If omitted or rate-limited, chat falls back
+# to local retrieval over committed portfolio data.
+# export HUGGINGFACE_API_KEY="hf_your_token"
+# export HUGGINGFACE_CHAT_MODEL="HuggingFaceTB/SmolLM2-1.7B-Instruct"
+export RAG_MAX_RESPONSE_TOKENS=220
+export RAG_TEMPERATURE=0.3

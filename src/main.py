@@ -33,7 +33,7 @@ from pathlib import Path
 import secrets
 import string
 from starlette.staticfiles import StaticFiles
-from starlette.responses import RedirectResponse
+from starlette.responses import JSONResponse, RedirectResponse
 from starlette.requests import Request
 import time
 from captcha.image import ImageCaptcha
@@ -45,6 +45,8 @@ from src.services.content import load_experience
 from src.services.email import send_email
 from src.config import get_config, BASE_DATA_DIR
 from src.utils.rate_limit import is_rate_limited
+from src.components.chat.widget import ChatWidget
+from src.services.rag.simple_chat import handle_chat_payload
 
 
 load_dotenv("envs.sh")
@@ -634,6 +636,7 @@ app = FastHTML(
                 var id = p.startsWith('/projects') ? 'tab-projects'
                       : p.startsWith('/about') ? 'tab-about'
                       : p.startsWith('/resume') ? 'tab-resume'
+                      : p.startsWith('/chat') ? 'tab-chat'
                       : p.startsWith('/contact') ? 'tab-contact'
                       : 'tab-home';
                 var el = document.getElementById(id);
@@ -1410,6 +1413,37 @@ def contact(req: Request):
             cls="container section",
         ),
     )
+
+
+@app.get("/chat")
+def chat_page():
+    """Dedicated chat page with the same session-scoped conversation as the widget."""
+    return render_page(
+        "Chat - Matthew L. Pergolski",
+        ft.Section(
+            ft.H2("Experience Chat", cls="section-title"),
+            ft.Div(
+                *ChatWidget.full_page(),
+                cls="container section",
+            ),
+        ),
+        include_chat=False,
+    )
+
+
+@app.post("/api/rag/chat")
+async def rag_chat(req: Request):
+    """Answer portfolio questions with local retrieval and optional free HF generation."""
+    try:
+        payload = await req.json()
+    except Exception:
+        return JSONResponse(
+            {"success": False, "error": "Invalid JSON."}, status_code=400
+        )
+
+    result = await handle_chat_payload(payload)
+    status = 200 if result.get("success") else 400
+    return JSONResponse(result, status_code=status)
 
 
 @app.post("/contact")

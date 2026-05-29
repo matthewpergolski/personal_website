@@ -13,6 +13,7 @@ wheels/
 .env
 envs.sh
 .sesskey
+.vercel/
 
 # IDE files
 .vscode/
@@ -42,9 +43,11 @@ data/static/*.docx
 # Test coverage
 .coverage
 htmlcov/
+.ruff_cache/
 
 data/static/Matthew-L-Pergolski__Resume_Public.docx
- 
+
 # Runtime data (should not be committed)
 data/ratelimit/
 data/messages/
+memory-bank/
