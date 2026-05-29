@@ -96,10 +96,17 @@ _LANG_CACHE: Dict[str, Tuple[float, Dict[str, int]]] = {}
 _LANG_TTL_SECONDS = 6 * 60 * 60  # 6 hours
 
 
-async def _fetch_repo_languages(client: httpx.AsyncClient, full_name: str, headers: Dict[str, str], sem: asyncio.Semaphore) -> Dict[str, int]:
+async def _fetch_repo_languages(
+    client: httpx.AsyncClient,
+    full_name: str,
+    headers: Dict[str, str],
+    sem: asyncio.Semaphore,
+) -> Dict[str, int]:
     async with sem:
         try:
-            r = await client.get(f"https://api.github.com/repos/{full_name}/languages", headers=headers)
+            r = await client.get(
+                f"https://api.github.com/repos/{full_name}/languages", headers=headers
+            )
             if r.status_code == 200:
                 data = r.json() or {}
                 # Ensure ints
@@ -128,12 +135,16 @@ async def fetch_language_bytes_aggregate() -> Dict[str, int]:
     if not repos:
         return {}
 
-    headers = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+    }
     sem = asyncio.Semaphore(6)
     async with httpx.AsyncClient(timeout=20.0) as client:
         tasks = [
             _fetch_repo_languages(client, r["full_name"], headers, sem)
-            for r in repos if r.get("full_name")
+            for r in repos
+            if r.get("full_name")
         ]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 

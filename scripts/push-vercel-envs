@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+#
+# Push selected variables from envs.sh into a linked Vercel project.
+#
+# Usage:
+#   ./scripts/push-vercel-envs production
+#   ./scripts/push-vercel-envs preview path/to/envs.sh
+#
+set -euo pipefail
+
+environment="${1:-production}"
+env_file="${2:-envs.sh}"
+
+if [[ ! "$environment" =~ ^(production|preview|development)$ ]]; then
+  echo "Usage: $0 [production|preview|development] [env-file]" >&2
+  exit 2
+fi
+
+if [[ ! -f "$env_file" ]]; then
+  echo "Env file not found: $env_file" >&2
+  exit 2
+fi
+
+vercel_cmd=(vercel)
+if ! command -v vercel >/dev/null 2>&1; then
+  if command -v npx >/dev/null 2>&1; then
+    vercel_cmd=(npx vercel@latest)
+  else
+    echo "Vercel CLI is required. Install it with: npm install --global vercel" >&2
+    exit 2
+  fi
+fi
+
+set -a
+# shellcheck source=/dev/null
+source "$env_file"
+set +a
+
+keys=(
+  GITHUB_USERNAME
+  GITHUB_TOKEN
+  CONTACT_EMAIL
+  LINKEDIN_URL
+  RESUME_URL
+  DEBUG
+  SITE_TITLE
+  SITE_DESCRIPTION
+  SESSION_SECRET
+  CAPTCHA_SECRET
+  CONTACT_CAPTCHA_SECRET
+  SMTP_HOST
+  SMTP_PORT
+  SMTP_USER
+  SMTP_PASSWORD
+  SMTP_PASS
+  SMTP_FROM
+  SMTP_TO
+  SMTP_TLS
+  RATE_IP_PER_HOUR
+  RATE_GLOBAL_PER_DAY
+  CONTACT_MIN_SECONDS
+  CONTACT_MIN_MSG_LEN
+)
+
+for key in "${keys[@]}"; do
+  if [[ -z "${!key+x}" || -z "${!key}" ]]; then
+    continue
+  fi
+
+  tmpfile="$(mktemp)"
+  printf "%s" "${!key}" > "$tmpfile"
+
+  sensitive_args=()
+  if [[ "$key" =~ (TOKEN|SECRET|PASSWORD|PASS|KEY)$ ]]; then
+    sensitive_args=(--sensitive)
+  fi
+
+  echo "Updating $key for $environment"
+  "${vercel_cmd[@]}" env add "$key" "$environment" --force "${sensitive_args[@]}" < "$tmpfile"
+  rm -f "$tmpfile"
+done

@@ -8,7 +8,6 @@ on cold starts / scaling. See DEPLOYING.md for details.
 import json
 import os
 import time
-from pathlib import Path
 
 from src.config import BASE_DATA_DIR  # type: ignore[attr-defined]
 

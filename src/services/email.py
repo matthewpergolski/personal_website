@@ -6,7 +6,14 @@ from email.message import EmailMessage
 from typing import Tuple, Optional
 
 
-async def send_email(subject: str, body: str, *, sender: Optional[str] = None, to: Optional[str] = None, reply_to: Optional[str] = None) -> Tuple[bool, str]:
+async def send_email(
+    subject: str,
+    body: str,
+    *,
+    sender: Optional[str] = None,
+    to: Optional[str] = None,
+    reply_to: Optional[str] = None,
+) -> Tuple[bool, str]:
     """Send an email via SMTP using env configuration.
 
     Returns (ok, info). If SMTP is not configured, returns (False, reason).
@@ -21,7 +28,7 @@ async def send_email(subject: str, body: str, *, sender: Optional[str] = None, t
     password = os.getenv("SMTP_PASSWORD") or os.getenv("SMTP_PASS")
     sender = sender or os.getenv("SMTP_FROM") or os.getenv("CONTACT_EMAIL")
     to = to or os.getenv("SMTP_TO") or os.getenv("CONTACT_EMAIL")
-    use_tls = (os.getenv("SMTP_TLS", "true").lower() in ("1", "true", "yes"))
+    use_tls = os.getenv("SMTP_TLS", "true").lower() in ("1", "true", "yes")
 
     if not host or not port or not sender or not to:
         return False, "SMTP not configured (missing host/port/from/to)"

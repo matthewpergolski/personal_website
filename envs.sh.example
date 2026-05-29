@@ -20,6 +20,7 @@ export RESUME_URL="https://docs.google.com/document/d/YOUR_FILE_ID/export?format
 export DEBUG="true"
 export SITE_TITLE="Personal Portfolio"  # Will be overridden by GitHub profile data
 export SITE_DESCRIPTION="AI/ML Engineer & Data Scientist"  # Will be overridden by GitHub bio
+export SESSION_SECRET="replace-with-a-long-random-string"
 
 # Optional: SMTP settings for contact form
 export SMTP_HOST="smtp.yourprovider.com"
@@ -32,10 +33,5 @@ export SMTP_TLS="true"                 # true/false
 export RATE_IP_PER_HOUR=3
 export RATE_GLOBAL_PER_DAY=50
 
-# Optional: Bot protection (choose one)
-# Cloudflare Turnstile (recommended)
-# export TURNSTILE_SITE_KEY="1x00000000000000000000AA"   # test key (always passes)
-# export TURNSTILE_SECRET_KEY="1x0000000000000000000000000000000AA"  # test secret
-# hCaptcha (alternative)
-# export HCAPTCHA_SITE_KEY="10000000-ffff-ffff-ffff-000000000001"   # test key (always passes)
-# export HCAPTCHA_SECRET="0x0000000000000000000000000000000000000000"  # test secret
+# Optional: CAPTCHA hash secret. If omitted, the app uses SESSION_SECRET/session key.
+# export CAPTCHA_SECRET="replace-with-a-long-random-string"

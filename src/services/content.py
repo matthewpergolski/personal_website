@@ -12,4 +12,3 @@ def load_experience(base: Path) -> Optional[Dict[str, Any]]:
         return json.loads(p.read_text())
     except Exception:
         return None
-

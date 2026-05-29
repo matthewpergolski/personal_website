@@ -20,8 +20,8 @@ A visually stunning and technically impressive portfolio website built exclusive
 - **Framework**: FastHTML (Python web framework)
 - **Language**: Python 3.12+
 - **Styling**: CSS-in-Python with FastHTML's built-in styling system
-- **Dependencies**: python-fasthtml, httpx, python-dotenv
-  - Optional: SMTP (email), Turnstile/hCaptcha (bot protection)
+- **Dependencies**: python-fasthtml, httpx, python-dotenv, captcha
+  - Optional: SMTP for email delivery
 - **Package Management**: UV (modern Python dependency management)
 
 ## 📋 Prerequisites
@@ -140,12 +140,11 @@ At runtime the app merges env vars with this JSON:
 - `PUBLIC_EMAIL` or `CONTACT_EMAIL`/`SMTP_TO` populate the Contact page.
 - Keep secrets (tokens, SMTP credentials) in env vars only.
 
-# Optional bot protection (Turnstile preferred)
-# export TURNSTILE_SITE_KEY="1x00000000000000000000AA"   # test key
-# export TURNSTILE_SECRET_KEY="1x0000000000000000000000000000000AA"  # test secret
-# hCaptcha alternative:
-# export HCAPTCHA_SITE_KEY="10000000-ffff-ffff-ffff-000000000001"
-# export HCAPTCHA_SECRET="0x0000000000000000000000000000000000000000"
+# Recommended on Vercel: stable session/cookie secret.
+# export SESSION_SECRET="replace-with-a-long-random-string"
+
+# Optional CAPTCHA hash secret. If omitted, the app uses SESSION_SECRET/session key.
+# export CAPTCHA_SECRET="replace-with-a-long-random-string"
 
 # Rate limits (server-side safeguards)
 export RATE_IP_PER_HOUR=3
@@ -185,8 +184,20 @@ export RATE_GLOBAL_PER_DAY=50
 
 ### Email + Contact
 - POST `/contact` sends email via SMTP and on success redirects to `/contact?sent=1`.
-- If SMTP is not configured or fails, messages are saved to `data/messages/` and the page redirects to `/contact?saved=1`.
-- Anti‑spam: honeypot + min submit time + per‑IP/hour and daily global rate‑limits; optional Turnstile/hCaptcha verification if keys are present.
+- If SMTP is not configured or fails in local/non-serverless environments, messages are saved to `data/messages/` and the page redirects to `/contact?saved=1`.
+- On Vercel, SMTP failures return an error instead of writing messages to ephemeral `/tmp` storage.
+- Anti‑spam: honeypot + min submit time + self-hosted image CAPTCHA + per‑IP/hour and daily global rate‑limits.
+
+### Development Checks
+- Install Git hooks with `uv run pre-commit install`.
+- Hooks run Ruff formatting and Ruff lint fixes.
+- GitHub Actions runs formatting, linting, and tests.
+- Vercel installs Python dependencies from the committed `pyproject.toml` and `uv.lock`.
+
+### Vercel Environment Variables
+- Push selected values from `envs.sh` with `./scripts/push-vercel-envs production`.
+- Use `preview` or `development` as the first argument for those Vercel environments.
+- The script marks token/password/secret/key variables as sensitive and overwrites existing values.
 
 ## 📊 Performance Features
 

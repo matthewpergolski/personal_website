@@ -49,11 +49,16 @@ def get_config() -> SiteConfig:
         or os.getenv("PUBLIC_EMAIL")
     )
     return SiteConfig(
-        site_title=os.getenv("SITE_TITLE", str(data.get("site_title") or "Professional Portfolio")),
-        site_description=os.getenv("SITE_DESCRIPTION", str(data.get("site_description") or "AI/ML Engineer & Data Scientist")),
+        site_title=os.getenv(
+            "SITE_TITLE", str(data.get("site_title") or "Professional Portfolio")
+        ),
+        site_description=os.getenv(
+            "SITE_DESCRIPTION",
+            str(data.get("site_description") or "AI/ML Engineer & Data Scientist"),
+        ),
         public_email=public_email,
         linkedin_url=os.getenv("LINKEDIN_URL") or (data.get("linkedin_url") or None),
-        github_username=os.getenv("GITHUB_USERNAME") or (data.get("github_username") or None),
+        github_username=os.getenv("GITHUB_USERNAME")
+        or (data.get("github_username") or None),
         resume_url=os.getenv("RESUME_URL") or (data.get("resume_url") or None),
     )
-

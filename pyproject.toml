@@ -10,3 +10,10 @@ dependencies = [
     "python-dotenv>=1.1.1",
     "python-fasthtml>=0.12.25",
 ]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.6.0",
+    "pytest>=9.0.3",
+    "ruff>=0.15.15",
+]

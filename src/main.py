@@ -6,31 +6,54 @@ to showcase GitHub projects and serve as a resume for technical roles.
 """
 
 from fasthtml import FastHTML
-from fasthtml.common import *
 import fasthtml.common as ft
+from fasthtml.common import (
+    A,
+    Button,
+    Div,
+    H2,
+    H3,
+    Img,
+    Link,
+    P,
+    Script,
+    Section,
+    Span,
+    Style,
+)
 from dotenv import load_dotenv
+import base64
 import os
 import json
 import asyncio
+import hashlib
+import hmac
+import random
 from pathlib import Path
+import secrets
+import string
 from starlette.staticfiles import StaticFiles
 from starlette.responses import RedirectResponse
 from starlette.requests import Request
-import time, json
+import time
+from captcha.image import ImageCaptcha
 from src.services.github import fetch_github_profile, fetch_github_projects
-from src.components.ui import Navigation, HeroSection, SiteFooter, ensure_url
+from src.components.ui import HeroSection, ensure_url
 from src.utils.render import render_page
 from src.services.github import fetch_language_bytes_aggregate
 from src.services.content import load_experience
 from src.services.email import send_email
-import httpx
 from src.config import get_config, BASE_DATA_DIR
 from src.utils.rate_limit import is_rate_limited
+
+
+load_dotenv("envs.sh")
 
 
 # =============================================================================
 # Security & Reliability Utilities (added during security fixes)
 # =============================================================================
+
 
 def get_client_ip(request):
     """Best-effort real client IP, respecting common proxy headers."""
@@ -54,7 +77,9 @@ def validate_startup_config() -> None:
 
     contact_dest = os.getenv("SMTP_TO") or os.getenv("CONTACT_EMAIL") or ""
     if not contact_dest:
-        warnings.append("No contact destination configured (contact form will save locally).")
+        warnings.append(
+            "No contact destination configured (contact form will save locally)."
+        )
 
     for w in warnings:
         print(f"⚠️  {w}")
@@ -68,39 +93,62 @@ def validate_startup_config() -> None:
             raise RuntimeError("Missing required environment variables.")
 
 
-# --- Self-hosted Image CAPTCHA (always on, no external services or env vars required) ---
-from captcha.image import ImageCaptcha
-import random
-import string
-import base64
-
 _captcha = ImageCaptcha(width=180, height=60)
+SESSION_KEY_FNAME = "/tmp/.sesskey" if os.getenv("VERCEL") else ".sesskey"
+SESSION_SECRET = os.getenv("SESSION_SECRET") or os.getenv("SECRET_KEY")
+_RUNTIME_CAPTCHA_SECRET = secrets.token_bytes(32)
+
+
+def _captcha_secret() -> bytes:
+    """Return a server-side key for CAPTCHA answer hashing."""
+    configured = (
+        os.getenv("CAPTCHA_SECRET")
+        or os.getenv("CONTACT_CAPTCHA_SECRET")
+        or SESSION_SECRET
+    )
+    if configured:
+        return configured.encode("utf-8")
+    try:
+        key_path = Path(SESSION_KEY_FNAME)
+        if key_path.exists():
+            return key_path.read_bytes()
+    except Exception:
+        pass
+    return _RUNTIME_CAPTCHA_SECRET
+
+
+def captcha_answer_hash(answer: str) -> str:
+    """Hash a CAPTCHA answer without exposing it in the client session cookie."""
+    normalized = answer.strip().upper().encode("utf-8")
+    return hmac.new(_captcha_secret(), normalized, hashlib.sha256).hexdigest()
 
 
 def generate_captcha() -> tuple[str, str]:
     """Generate a CAPTCHA image and return (data_url, answer)."""
-    answer = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+    answer = "".join(random.choices(string.ascii_uppercase + string.digits, k=5))
     data = _captcha.generate(answer)
     img_bytes = data.getvalue()
-    b64 = base64.b64encode(img_bytes).decode('utf-8')
+    b64 = base64.b64encode(img_bytes).decode("utf-8")
     return f"data:image/png;base64,{b64}", answer
 
 
-# Load environment variables
-load_dotenv('envs.sh')
 CFG = get_config()
 
 # FastHTML App Configuration
 app = FastHTML(
     # On Vercel's serverless runtime, the filesystem is read-only except for /tmp.
     # Ensure FastHTML does not try to write the default .sesskey in CWD.
-    key_fname=("/tmp/.sesskey" if os.getenv("VERCEL") else ".sesskey"),
-    title=os.getenv('SITE_TITLE', 'Professional Portfolio'),
+    key_fname=SESSION_KEY_FNAME,
+    secret_key=SESSION_SECRET,
+    sess_https_only=bool(os.getenv("VERCEL")),
+    title=os.getenv("SITE_TITLE", "Professional Portfolio"),
     hdrs=(
-        Link(rel="stylesheet", href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"),
+        Link(
+            rel="stylesheet",
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap",
+        ),
         # Theme Styles
         Link(rel="icon", type="image/svg+xml", href="/static/favicon.svg"),
-
         Style("""
             :root {
                 --primary-color: #2563eb;
@@ -497,11 +545,9 @@ app = FastHTML(
             .contact-form input, .contact-form textarea { width:100%; }
             .contact-form textarea { min-height:160px; resize:vertical; }
             .hp-wrap { position:absolute; left:-10000px; top:auto; width:1px; height:1px; overflow:hidden; }
-        """)
-        ,
+        """),
         # Plotly for interactive charts
-        Script(src="https://cdn.plot.ly/plotly-2.35.2.min.js")
-        ,
+        Script(src="https://cdn.plot.ly/plotly-2.35.2.min.js"),
         # Dark mode toggle persistence
         Script("""
             (function(){
@@ -520,8 +566,7 @@ app = FastHTML(
                 });
               } catch(e){}
             })();
-        """)
-        ,
+        """),
         # Mouse-follow glow effect
         Script(r"""
           (function(){
@@ -716,14 +761,12 @@ app = FastHTML(
             }
             document.addEventListener('DOMContentLoaded', initBelt);
           })();
-        """)
-)
+        """),
+    ),
 )
 
 # Mount static files at /static using project-relative data/static
 ROOT_DIR = Path(__file__).resolve().parent.parent
-# On Vercel (serverless), writes must go to /tmp. Use that for ephemeral data.
-BASE_DATA_DIR = Path("/tmp") if os.getenv("VERCEL") else (ROOT_DIR / "data")
 STATIC_DIR = Path(os.getenv("STATIC_DIR", ROOT_DIR / "data" / "static"))
 try:
     STATIC_DIR.mkdir(parents=True, exist_ok=True)
@@ -738,12 +781,15 @@ except Exception:
 
 """render_page helper moved to src/utils/render.py"""
 
+
 # Routes
 @app.get("/")
 async def home():
     """Home page"""
     profile, lang_bytes, repos = await asyncio.gather(
-        fetch_github_profile(), fetch_language_bytes_aggregate(), fetch_github_projects()
+        fetch_github_profile(),
+        fetch_language_bytes_aggregate(),
+        fetch_github_projects(),
     )
     # Build top languages from aggregated byte counts
     items = sorted((lang_bytes or {}).items(), key=lambda x: x[1], reverse=True)
@@ -755,8 +801,8 @@ async def home():
     values = [v for _, v in top]
     # Repo counts by primary language (for metric toggle)
     lang_counts = {}
-    for r in (repos or []):
-        lang = r.get('language') or 'Other'
+    for r in repos or []:
+        lang = r.get("language") or "Other"
         lang_counts[lang] = lang_counts.get(lang, 0) + 1
     values_cnt = [lang_counts.get(k, 0) for k in labels]
 
@@ -764,24 +810,21 @@ async def home():
     highlights = []
     try:
         from pathlib import Path
+
         data = load_experience(Path(__file__).resolve().parent.parent)
-        if data and isinstance(data.get('highlights'), list):
-            highlights = [str(x) for x in data['highlights']][:6]
+        if data and isinstance(data.get("highlights"), list):
+            highlights = [str(x) for x in data["highlights"]][:6]
     except Exception:
         pass
 
     highlights_section = (
         Section(
             H2("Highlights", cls="section-title"),
-            Div(
-                Div(
-                    *[P(f"• {h}") for h in highlights],
-                    cls="card"
-                ),
-                cls="container"
-            ),
-            cls="section"
-        ) if highlights else Div()
+            Div(Div(*[P(f"• {h}") for h in highlights], cls="card"), cls="container"),
+            cls="section",
+        )
+        if highlights
+        else Div()
     )
 
     chart_section = (
@@ -800,12 +843,12 @@ async def home():
                             Button("Bytes", id="metric-bytes", cls="icon-link"),
                             Button("Export PNG", id="chart-export", cls="icon-link"),
                             style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center;",
-                            cls="chart-controls"
+                            cls="chart-controls",
                         ),
-                        style="display:flex; justify-content:flex-end; margin-bottom:.5rem;"
+                        style="display:flex; justify-content:flex-end; margin-bottom:.5rem;",
                     ),
                     Div(id="lang-chart", style="height:480px;"),
-                    style="max-width:1000px;margin:0 auto;background:var(--surface-1);border:1px solid var(--border-color);border-radius:16px;padding:1rem;box-shadow: 0 10px 40px rgba(0,0,0,.25);backdrop-filter: blur(4px);"
+                    style="max-width:1000px;margin:0 auto;background:var(--surface-1);border:1px solid var(--border-color);border-radius:16px;padding:1rem;box-shadow: 0 10px 40px rgba(0,0,0,.25);backdrop-filter: blur(4px);",
                 ),
             ),
             Script(f"""
@@ -814,7 +857,7 @@ async def home():
                   const labels = {json.dumps(labels)};
                   const valuesBytes = {json.dumps(values)};
                   const valuesCnt = {json.dumps(values_cnt)};
-                  const ghUser = {json.dumps(os.getenv('GITHUB_USERNAME') or '')};
+                  const ghUser = {json.dumps(os.getenv("GITHUB_USERNAME") or "")};
                   if(!labels.length) return;
                   function fmtBytes(n) {{
                     const units=['B','KB','MB','GB']; let i=0, x=n; while(x>1024 && i<units.length-1){{x/=1024; i++;}} return (Math.round(x*10)/10)+' '+units[i];
@@ -874,8 +917,10 @@ async def home():
                   document.getElementById('metric-repos')?.addEventListener('click', ()=>{{metric='repos'; render(current); setActive();}});
                 }})();
             """),
-            cls="section"
-        ) if labels and values else Div()
+            cls="section",
+        )
+        if labels and values
+        else Div()
     )
 
     return render_page(
@@ -885,35 +930,63 @@ async def home():
         chart_section,
     )
 
+
 @app.get("/projects")
 async def projects():
     """Projects page with GitHub integration"""
     try:
-        projects_data, profile = await asyncio.gather(fetch_github_projects(), fetch_github_profile())
+        projects_data, profile = await asyncio.gather(
+            fetch_github_projects(), fetch_github_profile()
+        )
 
         if not projects_data:
             projects_content = Div(
                 H2("Projects", cls="section-title"),
                 Div(
-                    P("Unable to load projects at this time. Please check back later.", cls="error"),
-                    cls="container"
-                )
+                    P(
+                        "Unable to load projects at this time. Please check back later.",
+                        cls="error",
+                    ),
+                    cls="container",
+                ),
             )
         else:
             total = len(projects_data)
-            gh_url = (profile or {}).get('html_url') or (f"https://github.com/{os.getenv('GITHUB_USERNAME')}" if os.getenv('GITHUB_USERNAME') else None)
+            gh_url = (profile or {}).get("html_url") or (
+                f"https://github.com/{os.getenv('GITHUB_USERNAME')}"
+                if os.getenv("GITHUB_USERNAME")
+                else None
+            )
             project_cards = [
                 Div(
-                    H3(project['name'].replace('_', '_\u200b'), cls="card-title"),
+                    H3(project["name"].replace("_", "_\u200b"), cls="card-title"),
                     P(f"Language: {project['language']}", cls="card-subtitle"),
-                    P(project['description'], cls="card-description"),
-                    (Div(*[Span(t, cls="chip") for t in (project.get('topics') or [])], cls="chips") if project.get('topics') else Div()),
-                    Div(
-                        A("View Project", href=project['url'], cls="btn", target="_blank"),
-                        P(f"⭐ {project['stars']} • Updated {project['updated']}", style="margin-top: 1rem; font-size: 0.9rem; color: var(--secondary-color);"),
-                        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;"
+                    P(project["description"], cls="card-description"),
+                    (
+                        Div(
+                            *[
+                                Span(t, cls="chip")
+                                for t in (project.get("topics") or [])
+                            ],
+                            cls="chips",
+                        )
+                        if project.get("topics")
+                        else Div()
                     ),
-                    cls="card"
+                    Div(
+                        A(
+                            "View Project",
+                            href=project["url"],
+                            cls="btn",
+                            target="_blank",
+                        ),
+                        P(
+                            f"⭐ {project['stars']} • Updated {project['updated']}",
+                            style="margin-top: 1rem; font-size: 0.9rem; color: var(--secondary-color);",
+                        ),
+                        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;",
+                    ),
+                    cls="card",
                 )
                 for project in projects_data
             ]
@@ -924,31 +997,35 @@ async def projects():
                     P(
                         f"Showing {total} repositories",
                         (" • " if gh_url else ""),
-                        (A("View GitHub Profile →", href=gh_url, target="_blank", rel="noopener noreferrer") if gh_url else ""),
-                        style="text-align:center;color:var(--secondary-color);margin-top:-1.5rem;"
+                        (
+                            A(
+                                "View GitHub Profile →",
+                                href=gh_url,
+                                target="_blank",
+                                rel="noopener noreferrer",
+                            )
+                            if gh_url
+                            else ""
+                        ),
+                        style="text-align:center;color:var(--secondary-color);margin-top:-1.5rem;",
                     ),
-                    cls="container"
+                    cls="container",
                 ),
-                Div(
-                    Div(*project_cards, cls="card-grid"),
-                    cls="container"
-                ),
-                cls="section"
+                Div(Div(*project_cards, cls="card-grid"), cls="container"),
+                cls="section",
             )
 
     except Exception as e:
         projects_content = Div(
             H2("Projects", cls="section-title"),
-            Div(
-                P(f"Error loading projects: {str(e)}", cls="error"),
-                cls="container"
-            )
+            Div(P(f"Error loading projects: {str(e)}", cls="error"), cls="container"),
         )
 
     return render_page(
         "Projects - Matthew L. Pergolski",
         projects_content,
     )
+
 
 @app.get("/about")
 async def about():
@@ -958,78 +1035,141 @@ async def about():
     profile = await fetch_github_profile()
 
     # Hero
-    summary = data.get('summary') or os.getenv('SITE_DESCRIPTION') or "AI/ML engineer turning data into product value."
-    avatar = (profile or {}).get('avatar_url') or (f"https://github.com/{os.getenv('GITHUB_USERNAME')}.png" if os.getenv('GITHUB_USERNAME') else None)
+    summary = (
+        data.get("summary")
+        or os.getenv("SITE_DESCRIPTION")
+        or "AI/ML engineer turning data into product value."
+    )
+    avatar = (profile or {}).get("avatar_url") or (
+        f"https://github.com/{os.getenv('GITHUB_USERNAME')}.png"
+        if os.getenv("GITHUB_USERNAME")
+        else None
+    )
 
     # Highlights and timeline
-    highlights = data.get('highlights') or []
-    exp = data.get('experience', [])[:3]
+    highlights = data.get("highlights") or []
+    exp = data.get("experience", [])[:3]
 
     # Snapshot
-    snapshot = data.get('snapshot') or {}
-    years = snapshot.get('years') or None
-    pub_repos = (profile or {}).get('public_repos') or 0
-    followers = (profile or {}).get('followers') or 0
+    snapshot = data.get("snapshot") or {}
+    years = snapshot.get("years") or None
+    pub_repos = (profile or {}).get("public_repos") or 0
+    followers = (profile or {}).get("followers") or 0
 
     # Skills
-    skills = data.get('skills') or {}
+    skills = data.get("skills") or {}
     skill_cards = [
         ft.Div(
             ft.H4(cat),
             ft.Div(*[ft.Span(s, cls="chip") for s in items], cls="chips"),
-            cls="card"
-        ) for cat, items in skills.items()
+            cls="card",
+        )
+        for cat, items in skills.items()
     ]
 
     hero = ft.Div(
-        *( [Img(src=avatar, alt="Avatar", cls="avatar")] if avatar else [] ),
+        *([Img(src=avatar, alt="Avatar", cls="avatar")] if avatar else []),
         ft.Div(
             ft.H3("Professional Background"),
             ft.P(summary),
             ft.Div(
                 A("View Projects", href="/projects", cls="btn"),
                 A("Download Resume", href="/resume/download", cls="btn btn-secondary"),
-                cls="hero-cta"
+                cls="hero-cta",
             ),
         ),
-        cls="about-hero"
+        cls="about-hero",
     )
 
     left_col = ft.Div(
         ft.H3("Highlights"),
-        ft.Ul(*[ft.Li(h) for h in highlights], style="margin-left:1.25rem; margin-bottom:1.25rem;"),
+        ft.Ul(
+            *[ft.Li(h) for h in highlights],
+            style="margin-left:1.25rem; margin-bottom:1.25rem;",
+        ),
         ft.H3("Recent Roles"),
         ft.Div(
             *[
                 ft.Div(
-                    ft.H4(r.get('title','Role')),
-                    ft.P(f"{r.get('company','Company')} • {r.get('period','')}", style="color: var(--secondary-color);"),
-                    ft.Ul(*[ft.Li(b) for b in (r.get('bullets') or [])[:3]], style="margin-left:1.25rem; margin-bottom:.75rem;")
-                    ,cls="timeline-item"
-                ) for r in exp
+                    ft.H4(r.get("title", "Role")),
+                    ft.P(
+                        f"{r.get('company', 'Company')} • {r.get('period', '')}",
+                        style="color: var(--secondary-color);",
+                    ),
+                    ft.Ul(
+                        *[ft.Li(b) for b in (r.get("bullets") or [])[:3]],
+                        style="margin-left:1.25rem; margin-bottom:.75rem;",
+                    ),
+                    cls="timeline-item",
+                )
+                for r in exp
             ],
-            cls="timeline"
+            cls="timeline",
         ),
-        cls="card"
+        cls="card",
     )
 
     right_col = ft.Div(
         ft.H3("Snapshot"),
         ft.Div(
-            *( [ft.Div(ft.Div(str(years), cls="stat-num"), ft.Div("Years", cls="stat-label"), cls="stat-card")] if years else [] ),
-            ft.Div(ft.Div(str(pub_repos), cls="stat-num"), ft.Div("Public Repos", cls="stat-label"), cls="stat-card"),
-            *( [ft.Div(ft.Div(str(followers), cls="stat-num"), ft.Div("Followers", cls="stat-label"), cls="stat-card")] if followers > 0 else [] ),
+            *(
+                [
+                    ft.Div(
+                        ft.Div(str(years), cls="stat-num"),
+                        ft.Div("Years", cls="stat-label"),
+                        cls="stat-card",
+                    )
+                ]
+                if years
+                else []
+            ),
+            ft.Div(
+                ft.Div(str(pub_repos), cls="stat-num"),
+                ft.Div("Public Repos", cls="stat-label"),
+                cls="stat-card",
+            ),
+            *(
+                [
+                    ft.Div(
+                        ft.Div(str(followers), cls="stat-num"),
+                        ft.Div("Followers", cls="stat-label"),
+                        cls="stat-card",
+                    )
+                ]
+                if followers > 0
+                else []
+            ),
             cls="stats-grid",
-            style="margin-bottom:1rem;"
+            style="margin-bottom:1rem;",
         ),
         ft.H3("Links"),
         ft.Div(
-            A("💼 LinkedIn", href=ensure_url(os.getenv('LINKEDIN_URL')), cls="icon-link", target="_blank", rel="noopener noreferrer"),
-            A("🐙 GitHub", href=ensure_url(f"https://github.com/{os.getenv('GITHUB_USERNAME')}") if os.getenv('GITHUB_USERNAME') else "https://github.com/", cls="icon-link", target="_blank", rel="noopener noreferrer"),
-            A("⬇️ Resume", href="/resume/download", cls="icon-link", target="_blank", rel="noopener noreferrer"),
-            style="display:flex; gap:.5rem; flex-wrap:wrap;"
+            A(
+                "💼 LinkedIn",
+                href=ensure_url(os.getenv("LINKEDIN_URL")),
+                cls="icon-link",
+                target="_blank",
+                rel="noopener noreferrer",
+            ),
+            A(
+                "🐙 GitHub",
+                href=ensure_url(f"https://github.com/{os.getenv('GITHUB_USERNAME')}")
+                if os.getenv("GITHUB_USERNAME")
+                else "https://github.com/",
+                cls="icon-link",
+                target="_blank",
+                rel="noopener noreferrer",
+            ),
+            A(
+                "⬇️ Resume",
+                href="/resume/download",
+                cls="icon-link",
+                target="_blank",
+                rel="noopener noreferrer",
+            ),
+            style="display:flex; gap:.5rem; flex-wrap:wrap;",
         ),
-        cls="card"
+        cls="card",
     )
 
     return render_page(
@@ -1037,39 +1177,37 @@ async def about():
         ft.Section(
             ft.H2("About Me", cls="section-title"),
             hero,
-            ft.Div(
-                left_col,
-                right_col,
-                cls="grid-2-1",
-                style="margin-top:1.5rem;"
-            ),
-            ft.Div(
-                *skill_cards,
-                cls="card-grid",
-                style="margin-top:1.5rem;"
-            ),
-            cls="container section"
+            ft.Div(left_col, right_col, cls="grid-2-1", style="margin-top:1.5rem;"),
+            ft.Div(*skill_cards, cls="card-grid", style="margin-top:1.5rem;"),
+            cls="container section",
         ),
     )
+
 
 @app.get("/resume")
 def resume():
     """Resume page"""
     data = load_experience(Path(__file__).resolve().parent.parent) or {}
-    exp = data.get('experience', [])
-    edu = data.get('education', [])
-    skills = data.get('skills', {})
+    exp = data.get("experience", [])
+    edu = data.get("education", [])
+    skills = data.get("skills", {})
 
     exp_blocks = []
     if exp:
         exp_blocks.append(ft.H3("Experience"))
         for r in exp:
-            bullets = r.get('bullets') or []
+            bullets = r.get("bullets") or []
             exp_blocks.append(
                 ft.Div(
-                    ft.H4(r.get('title', 'Role')),
-                    ft.P(f"{r.get('company','Company')} • {r.get('period','')}", style="color: var(--secondary-color);"),
-                    ft.Ul(*[ft.Li(b) for b in bullets], style="margin-left: 1.5rem; margin-bottom: 1.25rem;"),
+                    ft.H4(r.get("title", "Role")),
+                    ft.P(
+                        f"{r.get('company', 'Company')} • {r.get('period', '')}",
+                        style="color: var(--secondary-color);",
+                    ),
+                    ft.Ul(
+                        *[ft.Li(b) for b in bullets],
+                        style="margin-left: 1.5rem; margin-bottom: 1.25rem;",
+                    ),
                 )
             )
     if edu:
@@ -1077,8 +1215,11 @@ def resume():
         for e in edu:
             exp_blocks.append(
                 ft.Div(
-                    ft.H4(e.get('degree','Degree')),
-                    ft.P(f"{e.get('institution','University')} • {e.get('period','')}", style="color: var(--secondary-color);"),
+                    ft.H4(e.get("degree", "Degree")),
+                    ft.P(
+                        f"{e.get('institution', 'University')} • {e.get('period', '')}",
+                        style="color: var(--secondary-color);",
+                    ),
                 )
             )
     left_col = ft.Div(*exp_blocks, cls="card")
@@ -1088,27 +1229,30 @@ def resume():
         skills_blocks.append(ft.H3("Skills"))
         for cat, items in skills.items():
             skills_blocks.append(ft.H4(cat))
-            skills_blocks.append(ft.Div(*[ft.Span(s, cls="chip") for s in items], cls="chips", style="margin-bottom: .75rem;"))
+            skills_blocks.append(
+                ft.Div(
+                    *[ft.Span(s, cls="chip") for s in items],
+                    cls="chips",
+                    style="margin-bottom: .75rem;",
+                )
+            )
     right_col = ft.Div(
         ft.H3("Download Resume"),
         ft.P("Get a complete PDF version of my professional resume."),
         ft.A("Download PDF", href="/resume/download", cls="btn"),
         *skills_blocks,
-        cls="card"
+        cls="card",
     )
 
     return render_page(
         "Resume - Matthew L. Pergolski",
         ft.Section(
             ft.H2("Professional Resume", cls="section-title"),
-            ft.Div(
-                left_col,
-                right_col,
-                cls="grid-2-1"
-            ),
-            cls="container section"
+            ft.Div(left_col, right_col, cls="grid-2-1"),
+            cls="container section",
         ),
     )
+
 
 @app.get("/contact")
 def contact(req: Request):
@@ -1116,27 +1260,39 @@ def contact(req: Request):
     # Query-based alert messages (after POST redirect)
     qp = req.query_params
     alert = None
-    if 'sent' in qp:
-        alert = ft.Div(ft.P("Thanks! Your message was sent."), cls="card", style="border-left:4px solid var(--success-color);")
-    elif 'saved' in qp:
-        alert = ft.Div(ft.P("Message saved locally (email not configured)."), cls="card", style="border-left:4px solid var(--accent-color);")
-    elif 'err' in qp:
+    if "sent" in qp:
+        alert = ft.Div(
+            ft.P("Thanks! Your message was sent."),
+            cls="card",
+            style="border-left:4px solid var(--success-color);",
+        )
+    elif "saved" in qp:
+        alert = ft.Div(
+            ft.P("Message saved locally (email not configured)."),
+            cls="card",
+            style="border-left:4px solid var(--accent-color);",
+        )
+    elif "err" in qp:
         errmap = {
-            'invalid': "Please check the fields and try again.",
-            'ratelimit': "Too many messages recently — please try again later.",
-            'verify': "Please complete the verification challenge.",
-            'server': "We couldn't send your message right now. Please email me directly.",
+            "invalid": "Please check the fields and try again.",
+            "ratelimit": "Too many messages recently — please try again later.",
+            "verify": "Please complete the verification challenge.",
+            "server": "We couldn't send your message right now. Please email me directly.",
         }
-        msg = errmap.get(qp.get('err'), "We couldn't send your message right now.")
-        alert = ft.Div(ft.P(msg), cls="card", style="border-left:4px solid var(--error-color);")
+        msg = errmap.get(qp.get("err"), "We couldn't send your message right now.")
+        alert = ft.Div(
+            ft.P(msg), cls="card", style="border-left:4px solid var(--error-color);"
+        )
 
     # Generate self-hosted CAPTCHA and store with timestamp (supports multiple tabs)
     captcha_image, captcha_answer = generate_captcha()
     now = time.time()
     answers = req.session.get("captcha_answers", [])
     # Keep only recent ones (last 10 minutes or max 5)
-    answers = [a for a in answers if now - a.get("ts", 0) < 600][-4:]
-    answers.append({"answer": captcha_answer, "ts": now})
+    answers = [
+        a for a in answers if a.get("answer_hash") and now - a.get("ts", 0) < 600
+    ][-4:]
+    answers.append({"answer_hash": captcha_answer_hash(captcha_answer), "ts": now})
     req.session["captcha_answers"] = answers
 
     return render_page(
@@ -1147,79 +1303,132 @@ def contact(req: Request):
                 ft.Div(
                     alert if alert else ft.Div(),
                     ft.H3("Let's Connect"),
-                    ft.P("I'm always interested in discussing new opportunities, interesting projects, or just having a chat about data science and AI."),
+                    ft.P(
+                        "I'm always interested in discussing new opportunities, interesting projects, or just having a chat about data science and AI."
+                    ),
                     ft.H4("Contact Information"),
                     ft.P(f"📧 Email: {CFG.public_email or ''}"),
                     ft.Div(
-                        ft.A("💼 LinkedIn", href=ensure_url(os.getenv('LINKEDIN_URL')), cls="icon-link", target="_blank", rel="noopener noreferrer"),
-                        ft.A("🐙 GitHub", href=ensure_url(f"https://github.com/{os.getenv('GITHUB_USERNAME')}") if os.getenv('GITHUB_USERNAME') else "https://github.com/", cls="icon-link", target="_blank", rel="noopener noreferrer"),
-                        style="display:flex; gap:.75rem; flex-wrap:wrap; margin: .5rem 0 1rem;"
+                        ft.A(
+                            "💼 LinkedIn",
+                            href=ensure_url(os.getenv("LINKEDIN_URL")),
+                            cls="icon-link",
+                            target="_blank",
+                            rel="noopener noreferrer",
+                        ),
+                        ft.A(
+                            "🐙 GitHub",
+                            href=ensure_url(
+                                f"https://github.com/{os.getenv('GITHUB_USERNAME')}"
+                            )
+                            if os.getenv("GITHUB_USERNAME")
+                            else "https://github.com/",
+                            cls="icon-link",
+                            target="_blank",
+                            rel="noopener noreferrer",
+                        ),
+                        style="display:flex; gap:.75rem; flex-wrap:wrap; margin: .5rem 0 1rem;",
                     ),
                     ft.H4("Response Time"),
                     ft.P("I typically respond to emails within 24 hours."),
-                    cls="card"
+                    cls="card",
                 ),
                 ft.Div(
                     ft.H3("Send a Message"),
                     ft.Form(
                         ft.Div(
                             ft.Label("Name", fr="name"),
-                            ft.Input(type="text", id="name", name="name", required=True, cls="form-input"),
-                            cls="form-group"
+                            ft.Input(
+                                type="text",
+                                id="name",
+                                name="name",
+                                required=True,
+                                cls="form-input",
+                            ),
+                            cls="form-group",
                         ),
                         ft.Div(
                             ft.Label("Email", fr="email"),
-                            ft.Input(type="email", id="email", name="email", required=True, cls="form-input"),
-                            cls="form-group"
+                            ft.Input(
+                                type="email",
+                                id="email",
+                                name="email",
+                                required=True,
+                                cls="form-input",
+                            ),
+                            cls="form-group",
                         ),
                         ft.Div(
                             ft.Label("Company", fr="company"),
-                            ft.Input(type="text", id="company", name="company", cls="form-input"),
-                            cls="hp-wrap"
+                            ft.Input(
+                                type="text",
+                                id="company",
+                                name="company",
+                                cls="form-input",
+                            ),
+                            cls="hp-wrap",
                         ),
                         ft.Div(
                             ft.Label("Message", fr="message"),
-                            ft.Textarea(id="message", name="message", required=True, rows=5, cls="form-input"),
-                            cls="form-group"
+                            ft.Textarea(
+                                id="message",
+                                name="message",
+                                required=True,
+                                rows=5,
+                                cls="form-input",
+                            ),
+                            cls="form-group",
                         ),
                         ft.Input(type="hidden", name="t0", value=str(int(time.time()))),
                         # Self-hosted image CAPTCHA (no external services, no env vars required)
                         ft.Div(
                             ft.Label("Verification", fr="captcha"),
-                            ft.Img(src=captcha_image, alt="CAPTCHA", style="border:1px solid var(--border-color); border-radius:4px; margin-bottom:0.5rem; display:block;"),
-                            ft.Input(type="text", id="captcha", name="captcha", required=True, placeholder="Enter the code above", cls="form-input"),
-                            cls="form-group"
+                            ft.Img(
+                                src=captcha_image,
+                                alt="CAPTCHA",
+                                style="border:1px solid var(--border-color); border-radius:4px; margin-bottom:0.5rem; display:block;",
+                            ),
+                            ft.Input(
+                                type="text",
+                                id="captcha",
+                                name="captcha",
+                                required=True,
+                                placeholder="Enter the code above",
+                                cls="form-input",
+                            ),
+                            cls="form-group",
                         ),
                         ft.Button("Send Message", type="submit", cls="btn"),
                         method="post",
                         action="/contact",
-                        cls="contact-form"
+                        cls="contact-form",
                     ),
-                    cls="card"
+                    cls="card",
                 ),
-                cls="card-grid"
+                cls="card-grid",
             ),
-            cls="container section"
+            cls="container section",
         ),
     )
+
 
 @app.post("/contact")
 async def contact_submit(req: Request):
     """Handle contact form submission: try SMTP, else save locally."""
     try:
         form = await req.form()
-        name = (form.get('name') or '').strip()
-        email_addr = (form.get('email') or '').strip()
-        message_txt = (form.get('message') or '').strip()
+        name = (form.get("name") or "").strip()
+        email_addr = (form.get("email") or "").strip()
+        message_txt = (form.get("message") or "").strip()
 
         # Configurable validation/anti-spam thresholds
-        dbg = (os.getenv('DEBUG', '').lower() in ('1', 'true', 'yes', 'on'))
+        dbg = os.getenv("DEBUG", "").lower() in ("1", "true", "yes", "on")
         try:
-            min_msg_len = int(os.getenv('CONTACT_MIN_MSG_LEN', '10'))
+            min_msg_len = int(os.getenv("CONTACT_MIN_MSG_LEN", "10"))
         except Exception:
             min_msg_len = 10
         try:
-            min_submit_secs = float(os.getenv('CONTACT_MIN_SECONDS', '2.5'))
+            min_submit_secs = float(os.getenv("CONTACT_MIN_SECONDS", "2.5"))
         except Exception:
             min_submit_secs = 2.5
         # In DEBUG, relax constraints for easier local testing
@@ -1229,12 +1438,12 @@ async def contact_submit(req: Request):
 
         errs = []
         # Honeypot / timing
-        if (form.get('company') or '').strip():
+        if (form.get("company") or "").strip():
             # Silently accept to mislead bots
-            return RedirectResponse('/contact', status_code=303)
+            return RedirectResponse("/contact", status_code=303)
         t0 = 0
         try:
-            t0 = int(form.get('t0') or 0)
+            t0 = int(form.get("t0") or 0)
         except Exception:
             t0 = 0
         if t0 and min_submit_secs > 0:
@@ -1242,14 +1451,14 @@ async def contact_submit(req: Request):
                 errs.append("Submission was too fast; please try again.")
         if len(name) < 2:
             errs.append("Please enter your name.")
-        if '@' not in email_addr:
+        if "@" not in email_addr:
             errs.append("Please enter a valid email address.")
         if len(message_txt) < min_msg_len:
             errs.append("Please write a slightly longer message.")
 
-        alert = None
         # Self-hosted CAPTCHA validation supporting multiple recent codes (better multi-tab UX)
-        submitted = (form.get('captcha') or '').strip().upper()
+        submitted = (form.get("captcha") or "").strip().upper()
+        submitted_hash = captcha_answer_hash(submitted)
         now = time.time()
         answers = req.session.get("captcha_answers", [])
         # Clean old entries and look for a match
@@ -1258,7 +1467,10 @@ async def contact_submit(req: Request):
         for item in answers:
             if now - item.get("ts", 0) > 600:
                 continue  # too old
-            if not matched and item.get("answer") == submitted:
+            answer_hash = item.get("answer_hash")
+            if not answer_hash:
+                continue
+            if not matched and answer_hash == submitted_hash:
                 matched = True  # consume this one
                 continue
             valid_answers.append(item)
@@ -1277,34 +1489,47 @@ async def contact_submit(req: Request):
             body = f"From: {name} <{email_addr}>\n\n{message_txt}"
             ok, info = await send_email(subject, body, reply_to=email_addr)
             if ok:
-                return RedirectResponse('/contact?sent=1', status_code=303)
+                return RedirectResponse("/contact?sent=1", status_code=303)
             else:
+                if os.getenv("VERCEL"):
+                    print(
+                        f"Email send failed; local fallback disabled on Vercel: {info}"
+                    )
+                    return RedirectResponse("/contact?err=server", status_code=303)
                 # Fallback: persist to data/messages
-                msg_dir = BASE_DATA_DIR / 'messages'
+                msg_dir = BASE_DATA_DIR / "messages"
                 try:
                     msg_dir.mkdir(parents=True, exist_ok=True)
-                    (msg_dir / f"{int(time.time())}.json").write_text(json.dumps({"name":name, "email":email_addr, "message":message_txt}))
-                    return RedirectResponse('/contact?saved=1', status_code=303)
+                    (msg_dir / f"{int(time.time())}.json").write_text(
+                        json.dumps(
+                            {"name": name, "email": email_addr, "message": message_txt}
+                        )
+                    )
+                    return RedirectResponse("/contact?saved=1", status_code=303)
                 except Exception:
-                    return RedirectResponse('/contact?err=server', status_code=303)
+                    return RedirectResponse("/contact?err=server", status_code=303)
         else:
             # Prefer simple redirect with error code to avoid re-post on refresh
-            code = 'invalid'
-            if any('verification' in e.lower() for e in errs):
-                code = 'verify'
-            if any('many' in e.lower() for e in errs):
-                code = 'ratelimit'
+            code = "invalid"
+            if any("verification" in e.lower() for e in errs):
+                code = "verify"
+            if any("many" in e.lower() for e in errs):
+                code = "ratelimit"
             return RedirectResponse(f"/contact?err={code}", status_code=303)
 
     except Exception:
         return RedirectResponse("/contact", status_code=303)
+
+
 @app.get("/resume/download")
 def resume_download():
     """Redirect to the configured resume URL or local static fallback."""
     url = os.getenv("RESUME_URL") or "/static/resume.pdf"
     return RedirectResponse(url, status_code=307)
 
+
 # Run the app
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)
