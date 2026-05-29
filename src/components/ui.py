@@ -22,28 +22,74 @@ def Navigation():
         Div(
             Div(
                 A(
-                    *( [Img(src=brand_avatar, alt="Avatar", cls="brand-logo")] if brand_avatar else [] ),
+                    *(
+                        [Img(src=brand_avatar, alt="Avatar", cls="brand-logo")]
+                        if brand_avatar
+                        else []
+                    ),
                     Span("MLP", cls="brand-initials"),
                     Span("Portfolio", cls="brand-sub"),
                     href="/",
                     cls="nav-brand",
                 ),
-                Button("☰", id="nav-toggle", cls="nav-toggle", aria_label="Toggle navigation", aria_controls="nav-links", aria_expanded="false", title="Menu"),
+                Button(
+                    "☰",
+                    id="nav-toggle",
+                    cls="nav-toggle",
+                    aria_label="Toggle navigation",
+                    aria_controls="nav-links",
+                    aria_expanded="false",
+                    title="Menu",
+                ),
                 Div(
-                    Button("×", id="nav-close", cls="nav-close", aria_label="Close menu"),
+                    Button(
+                        "×", id="nav-close", cls="nav-close", aria_label="Close menu"
+                    ),
                     A("Home", href="/", cls="nav-link"),
                     A("Projects", href="/projects", cls="nav-link"),
                     A("About", href="/about", cls="nav-link"),
                     A("Resume", href="/resume", cls="nav-link"),
                     A("Contact", href="/contact", cls="nav-link"),
-                    A("AI Chat", href="/chat", cls="nav-link"),
-                    id="nav-links", cls="nav-links",
+                    A("Chat", href="/chat", cls="nav-link"),
+                    id="nav-links",
+                    cls="nav-links",
                 ),
                 Div(
                     *(
-                        ([A("GitHub", href=gh_url, cls="icon-link", target="_blank", rel="noopener noreferrer")] if gh_url else [])
-                        + ([A("LinkedIn", href=li_url, cls="icon-link", target="_blank", rel="noopener noreferrer")] if li_url else [])
-                        + [Button("🌗", id="theme-toggle", cls="icon-link theme-toggle", title="Toggle theme")]
+                        (
+                            [
+                                A(
+                                    "GitHub",
+                                    href=gh_url,
+                                    cls="icon-link",
+                                    target="_blank",
+                                    rel="noopener noreferrer",
+                                )
+                            ]
+                            if gh_url
+                            else []
+                        )
+                        + (
+                            [
+                                A(
+                                    "LinkedIn",
+                                    href=li_url,
+                                    cls="icon-link",
+                                    target="_blank",
+                                    rel="noopener noreferrer",
+                                )
+                            ]
+                            if li_url
+                            else []
+                        )
+                        + [
+                            Button(
+                                "🌗",
+                                id="theme-toggle",
+                                cls="icon-link theme-toggle",
+                                title="Toggle theme",
+                            )
+                        ]
                     ),
                     cls="nav-actions",
                 ),
@@ -64,7 +110,10 @@ def HeroSection(profile: dict | None = None):
         Div(
             *([Img(src=avatar, alt=name, cls="avatar avatar-lg")] if avatar else []),
             H1(name, cls="hero-title"),
-            P(os.getenv("SITE_TITLE", "Data Scientist & AI/ML Engineer"), cls="hero-subtitle"),
+            P(
+                os.getenv("SITE_TITLE", "Data Scientist & AI/ML Engineer"),
+                cls="hero-subtitle",
+            ),
             P(bio, cls="hero-description"),
             Div(
                 ft.A("View My Work", href="/projects", cls="btn"),
@@ -92,10 +141,48 @@ def SiteFooter():
 def MobileTabBar():
     """Fixed bottom tab bar for mobile only (CSS controls visibility)."""
     return Div(
-        A(Span("🏠", cls="tab-ico"), Span("Home", cls="tab-txt"), href="/", id="tab-home", cls="tab"),
-        A(Span("📦", cls="tab-ico"), Span("Projects", cls="tab-txt"), href="/projects", id="tab-projects", cls="tab"),
-        A(Span("👤", cls="tab-ico"), Span("About", cls="tab-txt"), href="/about", id="tab-about", cls="tab"),
-        A(Span("📄", cls="tab-ico"), Span("Resume", cls="tab-txt"), href="/resume", id="tab-resume", cls="tab"),
-        A(Span("✉️", cls="tab-ico"), Span("Contact", cls="tab-txt"), href="/contact", id="tab-contact", cls="tab"),
-        id="mobile-tabbar", cls="mobile-tabbar"
+        A(
+            Span("🏠", cls="tab-ico"),
+            Span("Home", cls="tab-txt"),
+            href="/",
+            id="tab-home",
+            cls="tab",
+        ),
+        A(
+            Span("📦", cls="tab-ico"),
+            Span("Projects", cls="tab-txt"),
+            href="/projects",
+            id="tab-projects",
+            cls="tab",
+        ),
+        A(
+            Span("👤", cls="tab-ico"),
+            Span("About", cls="tab-txt"),
+            href="/about",
+            id="tab-about",
+            cls="tab",
+        ),
+        A(
+            Span("📄", cls="tab-ico"),
+            Span("Resume", cls="tab-txt"),
+            href="/resume",
+            id="tab-resume",
+            cls="tab",
+        ),
+        A(
+            Span("✉️", cls="tab-ico"),
+            Span("Contact", cls="tab-txt"),
+            href="/contact",
+            id="tab-contact",
+            cls="tab",
+        ),
+        A(
+            Span("💬", cls="tab-ico"),
+            Span("Chat", cls="tab-txt"),
+            href="/chat",
+            id="tab-chat",
+            cls="tab",
+        ),
+        id="mobile-tabbar",
+        cls="mobile-tabbar",
     )

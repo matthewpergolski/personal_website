@@ -6,34 +6,56 @@ to showcase GitHub projects and serve as a resume for technical roles.
 """
 
 from fasthtml import FastHTML
-from fasthtml.common import *
 import fasthtml.common as ft
+from fasthtml.common import (
+    A,
+    Button,
+    Div,
+    H2,
+    H3,
+    Img,
+    Link,
+    P,
+    Script,
+    Section,
+    Span,
+    Style,
+)
 from dotenv import load_dotenv
+import base64
 import os
 import json
 import asyncio
+import hashlib
+import hmac
+import random
 from pathlib import Path
+import secrets
+import string
 from starlette.staticfiles import StaticFiles
-from starlette.responses import RedirectResponse
+from starlette.responses import JSONResponse, RedirectResponse
 from starlette.requests import Request
-import time, json
+import time
+from captcha.image import ImageCaptcha
 from src.services.github import fetch_github_profile, fetch_github_projects
-from src.components.ui import Navigation, HeroSection, SiteFooter, ensure_url
+from src.components.ui import HeroSection, ensure_url
 from src.utils.render import render_page
 from src.services.github import fetch_language_bytes_aggregate
 from src.services.content import load_experience
 from src.services.email import send_email
+from src.config import get_config, BASE_DATA_DIR
+from src.utils.rate_limit import is_rate_limited
 from src.components.chat.widget import ChatWidget
-from src.services.rag.rag_pipeline import RAGPipeline, QueryContext
-import json
-from starlette.responses import JSONResponse
-import httpx
-from src.config import get_config
+from src.services.rag.simple_chat import handle_chat_payload
+
+
+load_dotenv("envs.sh")
 
 
 # =============================================================================
 # Security & Reliability Utilities (added during security fixes)
 # =============================================================================
+
 
 def get_client_ip(request):
     """Best-effort real client IP, respecting common proxy headers."""
@@ -42,77 +64,6 @@ def get_client_ip(request):
         if val:
             return val.split(",")[0].strip()
     return getattr(request.client, "host", "unknown") if request.client else "unknown"
-
-
-def _safe_filename(value: str) -> str:
-    """Make a string safe to use in filenames (IPv6 etc.)."""
-    if not value:
-        return "unknown"
-    safe = value.replace(":", "-").replace("/", "_").replace("\\", "_")
-    safe = "".join(c for c in safe if c.isalnum() or c in ("-", "_", "."))
-    return safe[:80] or "unknown"
-
-
-def rate_limited(ip: str) -> bool:
-    """Best-effort per-IP and global rate limiting.
-
-    Note: On serverless this is per-instance only. See DEPLOYING.md.
-    """
-    try:
-        limit_ip = int(os.getenv('RATE_IP_PER_HOUR', '3'))
-        limit_global = int(os.getenv('RATE_GLOBAL_PER_DAY', '50'))
-    except Exception:
-        limit_ip, limit_global = 3, 50
-
-    now = int(time.time())
-    rl_dir = BASE_DATA_DIR / 'ratelimit'
-    try:
-        rl_dir.mkdir(parents=True, exist_ok=True)
-    except Exception:
-        pass
-
-    safe_ip = _safe_filename(ip)
-    ipf = rl_dir / f"{safe_ip}.json"
-
-    try:
-        lst = json.loads(ipf.read_text())
-    except Exception:
-        lst = []
-
-    lst = [t for t in lst if now - int(t) < 3600]
-    if len(lst) >= limit_ip:
-        try:
-            ipf.write_text(json.dumps(lst))
-        except Exception:
-            pass
-        return True
-
-    lst.append(now)
-    try:
-        ipf.write_text(json.dumps(lst))
-    except Exception:
-        pass
-
-    gf = rl_dir / 'global.json'
-    try:
-        gl = json.loads(gf.read_text())
-    except Exception:
-        gl = []
-
-    gl = [t for t in gl if now - int(t) < 86400]
-    if len(gl) >= limit_global:
-        try:
-            gf.write_text(json.dumps(gl))
-        except Exception:
-            pass
-        return True
-
-    gl.append(now)
-    try:
-        gf.write_text(json.dumps(gl))
-    except Exception:
-        pass
-    return False
 
 
 def validate_startup_config() -> None:
@@ -128,7 +79,9 @@ def validate_startup_config() -> None:
 
     contact_dest = os.getenv("SMTP_TO") or os.getenv("CONTACT_EMAIL") or ""
     if not contact_dest:
-        warnings.append("No contact destination configured (contact form will save locally).")
+        warnings.append(
+            "No contact destination configured (contact form will save locally)."
+        )
 
     for w in warnings:
         print(f"⚠️  {w}")
@@ -141,103 +94,63 @@ def validate_startup_config() -> None:
         else:
             raise RuntimeError("Missing required environment variables.")
 
-async def verify_human(
-    req: Request | None = None,
-    *,
-    turnstile_token: str = "",
-    hcaptcha_token: str = "",
-    remote_ip: str = "",
-) -> tuple[bool, str]:
-    """Verify Cloudflare Turnstile or hCaptcha token if configured.
 
-    Supports two styles:
-    - Pass Request (legacy) → reads form internally
-    - Pass pre-extracted tokens (preferred) → avoids double form read
-    """
-    ts_token = turnstile_token
-    hc_token = hcaptcha_token
-    ip = remote_ip
+_captcha = ImageCaptcha(width=180, height=60)
+SESSION_KEY_FNAME = "/tmp/.sesskey" if os.getenv("VERCEL") else ".sesskey"
+SESSION_SECRET = os.getenv("SESSION_SECRET") or os.getenv("SECRET_KEY")
+_RUNTIME_CAPTCHA_SECRET = secrets.token_bytes(32)
 
-    if req is not None and not (ts_token or hc_token):
-        form = await req.form()
-        ts_token = form.get('cf-turnstile-response') or ''
-        hc_token = form.get('h-captcha-response') or ''
-        ip = ip or getattr(req.client, 'host', '')
 
-    ts_secret = os.getenv('TURNSTILE_SECRET_KEY')
-    if ts_secret and ts_token:
-        try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                r = await client.post(
-                    'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-                    data={'secret': ts_secret, 'response': ts_token, 'remoteip': ip}
-                )
-                return (r.json().get('success') is True, 'turnstile')
-        except Exception as e:
-            return False, str(e)
+def _captcha_secret() -> bytes:
+    """Return a server-side key for CAPTCHA answer hashing."""
+    configured = (
+        os.getenv("CAPTCHA_SECRET")
+        or os.getenv("CONTACT_CAPTCHA_SECRET")
+        or SESSION_SECRET
+    )
+    if configured:
+        return configured.encode("utf-8")
+    try:
+        key_path = Path(SESSION_KEY_FNAME)
+        if key_path.exists():
+            return key_path.read_bytes()
+    except Exception:
+        pass
+    return _RUNTIME_CAPTCHA_SECRET
 
-    hc_secret = os.getenv('HCAPTCHA_SECRET')
-    if hc_secret and hc_token:
-        try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                r = await client.post('https://hcaptcha.com/siteverify', data={'secret': hc_secret, 'response': hc_token})
-                return (bool(r.json().get('success')), 'hcaptcha')
-        except Exception as e:
-            return False, str(e)
 
-    return True, 'disabled'
+def captcha_answer_hash(answer: str) -> str:
+    """Hash a CAPTCHA answer without exposing it in the client session cookie."""
+    normalized = answer.strip().upper().encode("utf-8")
+    return hmac.new(_captcha_secret(), normalized, hashlib.sha256).hexdigest()
 
-# Initialize RAG pipeline on startup (deployment-friendly)
-_rag_pipeline_instance: Optional[RAGPipeline] = None
 
-async def initialize_rag_on_startup():
-    """
-    Initialize RAG pipeline on application startup.
-    This ensures the pipeline is ready when deployed.
-    """
-    global _rag_pipeline_instance
-    if _rag_pipeline_instance is None:
-        try:
-            print("🤖 Initializing RAG Pipeline for deployment...")
-            _rag_pipeline_instance = RAGPipeline()
-            success = await _rag_pipeline_instance.initialize()
+def generate_captcha() -> tuple[str, str]:
+    """Generate a CAPTCHA image and return (data_url, answer)."""
+    answer = "".join(random.choices(string.ascii_uppercase + string.digits, k=5))
+    data = _captcha.generate(answer)
+    img_bytes = data.getvalue()
+    b64 = base64.b64encode(img_bytes).decode("utf-8")
+    return f"data:image/png;base64,{b64}", answer
 
-            if success:
-                print("✅ RAG Pipeline ready with vector store and documents loaded")
-            else:
-                print("⚠️  RAG Pipeline basic init complete, will load documents on demand")
-        except Exception as e:
-            print(f"❌ RAG Pipeline initialization failed: {e}")
-            import traceback
-            traceback.print_exc()
-            _rag_pipeline_instance = None
 
-# Load environment variables
-load_dotenv('envs.sh')
 CFG = get_config()
-
-# Initialize RAG pipeline early
-if os.getenv("VERCEL") or os.getenv("USE_GLOBAL_RAG", "").lower() == "true":
-    import asyncio
-
-    # For serverless, delay initialization until first request
-    print("🔧 RAG Pipeline will initialize on first chat request")
-else:
-    # For standard deployments, initialize immediately
-    print("🚀 Starting background RAG pipeline initialization...")
-    asyncio.create_task(initialize_rag_on_startup())
 
 # FastHTML App Configuration
 app = FastHTML(
     # On Vercel's serverless runtime, the filesystem is read-only except for /tmp.
     # Ensure FastHTML does not try to write the default .sesskey in CWD.
-    key_fname=("/tmp/.sesskey" if os.getenv("VERCEL") else ".sesskey"),
-    title=os.getenv('SITE_TITLE', 'Professional Portfolio'),
+    key_fname=SESSION_KEY_FNAME,
+    secret_key=SESSION_SECRET,
+    sess_https_only=bool(os.getenv("VERCEL")),
+    title=os.getenv("SITE_TITLE", "Professional Portfolio"),
     hdrs=(
-        Link(rel="stylesheet", href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"),
+        Link(
+            rel="stylesheet",
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap",
+        ),
         # Theme Styles
         Link(rel="icon", type="image/svg+xml", href="/static/favicon.svg"),
-
         Style("""
             :root {
                 --primary-color: #2563eb;
@@ -634,11 +547,9 @@ app = FastHTML(
             .contact-form input, .contact-form textarea { width:100%; }
             .contact-form textarea { min-height:160px; resize:vertical; }
             .hp-wrap { position:absolute; left:-10000px; top:auto; width:1px; height:1px; overflow:hidden; }
-        """)
-        ,
+        """),
         # Plotly for interactive charts
-        Script(src="https://cdn.plot.ly/plotly-2.35.2.min.js")
-        ,
+        Script(src="https://cdn.plot.ly/plotly-2.35.2.min.js"),
         # Dark mode toggle persistence
         Script("""
             (function(){
@@ -657,8 +568,7 @@ app = FastHTML(
                 });
               } catch(e){}
             })();
-        """)
-        ,
+        """),
         # Mouse-follow glow effect
         Script(r"""
           (function(){
@@ -726,6 +636,7 @@ app = FastHTML(
                 var id = p.startsWith('/projects') ? 'tab-projects'
                       : p.startsWith('/about') ? 'tab-about'
                       : p.startsWith('/resume') ? 'tab-resume'
+                      : p.startsWith('/chat') ? 'tab-chat'
                       : p.startsWith('/contact') ? 'tab-contact'
                       : 'tab-home';
                 var el = document.getElementById(id);
@@ -853,14 +764,12 @@ app = FastHTML(
             }
             document.addEventListener('DOMContentLoaded', initBelt);
           })();
-        """)
-)
+        """),
+    ),
 )
 
 # Mount static files at /static using project-relative data/static
 ROOT_DIR = Path(__file__).resolve().parent.parent
-# On Vercel (serverless), writes must go to /tmp. Use that for ephemeral data.
-BASE_DATA_DIR = Path("/tmp") if os.getenv("VERCEL") else (ROOT_DIR / "data")
 STATIC_DIR = Path(os.getenv("STATIC_DIR", ROOT_DIR / "data" / "static"))
 try:
     STATIC_DIR.mkdir(parents=True, exist_ok=True)
@@ -875,12 +784,15 @@ except Exception:
 
 """render_page helper moved to src/utils/render.py"""
 
+
 # Routes
 @app.get("/")
 async def home():
     """Home page"""
     profile, lang_bytes, repos = await asyncio.gather(
-        fetch_github_profile(), fetch_language_bytes_aggregate(), fetch_github_projects()
+        fetch_github_profile(),
+        fetch_language_bytes_aggregate(),
+        fetch_github_projects(),
     )
     # Build top languages from aggregated byte counts
     items = sorted((lang_bytes or {}).items(), key=lambda x: x[1], reverse=True)
@@ -892,8 +804,8 @@ async def home():
     values = [v for _, v in top]
     # Repo counts by primary language (for metric toggle)
     lang_counts = {}
-    for r in (repos or []):
-        lang = r.get('language') or 'Other'
+    for r in repos or []:
+        lang = r.get("language") or "Other"
         lang_counts[lang] = lang_counts.get(lang, 0) + 1
     values_cnt = [lang_counts.get(k, 0) for k in labels]
 
@@ -901,24 +813,21 @@ async def home():
     highlights = []
     try:
         from pathlib import Path
+
         data = load_experience(Path(__file__).resolve().parent.parent)
-        if data and isinstance(data.get('highlights'), list):
-            highlights = [str(x) for x in data['highlights']][:6]
+        if data and isinstance(data.get("highlights"), list):
+            highlights = [str(x) for x in data["highlights"]][:6]
     except Exception:
         pass
 
     highlights_section = (
         Section(
             H2("Highlights", cls="section-title"),
-            Div(
-                Div(
-                    *[P(f"• {h}") for h in highlights],
-                    cls="card"
-                ),
-                cls="container"
-            ),
-            cls="section"
-        ) if highlights else Div()
+            Div(Div(*[P(f"• {h}") for h in highlights], cls="card"), cls="container"),
+            cls="section",
+        )
+        if highlights
+        else Div()
     )
 
     chart_section = (
@@ -937,12 +846,12 @@ async def home():
                             Button("Bytes", id="metric-bytes", cls="icon-link"),
                             Button("Export PNG", id="chart-export", cls="icon-link"),
                             style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center;",
-                            cls="chart-controls"
+                            cls="chart-controls",
                         ),
-                        style="display:flex; justify-content:flex-end; margin-bottom:.5rem;"
+                        style="display:flex; justify-content:flex-end; margin-bottom:.5rem;",
                     ),
                     Div(id="lang-chart", style="height:480px;"),
-                    style="max-width:1000px;margin:0 auto;background:var(--surface-1);border:1px solid var(--border-color);border-radius:16px;padding:1rem;box-shadow: 0 10px 40px rgba(0,0,0,.25);backdrop-filter: blur(4px);"
+                    style="max-width:1000px;margin:0 auto;background:var(--surface-1);border:1px solid var(--border-color);border-radius:16px;padding:1rem;box-shadow: 0 10px 40px rgba(0,0,0,.25);backdrop-filter: blur(4px);",
                 ),
             ),
             Script(f"""
@@ -951,7 +860,7 @@ async def home():
                   const labels = {json.dumps(labels)};
                   const valuesBytes = {json.dumps(values)};
                   const valuesCnt = {json.dumps(values_cnt)};
-                  const ghUser = {json.dumps(os.getenv('GITHUB_USERNAME') or '')};
+                  const ghUser = {json.dumps(os.getenv("GITHUB_USERNAME") or "")};
                   if(!labels.length) return;
                   function fmtBytes(n) {{
                     const units=['B','KB','MB','GB']; let i=0, x=n; while(x>1024 && i<units.length-1){{x/=1024; i++;}} return (Math.round(x*10)/10)+' '+units[i];
@@ -1011,51 +920,76 @@ async def home():
                   document.getElementById('metric-repos')?.addEventListener('click', ()=>{{metric='repos'; render(current); setActive();}});
                 }})();
             """),
-            cls="section"
-        ) if labels and values else Div()
+            cls="section",
+        )
+        if labels and values
+        else Div()
     )
-
-    # Create chat widget instance
-    chat_widget = ChatWidget.professional_mode()
 
     return render_page(
         "Matthew L. Pergolski - Data Scientist & AI/ML Engineer",
         HeroSection(profile),
         highlights_section,
         chart_section,
-        # Add chat widget to the page
-        chat_widget.render(),
     )
+
 
 @app.get("/projects")
 async def projects():
     """Projects page with GitHub integration"""
     try:
-        projects_data, profile = await asyncio.gather(fetch_github_projects(), fetch_github_profile())
+        projects_data, profile = await asyncio.gather(
+            fetch_github_projects(), fetch_github_profile()
+        )
 
         if not projects_data:
             projects_content = Div(
                 H2("Projects", cls="section-title"),
                 Div(
-                    P("Unable to load projects at this time. Please check back later.", cls="error"),
-                    cls="container"
-                )
+                    P(
+                        "Unable to load projects at this time. Please check back later.",
+                        cls="error",
+                    ),
+                    cls="container",
+                ),
             )
         else:
             total = len(projects_data)
-            gh_url = (profile or {}).get('html_url') or (f"https://github.com/{os.getenv('GITHUB_USERNAME')}" if os.getenv('GITHUB_USERNAME') else None)
+            gh_url = (profile or {}).get("html_url") or (
+                f"https://github.com/{os.getenv('GITHUB_USERNAME')}"
+                if os.getenv("GITHUB_USERNAME")
+                else None
+            )
             project_cards = [
                 Div(
-                    H3(project['name'].replace('_', '_\u200b'), cls="card-title"),
+                    H3(project["name"].replace("_", "_\u200b"), cls="card-title"),
                     P(f"Language: {project['language']}", cls="card-subtitle"),
-                    P(project['description'], cls="card-description"),
-                    (Div(*[Span(t, cls="chip") for t in (project.get('topics') or [])], cls="chips") if project.get('topics') else Div()),
-                    Div(
-                        A("View Project", href=project['url'], cls="btn", target="_blank"),
-                        P(f"⭐ {project['stars']} • Updated {project['updated']}", style="margin-top: 1rem; font-size: 0.9rem; color: var(--secondary-color);"),
-                        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;"
+                    P(project["description"], cls="card-description"),
+                    (
+                        Div(
+                            *[
+                                Span(t, cls="chip")
+                                for t in (project.get("topics") or [])
+                            ],
+                            cls="chips",
+                        )
+                        if project.get("topics")
+                        else Div()
                     ),
-                    cls="card"
+                    Div(
+                        A(
+                            "View Project",
+                            href=project["url"],
+                            cls="btn",
+                            target="_blank",
+                        ),
+                        P(
+                            f"⭐ {project['stars']} • Updated {project['updated']}",
+                            style="margin-top: 1rem; font-size: 0.9rem; color: var(--secondary-color);",
+                        ),
+                        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;",
+                    ),
+                    cls="card",
                 )
                 for project in projects_data
             ]
@@ -1066,31 +1000,35 @@ async def projects():
                     P(
                         f"Showing {total} repositories",
                         (" • " if gh_url else ""),
-                        (A("View GitHub Profile →", href=gh_url, target="_blank", rel="noopener noreferrer") if gh_url else ""),
-                        style="text-align:center;color:var(--secondary-color);margin-top:-1.5rem;"
+                        (
+                            A(
+                                "View GitHub Profile →",
+                                href=gh_url,
+                                target="_blank",
+                                rel="noopener noreferrer",
+                            )
+                            if gh_url
+                            else ""
+                        ),
+                        style="text-align:center;color:var(--secondary-color);margin-top:-1.5rem;",
                     ),
-                    cls="container"
+                    cls="container",
                 ),
-                Div(
-                    Div(*project_cards, cls="card-grid"),
-                    cls="container"
-                ),
-                cls="section"
+                Div(Div(*project_cards, cls="card-grid"), cls="container"),
+                cls="section",
             )
 
     except Exception as e:
         projects_content = Div(
             H2("Projects", cls="section-title"),
-            Div(
-                P(f"Error loading projects: {str(e)}", cls="error"),
-                cls="container"
-            )
+            Div(P(f"Error loading projects: {str(e)}", cls="error"), cls="container"),
         )
 
     return render_page(
         "Projects - Matthew L. Pergolski",
         projects_content,
     )
+
 
 @app.get("/about")
 async def about():
@@ -1100,78 +1038,141 @@ async def about():
     profile = await fetch_github_profile()
 
     # Hero
-    summary = data.get('summary') or os.getenv('SITE_DESCRIPTION') or "AI/ML engineer turning data into product value."
-    avatar = (profile or {}).get('avatar_url') or (f"https://github.com/{os.getenv('GITHUB_USERNAME')}.png" if os.getenv('GITHUB_USERNAME') else None)
+    summary = (
+        data.get("summary")
+        or os.getenv("SITE_DESCRIPTION")
+        or "AI/ML engineer turning data into product value."
+    )
+    avatar = (profile or {}).get("avatar_url") or (
+        f"https://github.com/{os.getenv('GITHUB_USERNAME')}.png"
+        if os.getenv("GITHUB_USERNAME")
+        else None
+    )
 
     # Highlights and timeline
-    highlights = data.get('highlights') or []
-    exp = data.get('experience', [])[:3]
+    highlights = data.get("highlights") or []
+    exp = data.get("experience", [])[:3]
 
     # Snapshot
-    snapshot = data.get('snapshot') or {}
-    years = snapshot.get('years') or None
-    pub_repos = (profile or {}).get('public_repos') or 0
-    followers = (profile or {}).get('followers') or 0
+    snapshot = data.get("snapshot") or {}
+    years = snapshot.get("years") or None
+    pub_repos = (profile or {}).get("public_repos") or 0
+    followers = (profile or {}).get("followers") or 0
 
     # Skills
-    skills = data.get('skills') or {}
+    skills = data.get("skills") or {}
     skill_cards = [
         ft.Div(
             ft.H4(cat),
             ft.Div(*[ft.Span(s, cls="chip") for s in items], cls="chips"),
-            cls="card"
-        ) for cat, items in skills.items()
+            cls="card",
+        )
+        for cat, items in skills.items()
     ]
 
     hero = ft.Div(
-        *( [Img(src=avatar, alt="Avatar", cls="avatar")] if avatar else [] ),
+        *([Img(src=avatar, alt="Avatar", cls="avatar")] if avatar else []),
         ft.Div(
             ft.H3("Professional Background"),
             ft.P(summary),
             ft.Div(
                 A("View Projects", href="/projects", cls="btn"),
                 A("Download Resume", href="/resume/download", cls="btn btn-secondary"),
-                cls="hero-cta"
+                cls="hero-cta",
             ),
         ),
-        cls="about-hero"
+        cls="about-hero",
     )
 
     left_col = ft.Div(
         ft.H3("Highlights"),
-        ft.Ul(*[ft.Li(h) for h in highlights], style="margin-left:1.25rem; margin-bottom:1.25rem;"),
+        ft.Ul(
+            *[ft.Li(h) for h in highlights],
+            style="margin-left:1.25rem; margin-bottom:1.25rem;",
+        ),
         ft.H3("Recent Roles"),
         ft.Div(
             *[
                 ft.Div(
-                    ft.H4(r.get('title','Role')),
-                    ft.P(f"{r.get('company','Company')} • {r.get('period','')}", style="color: var(--secondary-color);"),
-                    ft.Ul(*[ft.Li(b) for b in (r.get('bullets') or [])[:3]], style="margin-left:1.25rem; margin-bottom:.75rem;")
-                    ,cls="timeline-item"
-                ) for r in exp
+                    ft.H4(r.get("title", "Role")),
+                    ft.P(
+                        f"{r.get('company', 'Company')} • {r.get('period', '')}",
+                        style="color: var(--secondary-color);",
+                    ),
+                    ft.Ul(
+                        *[ft.Li(b) for b in (r.get("bullets") or [])[:3]],
+                        style="margin-left:1.25rem; margin-bottom:.75rem;",
+                    ),
+                    cls="timeline-item",
+                )
+                for r in exp
             ],
-            cls="timeline"
+            cls="timeline",
         ),
-        cls="card"
+        cls="card",
     )
 
     right_col = ft.Div(
         ft.H3("Snapshot"),
         ft.Div(
-            *( [ft.Div(ft.Div(str(years), cls="stat-num"), ft.Div("Years", cls="stat-label"), cls="stat-card")] if years else [] ),
-            ft.Div(ft.Div(str(pub_repos), cls="stat-num"), ft.Div("Public Repos", cls="stat-label"), cls="stat-card"),
-            *( [ft.Div(ft.Div(str(followers), cls="stat-num"), ft.Div("Followers", cls="stat-label"), cls="stat-card")] if followers > 0 else [] ),
+            *(
+                [
+                    ft.Div(
+                        ft.Div(str(years), cls="stat-num"),
+                        ft.Div("Years", cls="stat-label"),
+                        cls="stat-card",
+                    )
+                ]
+                if years
+                else []
+            ),
+            ft.Div(
+                ft.Div(str(pub_repos), cls="stat-num"),
+                ft.Div("Public Repos", cls="stat-label"),
+                cls="stat-card",
+            ),
+            *(
+                [
+                    ft.Div(
+                        ft.Div(str(followers), cls="stat-num"),
+                        ft.Div("Followers", cls="stat-label"),
+                        cls="stat-card",
+                    )
+                ]
+                if followers > 0
+                else []
+            ),
             cls="stats-grid",
-            style="margin-bottom:1rem;"
+            style="margin-bottom:1rem;",
         ),
         ft.H3("Links"),
         ft.Div(
-            A("💼 LinkedIn", href=ensure_url(os.getenv('LINKEDIN_URL')), cls="icon-link", target="_blank", rel="noopener noreferrer"),
-            A("🐙 GitHub", href=ensure_url(f"https://github.com/{os.getenv('GITHUB_USERNAME')}") if os.getenv('GITHUB_USERNAME') else "https://github.com/", cls="icon-link", target="_blank", rel="noopener noreferrer"),
-            A("⬇️ Resume", href="/resume/download", cls="icon-link", target="_blank", rel="noopener noreferrer"),
-            style="display:flex; gap:.5rem; flex-wrap:wrap;"
+            A(
+                "💼 LinkedIn",
+                href=ensure_url(os.getenv("LINKEDIN_URL")),
+                cls="icon-link",
+                target="_blank",
+                rel="noopener noreferrer",
+            ),
+            A(
+                "🐙 GitHub",
+                href=ensure_url(f"https://github.com/{os.getenv('GITHUB_USERNAME')}")
+                if os.getenv("GITHUB_USERNAME")
+                else "https://github.com/",
+                cls="icon-link",
+                target="_blank",
+                rel="noopener noreferrer",
+            ),
+            A(
+                "⬇️ Resume",
+                href="/resume/download",
+                cls="icon-link",
+                target="_blank",
+                rel="noopener noreferrer",
+            ),
+            style="display:flex; gap:.5rem; flex-wrap:wrap;",
         ),
-        cls="card"
+        cls="card",
     )
 
     return render_page(
@@ -1179,39 +1180,37 @@ async def about():
         ft.Section(
             ft.H2("About Me", cls="section-title"),
             hero,
-            ft.Div(
-                left_col,
-                right_col,
-                cls="grid-2-1",
-                style="margin-top:1.5rem;"
-            ),
-            ft.Div(
-                *skill_cards,
-                cls="card-grid",
-                style="margin-top:1.5rem;"
-            ),
-            cls="container section"
+            ft.Div(left_col, right_col, cls="grid-2-1", style="margin-top:1.5rem;"),
+            ft.Div(*skill_cards, cls="card-grid", style="margin-top:1.5rem;"),
+            cls="container section",
         ),
     )
+
 
 @app.get("/resume")
 def resume():
     """Resume page"""
     data = load_experience(Path(__file__).resolve().parent.parent) or {}
-    exp = data.get('experience', [])
-    edu = data.get('education', [])
-    skills = data.get('skills', {})
+    exp = data.get("experience", [])
+    edu = data.get("education", [])
+    skills = data.get("skills", {})
 
     exp_blocks = []
     if exp:
         exp_blocks.append(ft.H3("Experience"))
         for r in exp:
-            bullets = r.get('bullets') or []
+            bullets = r.get("bullets") or []
             exp_blocks.append(
                 ft.Div(
-                    ft.H4(r.get('title', 'Role')),
-                    ft.P(f"{r.get('company','Company')} • {r.get('period','')}", style="color: var(--secondary-color);"),
-                    ft.Ul(*[ft.Li(b) for b in bullets], style="margin-left: 1.5rem; margin-bottom: 1.25rem;"),
+                    ft.H4(r.get("title", "Role")),
+                    ft.P(
+                        f"{r.get('company', 'Company')} • {r.get('period', '')}",
+                        style="color: var(--secondary-color);",
+                    ),
+                    ft.Ul(
+                        *[ft.Li(b) for b in bullets],
+                        style="margin-left: 1.5rem; margin-bottom: 1.25rem;",
+                    ),
                 )
             )
     if edu:
@@ -1219,8 +1218,11 @@ def resume():
         for e in edu:
             exp_blocks.append(
                 ft.Div(
-                    ft.H4(e.get('degree','Degree')),
-                    ft.P(f"{e.get('institution','University')} • {e.get('period','')}", style="color: var(--secondary-color);"),
+                    ft.H4(e.get("degree", "Degree")),
+                    ft.P(
+                        f"{e.get('institution', 'University')} • {e.get('period', '')}",
+                        style="color: var(--secondary-color);",
+                    ),
                 )
             )
     left_col = ft.Div(*exp_blocks, cls="card")
@@ -1230,27 +1232,30 @@ def resume():
         skills_blocks.append(ft.H3("Skills"))
         for cat, items in skills.items():
             skills_blocks.append(ft.H4(cat))
-            skills_blocks.append(ft.Div(*[ft.Span(s, cls="chip") for s in items], cls="chips", style="margin-bottom: .75rem;"))
+            skills_blocks.append(
+                ft.Div(
+                    *[ft.Span(s, cls="chip") for s in items],
+                    cls="chips",
+                    style="margin-bottom: .75rem;",
+                )
+            )
     right_col = ft.Div(
         ft.H3("Download Resume"),
         ft.P("Get a complete PDF version of my professional resume."),
         ft.A("Download PDF", href="/resume/download", cls="btn"),
         *skills_blocks,
-        cls="card"
+        cls="card",
     )
 
     return render_page(
         "Resume - Matthew L. Pergolski",
         ft.Section(
             ft.H2("Professional Resume", cls="section-title"),
-            ft.Div(
-                left_col,
-                right_col,
-                cls="grid-2-1"
-            ),
-            cls="container section"
+            ft.Div(left_col, right_col, cls="grid-2-1"),
+            cls="container section",
         ),
     )
+
 
 @app.get("/contact")
 def contact(req: Request):
@@ -1258,19 +1263,40 @@ def contact(req: Request):
     # Query-based alert messages (after POST redirect)
     qp = req.query_params
     alert = None
-    if 'sent' in qp:
-        alert = ft.Div(ft.P("Thanks! Your message was sent."), cls="card", style="border-left:4px solid var(--success-color);")
-    elif 'saved' in qp:
-        alert = ft.Div(ft.P("Message saved locally (email not configured)."), cls="card", style="border-left:4px solid var(--accent-color);")
-    elif 'err' in qp:
+    if "sent" in qp:
+        alert = ft.Div(
+            ft.P("Thanks! Your message was sent."),
+            cls="card",
+            style="border-left:4px solid var(--success-color);",
+        )
+    elif "saved" in qp:
+        alert = ft.Div(
+            ft.P("Message saved locally (email not configured)."),
+            cls="card",
+            style="border-left:4px solid var(--accent-color);",
+        )
+    elif "err" in qp:
         errmap = {
-            'invalid': "Please check the fields and try again.",
-            'ratelimit': "Too many messages recently — please try again later.",
-            'verify': "Please complete the verification challenge.",
-            'server': "We couldn't send your message right now. Please email me directly.",
+            "invalid": "Please check the fields and try again.",
+            "ratelimit": "Too many messages recently — please try again later.",
+            "verify": "Please complete the verification challenge.",
+            "server": "We couldn't send your message right now. Please email me directly.",
         }
-        msg = errmap.get(qp.get('err'), "We couldn't send your message right now.")
-        alert = ft.Div(ft.P(msg), cls="card", style="border-left:4px solid var(--error-color);")
+        msg = errmap.get(qp.get("err"), "We couldn't send your message right now.")
+        alert = ft.Div(
+            ft.P(msg), cls="card", style="border-left:4px solid var(--error-color);"
+        )
+
+    # Generate self-hosted CAPTCHA and store with timestamp (supports multiple tabs)
+    captcha_image, captcha_answer = generate_captcha()
+    now = time.time()
+    answers = req.session.get("captcha_answers", [])
+    # Keep only recent ones (last 10 minutes or max 5)
+    answers = [
+        a for a in answers if a.get("answer_hash") and now - a.get("ts", 0) < 600
+    ][-4:]
+    answers.append({"answer_hash": captcha_answer_hash(captcha_answer), "ts": now})
+    req.session["captcha_answers"] = answers
 
     return render_page(
         "Contact - Matthew L. Pergolski",
@@ -1280,1046 +1306,163 @@ def contact(req: Request):
                 ft.Div(
                     alert if alert else ft.Div(),
                     ft.H3("Let's Connect"),
-                    ft.P("I'm always interested in discussing new opportunities, interesting projects, or just having a chat about data science and AI."),
+                    ft.P(
+                        "I'm always interested in discussing new opportunities, interesting projects, or just having a chat about data science and AI."
+                    ),
                     ft.H4("Contact Information"),
                     ft.P(f"📧 Email: {CFG.public_email or ''}"),
                     ft.Div(
-                        ft.A("💼 LinkedIn", href=ensure_url(os.getenv('LINKEDIN_URL')), cls="icon-link", target="_blank", rel="noopener noreferrer"),
-                        ft.A("🐙 GitHub", href=ensure_url(f"https://github.com/{os.getenv('GITHUB_USERNAME')}") if os.getenv('GITHUB_USERNAME') else "https://github.com/", cls="icon-link", target="_blank", rel="noopener noreferrer"),
-                        style="display:flex; gap:.5rem; flex-wrap:wrap; margin: .5rem 0 1rem;"
+                        ft.A(
+                            "💼 LinkedIn",
+                            href=ensure_url(os.getenv("LINKEDIN_URL")),
+                            cls="icon-link",
+                            target="_blank",
+                            rel="noopener noreferrer",
+                        ),
+                        ft.A(
+                            "🐙 GitHub",
+                            href=ensure_url(
+                                f"https://github.com/{os.getenv('GITHUB_USERNAME')}"
+                            )
+                            if os.getenv("GITHUB_USERNAME")
+                            else "https://github.com/",
+                            cls="icon-link",
+                            target="_blank",
+                            rel="noopener noreferrer",
+                        ),
+                        style="display:flex; gap:.75rem; flex-wrap:wrap; margin: .5rem 0 1rem;",
                     ),
                     ft.H4("Response Time"),
                     ft.P("I typically respond to emails within 24 hours."),
-                    cls="card"
+                    cls="card",
                 ),
                 ft.Div(
                     ft.H3("Send a Message"),
                     ft.Form(
                         ft.Div(
                             ft.Label("Name", fr="name"),
-                            ft.Input(type="text", id="name", name="name", required=True, cls="form-input"),
-                            cls="form-group"
+                            ft.Input(
+                                type="text",
+                                id="name",
+                                name="name",
+                                required=True,
+                                cls="form-input",
+                            ),
+                            cls="form-group",
                         ),
                         ft.Div(
                             ft.Label("Email", fr="email"),
-                            ft.Input(type="email", id="email", name="email", required=True, cls="form-input"),
-                            cls="form-group"
+                            ft.Input(
+                                type="email",
+                                id="email",
+                                name="email",
+                                required=True,
+                                cls="form-input",
+                            ),
+                            cls="form-group",
                         ),
                         ft.Div(
                             ft.Label("Company", fr="company"),
-                            ft.Input(type="text", id="company", name="company", cls="form-input"),
-                            cls="hp-wrap"
+                            ft.Input(
+                                type="text",
+                                id="company",
+                                name="company",
+                                cls="form-input",
+                            ),
+                            cls="hp-wrap",
                         ),
                         ft.Div(
                             ft.Label("Message", fr="message"),
-                            ft.Textarea(id="message", name="message", required=True, rows=5, cls="form-input"),
-                            cls="form-group"
+                            ft.Textarea(
+                                id="message",
+                                name="message",
+                                required=True,
+                                rows=5,
+                                cls="form-input",
+                            ),
+                            cls="form-group",
                         ),
                         ft.Input(type="hidden", name="t0", value=str(int(time.time()))),
-                        # Bot protection widgets
-                        *( [
-                            ft.Div(cls="cf-turnstile", **{"data-sitekey": os.getenv('TURNSTILE_SITE_KEY')}),
-                            ft.Script(src="https://challenges.cloudflare.com/turnstile/v0/api.js", defer=True)
-                           ] if os.getenv('TURNSTILE_SITE_KEY') else [] ),
-                        *( [
-                            ft.Div(cls="h-captcha", **{"data-sitekey": os.getenv('HCAPTCHA_SITE_KEY')}),
-                            ft.Script(src="https://js.hcaptcha.com/1/api.js", async_=True, defer=True)
-                           ] if os.getenv('HCAPTCHA_SITE_KEY') else [] ),
+                        # Self-hosted image CAPTCHA (no external services, no env vars required)
+                        ft.Div(
+                            ft.Label("Verification", fr="captcha"),
+                            ft.Img(
+                                src=captcha_image,
+                                alt="CAPTCHA",
+                                style="border:1px solid var(--border-color); border-radius:4px; margin-bottom:0.5rem; display:block;",
+                            ),
+                            ft.Input(
+                                type="text",
+                                id="captcha",
+                                name="captcha",
+                                required=True,
+                                placeholder="Enter the code above",
+                                cls="form-input",
+                            ),
+                            cls="form-group",
+                        ),
                         ft.Button("Send Message", type="submit", cls="btn"),
                         method="post",
                         action="/contact",
-                        cls="contact-form"
+                        cls="contact-form",
                     ),
-                    cls="card"
+                    cls="card",
                 ),
-                cls="card-grid"
+                cls="card-grid",
             ),
-            cls="container section"
+            cls="container section",
         ),
     )
+
 
 @app.get("/chat")
-def chat():
-    """Dedicated Chat page with AI assistant"""
-
-    # Create a full-screen chat layout
-    chat_widget = ChatWidget.professional_mode()
-
+def chat_page():
+    """Dedicated chat page with the same session-scoped conversation as the widget."""
     return render_page(
-        "AI Chat Assistant - Matthew L. Pergolski",
-        # Professional viewport-based layout
-        Div(
-            # Properly structured full-viewport chat interface
-            Div(
-                # Top navigation/header area
-                Div(
-                    Div(
-                        H1("🤖 AI Chat Assistant", cls="page-header-title"),
-                        P(
-                            "Ask me anything about my experience, projects, or technical background. "
-                            "I draw from my resume, GitHub projects, and professional knowledge to provide helpful responses.",
-                            cls="page-header-description"
-                        ),
-                        cls="page-header-content"
-                    ),
-                    A("← Back", href="/", cls="page-back-link"),
-                    cls="page-header"
-                ),
-
-                # Main chat interface - proper flexbox layout
-                Div(
-                    # Chat window with professional design
-                    Div(
-                        # Messages area - flexible height, proper scrolling
-                        Div(
-                            Div(
-                                Div(
-                                    Div("🤖", cls="chat-avatar bot-avatar greeting-avatar"),
-                                    cls="chat-message-avatar"
-                                ),
-                                Div(
-                                    P("Hello! I'm here to discuss my AI/ML engineering background, including predictive systems, automation projects, and technical leadership. How can I help you today?", cls="chat-message-text"),
-                                    cls="chat-message-content"
-                                ),
-                                cls="chat-message bot-message",
-                                data_timestamp=str(int(time.time())),
-                                data_type="greeting"
-                            ),
-
-                            # Loading indicator (hidden initially)
-                            Div(
-                                Div(
-                                    Div("🤖", cls="chat-avatar bot-avatar typing-avatar"),
-                                    cls="chat-message-avatar"
-                                ),
-                                Div(
-                                    Div("Thinking", cls="typing-indicator"),
-                                    Div("⠋", cls="typing-dots"),
-                                    cls="chat-message-content"
-                                ),
-                                cls="chat-loading chat-hidden",
-                                id="page-chat-loading"
-                            ),
-
-                            # Suggested questions
-                            Div(
-                                Div("💡 Suggested topics:", cls="suggestions-header"),
-                                Div(
-                                    Button("What Python experience do you have?", cls="suggestion-btn", data_question="What Python experience do you have?"),
-                                    Button("Can you tell me about your ML projects?", cls="suggestion-btn", data_question="Can you tell me about your ML projects?"),
-                                    Button("How do you handle data visualization?", cls="suggestion-btn", data_question="How do you handle data visualization?"),
-                                    Button("What's your background in AI/ML?", cls="suggestion-btn", data_question="What's your background in AI/ML?"),
-                                    Button("What are your recent projects?", cls="suggestion-btn", data_question="What are your recent projects?"),
-                                    cls="suggestions-grid"
-                                ),
-                                cls="suggestions-section",
-                                id="page-suggestions"
-                            ),
-
-                            # Scrollable container attributes
-                            id="page-messages",
-                            cls="messages-container"
-                        ),
-
-                        # Input area - fixed at bottom
-                        Div(
-                            Div(
-                                Div(
-                                    Textarea(
-                                        "",
-                                        id="page-input",
-                                        name="message",
-                                        placeholder="Type your question here...",
-                                        maxlength="1000",
-                                        cls="message-input",
-                                        onkeypress="handlePageEnterKey(event)",
-                                        aria_label="Type your message"
-                                    ),
-                                    Button(
-                                        "Send",
-                                        id="page-send-btn",
-                                        cls="send-button",
-                                        type="submit",
-                                        disabled="disabled",
-                                        aria_label="Send message"
-                                    ),
-                                    cls="input-group"
-                                ),
-                                P("💭 Your conversation is private and temporary", cls="privacy-notice"),
-                                cls="input-container"
-                            ),
-                            cls="input-area"
-                        ),
-
-                        # Hidden state elements
-                        Input(type="hidden", id="page-conversation-id", value=f"conv_{int(time.time())}"),
-                        Input(type="hidden", id="page-user-context", value='{"tech_level": "intermediate", "urgency": "normal"}'),
-
-                        cls="chat-interface"
-                    ),
-
-                    cls="chat-layout"
-                ),
-
-                cls="page-content"
+        "Chat - Matthew L. Pergolski",
+        ft.Section(
+            ft.H2("Experience Chat", cls="section-title"),
+            ft.Div(
+                *ChatWidget.full_page(),
+                cls="container section",
             ),
-
-            # Professional CSS following frontend engineering best practices
-            Style("""
-                /* PRINCIPAL FRONTEND ENGINEER CHAT PAGE DESIGN */
-
-                /* Page Structure - Proper Viewport Management */
-                html, body {
-                    height: 100%;
-                    margin: 0;
-                    padding: 0;
-                }
-
-                .page-content {
-                    min-height: 100vh;
-                    display: flex;
-                    flex-direction: column;
-                    background: linear-gradient(135deg, var(--surface-1) 0%, var(--surface-2) 50%, var(--surface-1) 100%);
-                }
-
-                /* Header - Fixed positioning with proper z-index layering */
-                .page-header {
-                    position: sticky;
-                    top: 0;
-                    z-index: 100;
-                    background: rgba(255, 255, 255, 0.95);
-                    backdrop-filter: blur(20px);
-                    border-bottom: 1px solid var(--border-color);
-                    padding: 24px 32px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    gap: 24px;
-                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-                }
-
-                .page-header-content {
-                    flex: 1;
-                }
-
-                .page-header-title {
-                    font-size: 42px;
-                    font-weight: 800;
-                    color: var(--text-color);
-                    margin: 0 0 12px 0;
-                    letter-spacing: -0.025em;
-                    line-height: 1.1;
-                }
-
-                .page-header-description {
-                    font-size: 18px;
-                    color: var(--muted-text);
-                    line-height: 1.6;
-                    margin: 0;
-                    max-width: 600px;
-                }
-
-                .page-back-link {
-                    display: inline-flex;
-                    align-items: center;
-                    padding: 12px 24px;
-                    background: var(--primary-color);
-                    color: white;
-                    text-decoration: none;
-                    border-radius: 12px;
-                    font-weight: 600;
-                    font-size: 16px;
-                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
-                }
-
-                .page-back-link:hover {
-                    background: #1d4ed8;
-                    transform: translateY(-2px);
-                    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.4);
-                }
-
-                /* Main Chat Layout - Proper Flexbox Architecture */
-                .chat-layout {
-                    flex: 1;
-                    display: flex;
-                    flex-direction: column;
-                    padding: 32px;
-                    max-width: 1200px;
-                    width: 100%;
-                    margin: 0 auto;
-                }
-
-                .chat-interface {
-                    flex: 1;
-                    display: flex;
-                    flex-direction: column;
-                    background: var(--surface-1);
-                    border-radius: 24px;
-                    border: 1px solid var(--border-color);
-                    box-shadow: 0 32px 120px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.05);
-                    overflow: hidden;
-                    min-height: 80vh;
-                    max-height: 90vh;
-                }
-
-                /* Messages Area - Professional Scrolling Interface */
-                .messages-container {
-                    flex: 1;
-                    overflow-y: auto;
-                    padding: 40px;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 24px;
-                    scroll-behavior: smooth;
-                    scrollbar-width: thin;
-                    scrollbar-color: var(--border-color) transparent;
-                }
-
-                .messages-container::-webkit-scrollbar {
-                    width: 8px;
-                }
-
-                .messages-container::-webkit-scrollbar-track {
-                    background: transparent;
-                    border-radius: 4px;
-                }
-
-                .messages-container::-webkit-scrollbar-thumb {
-                    background: var(--border-color);
-                    border-radius: 4px;
-                }
-
-                .messages-container::-webkit-scrollbar-thumb:hover {
-                    background: var(--muted-text);
-                }
-
-                /* Message Styling - Clean, Professional Design */
-                .chat-message {
-                    display: flex;
-                    gap: 20px;
-                    align-items: flex-start;
-                    animation: messageAppear 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-                    max-width: 100%;
-                }
-
-                @keyframes messageAppear {
-                    from {
-                        opacity: 0;
-                        transform: translateY(20px);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translateY(0);
-                    }
-                }
-
-                .chat-message-avatar {
-                    flex-shrink: 0;
-                    margin-top: 4px;
-                }
-
-                .chat-avatar {
-                    width: 44px;
-                    height: 44px;
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 20px;
-                    border: 3px solid white;
-                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-                }
-
-                .bot-avatar {
-                    background: linear-gradient(135deg, var(--primary-color), #3b82f6);
-                    border-color: white;
-                }
-
-                .user-avatar {
-                    background: linear-gradient(135deg, var(--accent-color), #f59e0b);
-                    border-color: white;
-                }
-
-                .greeting-avatar {
-                    background: linear-gradient(135deg, #10b981, #059669);
-                }
-
-                .chat-message-content {
-                    flex: 1;
-                    background: var(--surface-2);
-                    border: 1px solid var(--border-color);
-                    border-radius: 20px;
-                    padding: 20px 24px;
-                    font-size: 16px;
-                    line-height: 1.6;
-                    color: var(--text-color);
-                    position: relative;
-                    word-wrap: break-word;
-                    overflow-wrap: break-word;
-                    max-width: calc(100% - 80px);
-                }
-
-                .user-message .chat-message-content {
-                    background: var(--primary-color);
-                    color: white;
-                    text-align: right;
-                    margin-left: auto;
-                    margin-right: 0;
-                    border-color: var(--primary-color);
-                }
-
-                /* Loading States */
-                .chat-loading {
-                    display: flex;
-                    gap: 20px;
-                    align-items: center;
-                    margin: 24px 0;
-                }
-
-                .typing-avatar::after {
-                    content: "";
-                    width: 8px;
-                    height: 8px;
-                    border-radius: 50%;
-                    background: var(--primary-color);
-                    animation: typingPulse 1.5s ease-in-out infinite;
-                }
-
-                @keyframes typingPulse {
-                    0%, 100% {
-                        opacity: 0.4;
-                        transform: scale(0.8);
-                    }
-                    50% {
-                        opacity: 1;
-                        transform: scale(1);
-                    }
-                }
-
-                .typing-indicator {
-                    font-size: 16px;
-                    color: var(--muted-text);
-                    font-style: italic;
-                }
-
-                .typing-dots {
-                    display: inline-block;
-                    animation: typingDots 1.5s ease-in-out infinite;
-                }
-
-                @keyframes typingDots {
-                    0%, 20% { content: "⠋"; }
-                    40% { content: "⠙"; }
-                    60% { content: "⠹"; }
-                    80% { content: "⠸"; }
-                    100% { content: "⠼"; }
-                }
-
-                /* Suggestions - Professional Grid Layout */
-                .suggestions-section {
-                    background: var(--surface-2);
-                    border: 1px solid var(--border-color);
-                    border-radius: 16px;
-                    padding: 24px 32px;
-                    margin: 24px 0;
-                }
-
-                .suggestions-header {
-                    font-size: 16px;
-                    font-weight: 600;
-                    color: var(--primary-color);
-                    margin-bottom: 16px;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                }
-
-                .suggestions-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
-                    gap: 16px;
-                }
-
-                .suggestion-btn {
-                    padding: 16px 20px;
-                    background: white;
-                    border: 2px solid var(--border-color);
-                    border-radius: 12px;
-                    text-align: left;
-                    font-size: 15px;
-                    font-weight: 500;
-                    color: var(--text-color);
-                    cursor: pointer;
-                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                    line-height: 1.4;
-                }
-
-                .suggestion-btn:hover {
-                    border-color: var(--primary-color);
-                    box-shadow: 0 4px 20px rgba(37, 99, 235, 0.15);
-                    transform: translateY(-2px);
-                }
-
-                .suggestion-btn:active {
-                    transform: translateY(0);
-                    background: var(--primary-color);
-                    color: white;
-                    border-color: var(--primary-color);
-                }
-
-                /* Input Area - Fixed at bottom, professional design */
-                .input-area {
-                    background: var(--surface-1);
-                    border-top: 1px solid var(--border-color);
-                    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.08);
-                    flex-shrink: 0;
-                }
-
-                .input-container {
-                    padding: 24px 40px 32px;
-                }
-
-                .input-group {
-                    display: flex;
-                    gap: 16px;
-                    align-items: flex-end;
-                    margin-bottom: 16px;
-                    background: var(--surface-2);
-                    border-radius: 24px;
-                    padding: 8px;
-                    border: 2px solid var(--border-color);
-                    transition: all 0.2s ease;
-                }
-
-                .input-group:focus-within {
-                    border-color: var(--primary-color);
-                    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
-                }
-
-                .message-input {
-                    flex: 1;
-                    min-height: 56px;
-                    max-height: 160px;
-                    padding: 16px 20px;
-                    border: none;
-                    background: transparent;
-                    resize: none;
-                    outline: none;
-                    font-size: 16px;
-                    line-height: 1.4;
-                    color: var(--text-color);
-                }
-
-                .message-input::placeholder {
-                    color: var(--muted-text);
-                    font-style: italic;
-                }
-
-                .send-button {
-                    padding: 16px 24px;
-                    background: var(--primary-color);
-                    color: white;
-                    border: none;
-                    border-radius: 16px;
-                    cursor: pointer;
-                    font-size: 16px;
-                    font-weight: 600;
-                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    min-width: 100px;
-                }
-
-                .send-button:hover:not(:disabled) {
-                    background: #1d4ed8;
-                    transform: translateY(-2px);
-                    box-shadow: 0 6px 24px rgba(37, 99, 235, 0.4);
-                }
-
-                .send-button:disabled {
-                    opacity: 0.5;
-                    cursor: not-allowed;
-                    transform: none;
-                }
-
-                .privacy-notice {
-                    text-align: center;
-                    font-size: 14px;
-                    color: var(--muted-text);
-                    margin: 0;
-                    margin-top: 12px;
-                }
-
-                /* Utility classes */
-                .chat-hidden {
-                    display: none !important;
-                }
-
-                /* Dark theme adjustments */
-                html[data-theme='dark'] {
-                    --surface-1: #0f172a;
-                    --surface-2: #1e293b;
-                    --text-color: #f1f5f9;
-                    --muted-text: #94a3b8;
-                    --border-color: #334155;
-                }
-
-                html[data-theme='dark'] .page-header {
-                    background: rgba(15, 23, 42, 0.95);
-                    border-color: #334155;
-                }
-
-                html[data-theme='dark'] .suggestion-btn {
-                    background: var(--surface-1);
-                    border-color: var(--border-color);
-                    color: var(--text-color);
-                }
-
-                html[data-theme='dark'] .suggestion-btn:hover {
-                    background: var(--primary-color);
-                }
-
-                /* Responsive Design - Mobile First Approach */
-                @media (max-width: 1200px) {
-                    .chat-layout {
-                        padding: 24px 20px;
-                    }
-
-                    .messages-container {
-                        padding: 32px 24px;
-                    }
-                }
-
-                @media (max-width: 768px) {
-                    .page-header {
-                        padding: 20px 24px;
-                        flex-direction: column;
-                        align-items: flex-start;
-                        gap: 16px;
-                    }
-
-                    .page-header-title {
-                        font-size: 36px;
-                        margin-bottom: 8px;
-                    }
-
-                    .page-header-description {
-                        font-size: 16px;
-                        line-height: 1.5;
-                    }
-
-                    .page-back-link {
-                        align-self: flex-end;
-                        padding: 10px 16px;
-                        font-size: 14px;
-                    }
-
-                    .chat-layout {
-                        padding: 16px;
-                    }
-
-                    .chat-interface {
-                        min-height: 85vh;
-                        max-height: 95vh;
-                    }
-
-                    .messages-container {
-                        padding: 24px 16px;
-                        gap: 20px;
-                    }
-
-                    .suggestions-grid {
-                        grid-template-columns: 1fr;
-                    }
-
-                    .input-container {
-                        padding: 20px 24px 24px;
-                    }
-
-                    .input-group {
-                        gap: 12px;
-                    }
-
-                    .send-button {
-                        padding: 14px 20px;
-                        font-size: 14px;
-                        min-width: 80px;
-                    }
-                }
-
-                @media (max-width: 480px) {
-                    .page-header {
-                        padding: 16px 20px;
-                    }
-
-                    .page-header-title {
-                        font-size: 28px;
-                        margin-bottom: 8px;
-                    }
-
-                    .page-header-description {
-                        font-size: 14px;
-                    }
-
-                    .chat-interface {
-                        min-height: 90vh;
-                        max-height: 100vh;
-                        border-radius: 16px;
-                    }
-
-                    .messages-container {
-                        padding: 20px 12px;
-                        gap: 16px;
-                    }
-
-                    .chat-message-content {
-                        padding: 16px 20px;
-                        font-size: 15px;
-                        border-radius: 16px;
-                        max-width: calc(100% - 60px);
-                    }
-
-                    .chat-avatar {
-                        width: 36px;
-                        height: 36px;
-                        font-size: 16px;
-                    }
-
-                    .input-container {
-                        padding: 16px 20px 20px;
-                    }
-
-                    .message-input {
-                        font-size: 16px;
-                        padding: 12px 16px;
-                        min-height: 48px;
-                    }
-
-                    .privacy-notice {
-                        font-size: 12px;
-                    }
-                }
-
-                @media (prefers-reduced-motion: reduce) {
-                    .chat-message {
-                        animation: none;
-                    }
-
-                    .send-button,
-                    .suggestion-btn,
-                    .page-back-link {
-                        transition: none;
-                    }
-
-                    .messages-container {
-                        scroll-behavior: auto;
-                    }
-                }
-            """),
-
-            # Professional JavaScript for the page
-            Script("""
-                // Professional Frontend Engineering - Chat Page JavaScript
-
-                // Configuration
-                const API_ENDPOINT = '/api/rag/chat';
-                const MAX_CHARS = 1000;
-
-                // State management
-                let conversationHistory = [];
-                let isTyping = false;
-
-                // DOM utilities
-                function $(id) { return document.getElementById(id); }
-
-                // Input handling
-                function updateSendButton() {
-                    const input = $('page-input');
-                    const sendBtn = $('page-send-btn');
-
-                    if (input && sendBtn) {
-                        const hasText = input.value.trim().length > 0;
-                        const withinLimit = input.value.length <= MAX_CHARS;
-
-                        sendBtn.disabled = !hasText || !withinLimit;
-                        sendBtn.textContent = hasText ? 'Send' : 'Send';
-
-                        if (!withinLimit) {
-                            input.value = input.value.substring(0, MAX_CHARS);
-                        }
-                    }
-                }
-
-                function handlePageEnterKey(event) {
-                    if (event.key === 'Enter' && !event.shiftKey) {
-                        event.preventDefault();
-                        handleSendMessage();
-                    }
-                }
-
-                // Message handling
-                function addUserMessage(text) {
-                    const container = $('page-messages');
-                    if (!container) return;
-
-                    const messageId = Date.now();
-                    const messageElement = document.createElement('div');
-                    messageElement.className = 'chat-message user-message';
-                    messageElement.id = 'message-' + messageId;
-
-                    messageElement.innerHTML = `
-                        <div class="chat-message-avatar">
-                            <div class="chat-avatar user-avatar">👤</div>
-                        </div>
-                        <div class="chat-message-content">
-                            <p class="chat-message-text">${escapeHtml(text)}</p>
-                        </div>
-                    `;
-
-                    container.appendChild(messageElement);
-                    scrollToBottom();
-
-                    return messageId;
-                }
-
-                function addBotMessage(text, metadata = null) {
-                    const container = $('page-messages');
-                    if (!container) return;
-
-                    const messageId = Date.now();
-                    const messageElement = document.createElement('div');
-                    messageElement.className = 'chat-message bot-message';
-                    messageElement.id = 'message-' + messageId;
-
-                    let sourcesHtml = '';
-                    if (metadata && metadata.sources && metadata.sources.length > 0) {
-                        sourcesHtml = `
-                            <div style="margin-top: 12px; font-size: 14px; color: var(--muted-text);">
-                                <strong>Sources:</strong>
-                                ${metadata.sources.map(s => '<span style="display: inline-block; background: var(--chip-bg); padding: 2px 8px; border-radius: 6px; margin-right: 6px; margin-bottom: 2px;">' + escapeHtml(s) + '</span>').join('')}
-                            </div>
-                        `;
-                    }
-
-                    messageElement.innerHTML = `
-                        <div class="chat-message-avatar">
-                            <div class="chat-avatar bot-avatar">🤖</div>
-                        </div>
-                        <div class="chat-message-content">
-                            <p class="chat-message-text">${escapeHtml(text)}</p>
-                            ${sourcesHtml}
-                        </div>
-                    `;
-
-                    container.appendChild(messageElement);
-                    scrollToBottom();
-
-                    return messageId;
-                }
-
-                function showTypingIndicator() {
-                    const container = $('page-messages');
-                    const loadingEl = $('page-chat-loading');
-
-                    if (loadingEl) {
-                        loadingEl.classList.remove('chat-hidden');
-                        isTyping = true;
-                        loadingEl.scrollIntoView({ behavior: 'smooth' });
-                    }
-                }
-
-                function hideTypingIndicator() {
-                    const loadingEl = $('page-chat-loading');
-                    if (loadingEl) {
-                        loadingEl.classList.add('chat-hidden');
-                        isTyping = false;
-                    }
-                }
-
-                function scrollToBottom() {
-                    setTimeout(() => {
-                        const container = $('page-messages');
-                        if (container) {
-                            container.scrollTop = container.scrollHeight;
-                        }
-                    }, 100);
-                }
-
-                function escapeHtml(text) {
-                    const map = {
-                        '&': '&',
-                        '<': '<',
-                        '>': '>',
-                        '"': '"',
-                        "'": '&#039;'
-                    };
-                    return text.replace(/[&<>"']/g, m => map[m]);
-                }
-
-                // API communication
-                async function handleSendMessage() {
-                    const input = $('page-input');
-                    const sendBtn = $('page-send-btn');
-
-                    if (!input || !sendBtn || sendBtn.disabled || isTyping) return;
-
-                    const message = input.value.trim();
-                    if (!message) return;
-
-                    // Clear input and disable button
-                    input.value = '';
-                    sendBtn.disabled = true;
-                    updateSendButton();
-
-                    // Add user message
-                    addUserMessage(message);
-
-                    // Hide suggestions if shown
-                    hideSuggestions();
-
-                    // Show typing indicator
-                    showTypingIndicator();
-
-                    try {
-                        const response = await fetch(API_ENDPOINT, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                message: message,
-                                context: {
-                                    tech_level: 'intermediate',
-                                    urgency: 'normal',
-                                    timestamp: Date.now(),
-                                    conversation_id: $('page-conversation-id').value
-                                }
-                            })
-                        });
-
-                        if (!response.ok) {
-                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                        }
-
-                        const data = await response.json();
-
-                        if (data.success) {
-                            addBotMessage(data.response, data.metadata);
-                        } else {
-                            addBotMessage('I apologize, but I\'m having trouble processing your question right now. Please try again.');
-                        }
-
-                    } catch (error) {
-                        console.error('API error:', error);
-                        addBotMessage('I apologize, but I\'m experiencing connection issues. Please check your internet connection and try again.');
-                    } finally {
-                        hideTypingIndicator();
-                    }
-                }
-
-                function hideSuggestions() {
-                    const suggestions = $('page-suggestions');
-                    if (suggestions) {
-                        suggestions.style.display = 'none';
-                    }
-                }
-
-                function handleSuggestionClick(buttonEl) {
-                    const question = buttonEl.getAttribute('data-question') || buttonEl.textContent;
-                    if (!question) return;
-
-                    const input = $('page-input');
-                    if (input) {
-                        input.value = question;
-                        updateSendButton();
-                        input.focus();
-
-                        // Scroll to input area
-                        const inputArea = document.querySelector('.input-area');
-                        if (inputArea) {
-                            inputArea.scrollIntoView({ behavior: 'smooth' });
-                        }
-                    }
-                }
-
-                // Event listeners
-                document.addEventListener('DOMContentLoaded', function() {
-                    const input = $('page-input');
-
-                    if (input) {
-                        input.addEventListener('input', updateSendButton);
-                        input.addEventListener('paste', updateSendButton);
-
-                        // Auto-resize textarea
-                        input.addEventListener('input', function() {
-                            this.style.height = 'auto';
-                            this.style.height = Math.min(this.scrollHeight, 160) + 'px';
-                        });
-                    }
-
-                    // Suggestion buttons
-                    document.querySelectorAll('.suggestion-btn').forEach(btn => {
-                        btn.addEventListener('click', function() {
-                            handleSuggestionClick(this);
-                        });
-                    });
-
-                    // Send button
-                    const sendBtn = $('page-send-btn');
-                    if (sendBtn) {
-                        sendBtn.addEventListener('click', handleSendMessage);
-                    }
-
-                    // Analytics tracking
-                    trackEvent('chat_page_loaded');
-
-                    console.log('Professional chat page initialized successfully');
-                });
-
-                function trackEvent(eventName, properties = {}) {
-                    try {
-                        console.log('[ProfessionalChatAnalytics]', eventName, properties);
-                    } catch (e) {
-                        // Ignore tracking errors
-                    }
-                }
-
-                // Global function for backwards compatibility
-                window.handlePageEnterKey = handlePageEnterKey;
-                window.sendSuggestionFromPage = function(question) {
-                    const input = $('page-input');
-                    if (input) {
-                        input.value = question;
-                        updateSendButton();
-                        input.focus();
-                    }
-                };
-            """),
-
-            cls="page-wrapper"
         ),
+        include_chat=False,
     )
+
+
+@app.post("/api/rag/chat")
+async def rag_chat(req: Request):
+    """Answer portfolio questions with local retrieval and optional free HF generation."""
+    try:
+        payload = await req.json()
+    except Exception:
+        return JSONResponse(
+            {"success": False, "error": "Invalid JSON."}, status_code=400
+        )
+
+    result = await handle_chat_payload(payload)
+    status = 200 if result.get("success") else 400
+    return JSONResponse(result, status_code=status)
+
 
 @app.post("/contact")
 async def contact_submit(req: Request):
     """Handle contact form submission: try SMTP, else save locally."""
     try:
         form = await req.form()
-        name = (form.get('name') or '').strip()
-        email_addr = (form.get('email') or '').strip()
-        message_txt = (form.get('message') or '').strip()
+        name = (form.get("name") or "").strip()
+        email_addr = (form.get("email") or "").strip()
+        message_txt = (form.get("message") or "").strip()
 
         # Configurable validation/anti-spam thresholds
-        dbg = (os.getenv('DEBUG', '').lower() in ('1', 'true', 'yes', 'on'))
+        dbg = os.getenv("DEBUG", "").lower() in ("1", "true", "yes", "on")
         try:
-            min_msg_len = int(os.getenv('CONTACT_MIN_MSG_LEN', '10'))
+            min_msg_len = int(os.getenv("CONTACT_MIN_MSG_LEN", "10"))
         except Exception:
             min_msg_len = 10
         try:
-            min_submit_secs = float(os.getenv('CONTACT_MIN_SECONDS', '2.5'))
+            min_submit_secs = float(os.getenv("CONTACT_MIN_SECONDS", "2.5"))
         except Exception:
             min_submit_secs = 2.5
         # In DEBUG, relax constraints for easier local testing
@@ -2329,12 +1472,12 @@ async def contact_submit(req: Request):
 
         errs = []
         # Honeypot / timing
-        if (form.get('company') or '').strip():
+        if (form.get("company") or "").strip():
             # Silently accept to mislead bots
-            return RedirectResponse('/contact', status_code=303)
+            return RedirectResponse("/contact", status_code=303)
         t0 = 0
         try:
-            t0 = int(form.get('t0') or 0)
+            t0 = int(form.get("t0") or 0)
         except Exception:
             t0 = 0
         if t0 and min_submit_secs > 0:
@@ -2342,61 +1485,37 @@ async def contact_submit(req: Request):
                 errs.append("Submission was too fast; please try again.")
         if len(name) < 2:
             errs.append("Please enter your name.")
-        if '@' not in email_addr:
+        if "@" not in email_addr:
             errs.append("Please enter a valid email address.")
         if len(message_txt) < min_msg_len:
             errs.append("Please write a slightly longer message.")
 
-        alert = None
-        # Verify CAPTCHA if configured
-        turnstile_token = form.get('cf-turnstile-response') or ''
-        hcaptcha_token = form.get('h-captcha-response') or ''
-        remote_ip = get_client_ip(req)
-        ok_human, reason = await verify_human(turnstile_token=turnstile_token, hcaptcha_token=hcaptcha_token, remote_ip=remote_ip)
-        if not ok_human:
-            errs.append("Please complete the verification challenge.")
+        # Self-hosted CAPTCHA validation supporting multiple recent codes (better multi-tab UX)
+        submitted = (form.get("captcha") or "").strip().upper()
+        submitted_hash = captcha_answer_hash(submitted)
+        now = time.time()
+        answers = req.session.get("captcha_answers", [])
+        # Clean old entries and look for a match
+        valid_answers = []
+        matched = False
+        for item in answers:
+            if now - item.get("ts", 0) > 600:
+                continue  # too old
+            answer_hash = item.get("answer_hash")
+            if not answer_hash:
+                continue
+            if not matched and answer_hash == submitted_hash:
+                matched = True  # consume this one
+                continue
+            valid_answers.append(item)
+        req.session["captcha_answers"] = valid_answers
 
-        # Basic file-backed rate limit (per IP per hour, and global per day)
-        def rate_limited(ip: str) -> bool:
-            try:
-                limit_ip = int(os.getenv('RATE_IP_PER_HOUR', '3'))
-                limit_global = int(os.getenv('RATE_GLOBAL_PER_DAY', '50'))
-            except Exception:
-                limit_ip, limit_global = 3, 50
-            now = int(time.time())
-            rl_dir = BASE_DATA_DIR / 'ratelimit'
-            try: rl_dir.mkdir(parents=True, exist_ok=True)
-            except Exception: pass
-            ipf = rl_dir / f"{ip}.json"
-            try:
-                lst = json.loads(ipf.read_text())
-            except Exception:
-                lst = []
-            lst = [t for t in lst if now - int(t) < 3600]
-            if len(lst) >= limit_ip:
-                try: ipf.write_text(json.dumps(lst))
-                except Exception: pass
-                return True
-            lst.append(now)
-            try: ipf.write_text(json.dumps(lst))
-            except Exception: pass
-            gf = rl_dir / 'global.json'
-            try:
-                gl = json.loads(gf.read_text())
-            except Exception:
-                gl = []
-            gl = [t for t in gl if now - int(t) < 86400]
-            if len(gl) >= limit_global:
-                try: gf.write_text(json.dumps(gl))
-                except Exception: pass
-                return True
-            gl.append(now)
-            try: gf.write_text(json.dumps(gl))
-            except Exception: pass
-            return False
+        if not matched:
+            errs.append("Please enter the correct verification code.")
 
-        ip = getattr(req.client, 'host', 'unknown')
-        if not errs and rate_limited(ip):
+        # Consolidated rate limiting (per-IP + global)
+        ip = get_client_ip(req)
+        if not errs and is_rate_limited(ip):
             errs.append("Too many messages recently — please try again later.")
 
         if not errs:
@@ -2404,120 +1523,36 @@ async def contact_submit(req: Request):
             body = f"From: {name} <{email_addr}>\n\n{message_txt}"
             ok, info = await send_email(subject, body, reply_to=email_addr)
             if ok:
-                return RedirectResponse('/contact?sent=1', status_code=303)
+                return RedirectResponse("/contact?sent=1", status_code=303)
             else:
+                if os.getenv("VERCEL"):
+                    print(
+                        f"Email send failed; local fallback disabled on Vercel: {info}"
+                    )
+                    return RedirectResponse("/contact?err=server", status_code=303)
                 # Fallback: persist to data/messages
-                msg_dir = BASE_DATA_DIR / 'messages'
+                msg_dir = BASE_DATA_DIR / "messages"
                 try:
                     msg_dir.mkdir(parents=True, exist_ok=True)
-                    (msg_dir / f"{int(time.time())}.json").write_text(json.dumps({"name":name, "email":email_addr, "message":message_txt}))
-                    return RedirectResponse('/contact?saved=1', status_code=303)
+                    (msg_dir / f"{int(time.time())}.json").write_text(
+                        json.dumps(
+                            {"name": name, "email": email_addr, "message": message_txt}
+                        )
+                    )
+                    return RedirectResponse("/contact?saved=1", status_code=303)
                 except Exception:
-                    return RedirectResponse('/contact?err=server', status_code=303)
+                    return RedirectResponse("/contact?err=server", status_code=303)
         else:
             # Prefer simple redirect with error code to avoid re-post on refresh
-            code = 'invalid'
-            if any('verification' in e.lower() for e in errs):
-                code = 'verify'
-            if any('many' in e.lower() for e in errs):
-                code = 'ratelimit'
+            code = "invalid"
+            if any("verification" in e.lower() for e in errs):
+                code = "verify"
+            if any("many" in e.lower() for e in errs):
+                code = "ratelimit"
             return RedirectResponse(f"/contact?err={code}", status_code=303)
 
     except Exception:
         return RedirectResponse("/contact", status_code=303)
-
-
-@app.post("/api/rag/chat")
-async def api_rag_chat(req: Request):
-    """
-    RAG Chat API endpoint for handling conversational queries.
-
-    Expects JSON payload:
-    {
-        "message": "User question",
-        "context": {
-            "tech_level": "expert",
-            "urgency": "normal"
-        }
-    }
-    """
-    try:
-        # Parse request data
-        request_data = await req.json()
-        message = request_data.get("message", "").strip()
-
-        if not message:
-            return JSONResponse(
-                {"success": False, "error": "Message is required"},
-                status_code=400
-            )
-
-        # Validate message length for security
-        if len(message) > 1000:
-            return JSONResponse(
-                {"success": False, "error": "Message too long (max 1000 characters)"},
-                status_code=400
-            )
-
-        # Use global RAG pipeline instance
-        global _rag_pipeline_instance
-
-        if _rag_pipeline_instance is None:
-            print("🔧 Initializing RAG pipeline on first request...")
-            await initialize_rag_on_startup()
-
-        if _rag_pipeline_instance is None:
-            return JSONResponse(
-                {"success": False, "error": "RAG system not available"},
-                status_code=503
-            )
-
-        # Create query context
-        user_context = request_data.get('context', {})
-        query_context = QueryContext(
-            query=message,
-            user_location=user_context.get('user_location'),
-            tech_level=user_context.get('tech_level', 'intermediate'),
-            urgency=user_context.get('urgency', 'normal'),
-            industry=user_context.get('industry')
-        )
-
-        print(f"💬 Processing RAG request: '{message[:50]}{'...' if len(message) > 50 else ''}'")
-
-        # Process query through RAG pipeline
-        response = await _rag_pipeline_instance.process_query(message, query_context)
-
-        if response is None:
-            return JSONResponse(
-                {"success": False, "error": "Failed to process query"},
-                status_code=500
-            )
-
-        print(".2f")
-
-        # Return response
-        return JSONResponse({
-            "success": True,
-            "query": response.query,
-            "response": response.response,
-            "metadata": {
-                "confidence": response.confidence,
-                "sources": response.sources_used,
-                "processing_time": f"{response.processing_time:.2f}s",
-                "model_used": response.model_used,
-                "timestamp": int(time.time())
-            }
-        })
-
-    except Exception as e:
-        print(f"❌ RAG API error: {e}")
-        import traceback
-        traceback.print_exc()
-
-        return JSONResponse(
-            {"success": False, "error": "Internal server error"},
-            status_code=500
-        )
 
 
 @app.get("/resume/download")
@@ -2526,7 +1561,9 @@ def resume_download():
     url = os.getenv("RESUME_URL") or "/static/resume.pdf"
     return RedirectResponse(url, status_code=307)
 
+
 # Run the app
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)

@@ -5,18 +5,16 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "chromadb>=1.0.20",
+    "captcha>=0.7.1",
     "httpx>=0.28.1",
-    "pymupdf>=1.26.4",
-    "pytest>=8.4.1",
-    "pytest-asyncio>=1.1.0",
     "python-dotenv>=1.1.1",
     "python-fasthtml>=0.12.25",
-    "sentence-transformers>=5.1.0",
 ]
 
-[tool.pytest.ini_options]
-pythonpath = ["src", "."]
-addopts = "-v"
-testpaths = ["tests"]
-asyncio_mode = "strict"
+[dependency-groups]
+dev = [
+    "pre-commit>=4.6.0",
+    "pytest>=9.0.3",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.15.15",
+]
