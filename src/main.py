@@ -24,7 +24,8 @@ from src.services.github import fetch_language_bytes_aggregate
 from src.services.content import load_experience
 from src.services.email import send_email
 import httpx
-from src.config import get_config
+from src.config import get_config, BASE_DATA_DIR
+from src.utils.rate_limit import is_rate_limited
 
 
 # =============================================================================
@@ -38,77 +39,6 @@ def get_client_ip(request):
         if val:
             return val.split(",")[0].strip()
     return getattr(request.client, "host", "unknown") if request.client else "unknown"
-
-
-def _safe_filename(value: str) -> str:
-    """Make a string safe to use in filenames (IPv6 etc.)."""
-    if not value:
-        return "unknown"
-    safe = value.replace(":", "-").replace("/", "_").replace("\\", "_")
-    safe = "".join(c for c in safe if c.isalnum() or c in ("-", "_", "."))
-    return safe[:80] or "unknown"
-
-
-def rate_limited(ip: str) -> bool:
-    """Best-effort per-IP and global rate limiting.
-
-    Note: On serverless this is per-instance only. See DEPLOYING.md.
-    """
-    try:
-        limit_ip = int(os.getenv('RATE_IP_PER_HOUR', '3'))
-        limit_global = int(os.getenv('RATE_GLOBAL_PER_DAY', '50'))
-    except Exception:
-        limit_ip, limit_global = 3, 50
-
-    now = int(time.time())
-    rl_dir = BASE_DATA_DIR / 'ratelimit'
-    try:
-        rl_dir.mkdir(parents=True, exist_ok=True)
-    except Exception:
-        pass
-
-    safe_ip = _safe_filename(ip)
-    ipf = rl_dir / f"{safe_ip}.json"
-
-    try:
-        lst = json.loads(ipf.read_text())
-    except Exception:
-        lst = []
-
-    lst = [t for t in lst if now - int(t) < 3600]
-    if len(lst) >= limit_ip:
-        try:
-            ipf.write_text(json.dumps(lst))
-        except Exception:
-            pass
-        return True
-
-    lst.append(now)
-    try:
-        ipf.write_text(json.dumps(lst))
-    except Exception:
-        pass
-
-    gf = rl_dir / 'global.json'
-    try:
-        gl = json.loads(gf.read_text())
-    except Exception:
-        gl = []
-
-    gl = [t for t in gl if now - int(t) < 86400]
-    if len(gl) >= limit_global:
-        try:
-            gf.write_text(json.dumps(gl))
-        except Exception:
-            pass
-        return True
-
-    gl.append(now)
-    try:
-        gf.write_text(json.dumps(gl))
-    except Exception:
-        pass
-    return False
 
 
 def validate_startup_config() -> None:
@@ -155,52 +85,6 @@ def generate_captcha() -> tuple[str, str]:
     b64 = base64.b64encode(img_bytes).decode('utf-8')
     return f"data:image/png;base64,{b64}", answer
 
-
-async def verify_human(
-    req: Request | None = None,
-    *,
-    turnstile_token: str = "",
-    hcaptcha_token: str = "",
-    remote_ip: str = "",
-) -> tuple[bool, str]:
-    """Verify Cloudflare Turnstile or hCaptcha token if configured.
-
-    Supports two styles:
-    - Pass Request (legacy) → reads form internally
-    - Pass pre-extracted tokens (preferred) → avoids double form read
-    """
-    ts_token = turnstile_token
-    hc_token = hcaptcha_token
-    ip = remote_ip
-
-    if req is not None and not (ts_token or hc_token):
-        form = await req.form()
-        ts_token = form.get('cf-turnstile-response') or ''
-        hc_token = form.get('h-captcha-response') or ''
-        ip = ip or getattr(req.client, 'host', '')
-
-    ts_secret = os.getenv('TURNSTILE_SECRET_KEY')
-    if ts_secret and ts_token:
-        try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                r = await client.post(
-                    'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-                    data={'secret': ts_secret, 'response': ts_token, 'remoteip': ip}
-                )
-                return (r.json().get('success') is True, 'turnstile')
-        except Exception as e:
-            return False, str(e)
-
-    hc_secret = os.getenv('HCAPTCHA_SECRET')
-    if hc_secret and hc_token:
-        try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                r = await client.post('https://hcaptcha.com/siteverify', data={'secret': hc_secret, 'response': hc_token})
-                return (bool(r.json().get('success')), 'hcaptcha')
-        except Exception as e:
-            return False, str(e)
-
-    return True, 'disabled'
 
 # Load environment variables
 load_dotenv('envs.sh')
@@ -1246,9 +1130,14 @@ def contact(req: Request):
         msg = errmap.get(qp.get('err'), "We couldn't send your message right now.")
         alert = ft.Div(ft.P(msg), cls="card", style="border-left:4px solid var(--error-color);")
 
-    # Always generate a fresh self-hosted CAPTCHA for the contact form
+    # Generate self-hosted CAPTCHA and store with timestamp (supports multiple tabs)
     captcha_image, captcha_answer = generate_captcha()
-    req.session['captcha_answer'] = captcha_answer
+    now = time.time()
+    answers = req.session.get("captcha_answers", [])
+    # Keep only recent ones (last 10 minutes or max 5)
+    answers = [a for a in answers if now - a.get("ts", 0) < 600][-4:]
+    answers.append({"answer": captcha_answer, "ts": now})
+    req.session["captcha_answers"] = answers
 
     return render_page(
         "Contact - Matthew L. Pergolski",
@@ -1359,53 +1248,28 @@ async def contact_submit(req: Request):
             errs.append("Please write a slightly longer message.")
 
         alert = None
-        # Self-hosted CAPTCHA validation (always required, one-time use via session)
+        # Self-hosted CAPTCHA validation supporting multiple recent codes (better multi-tab UX)
         submitted = (form.get('captcha') or '').strip().upper()
-        expected = req.session.pop('captcha_answer', None)
-        if not expected or submitted != expected:
+        now = time.time()
+        answers = req.session.get("captcha_answers", [])
+        # Clean old entries and look for a match
+        valid_answers = []
+        matched = False
+        for item in answers:
+            if now - item.get("ts", 0) > 600:
+                continue  # too old
+            if not matched and item.get("answer") == submitted:
+                matched = True  # consume this one
+                continue
+            valid_answers.append(item)
+        req.session["captcha_answers"] = valid_answers
+
+        if not matched:
             errs.append("Please enter the correct verification code.")
 
-        # Basic file-backed rate limit (per IP per hour, and global per day)
-        def rate_limited(ip: str) -> bool:
-            try:
-                limit_ip = int(os.getenv('RATE_IP_PER_HOUR', '3'))
-                limit_global = int(os.getenv('RATE_GLOBAL_PER_DAY', '50'))
-            except Exception:
-                limit_ip, limit_global = 3, 50
-            now = int(time.time())
-            rl_dir = BASE_DATA_DIR / 'ratelimit'
-            try: rl_dir.mkdir(parents=True, exist_ok=True)
-            except Exception: pass
-            ipf = rl_dir / f"{ip}.json"
-            try:
-                lst = json.loads(ipf.read_text())
-            except Exception:
-                lst = []
-            lst = [t for t in lst if now - int(t) < 3600]
-            if len(lst) >= limit_ip:
-                try: ipf.write_text(json.dumps(lst))
-                except Exception: pass
-                return True
-            lst.append(now)
-            try: ipf.write_text(json.dumps(lst))
-            except Exception: pass
-            gf = rl_dir / 'global.json'
-            try:
-                gl = json.loads(gf.read_text())
-            except Exception:
-                gl = []
-            gl = [t for t in gl if now - int(t) < 86400]
-            if len(gl) >= limit_global:
-                try: gf.write_text(json.dumps(gl))
-                except Exception: pass
-                return True
-            gl.append(now)
-            try: gf.write_text(json.dumps(gl))
-            except Exception: pass
-            return False
-
-        ip = getattr(req.client, 'host', 'unknown')
-        if not errs and rate_limited(ip):
+        # Consolidated rate limiting (per-IP + global)
+        ip = get_client_ip(req)
+        if not errs and is_rate_limited(ip):
             errs.append("Too many messages recently — please try again later.")
 
         if not errs:

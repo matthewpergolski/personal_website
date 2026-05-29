@@ -9,6 +9,9 @@ from typing import Any, Optional
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
+# On Vercel (serverless), writes must go to /tmp. Use that for ephemeral data.
+BASE_DATA_DIR = Path("/tmp") if os.getenv("VERCEL") else (ROOT_DIR / "data")
+
 
 @dataclass(frozen=True)
 class SiteConfig:
