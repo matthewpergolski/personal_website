@@ -35,6 +35,7 @@ Do not bulk-read generated or lock files unless the task requires dependency or 
 - Run lint/format with `uv run pre-commit run --all-files`.
 - Keep files/modules under roughly 7,800 tokens; split large modules before they become hard to review.
 - Prefer small, focused changes over broad rewrites.
+- Treat docs as part of done: update `README.md` or other tracked docs in the same PR when changes affect setup, operations, deployment, workflows, or user-facing behavior.
 
 ## Security Rules
 

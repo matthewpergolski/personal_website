@@ -68,6 +68,8 @@ Lockheed Martin, Orlando, FL 01/18-11/19 Manufacturing Planner Associate
 Additional Information
 Software
 * Application Software: R, Python, SQL
+* Production Software: SAP, Windchill (dPLM), APECS, SAP
+* Other: Microsoft Office Suite (i.e., Excel, Power Query, Word, PowerPoint), draw.io
 Other Qualifications
 * Lean Six Sigma Green Belt Certified
 """
@@ -92,6 +94,19 @@ Other Qualifications
     ]
     assert "Software" not in {entry["title"] for entry in data["experience"]}
     assert data["skills"]["Application Software"] == ["R", "Python", "SQL"]
+    assert data["skills"]["Production Software"] == ["SAP", "Windchill (dPLM)", "APECS"]
+    assert data["skills"]["Other"] == [
+        "Microsoft Office Suite",
+        "Excel",
+        "Power Query",
+        "Word",
+        "PowerPoint",
+        "draw.io",
+    ]
+    assert "Skills" not in data["skills"]
+    assert "Lean Six Sigma Green Belt Certified" not in {
+        skill for skills in data["skills"].values() for skill in skills
+    }
 
 
 def test_parse_resume_text_redacts_contact_details_from_raw_resume_text():

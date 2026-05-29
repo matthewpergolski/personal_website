@@ -206,6 +206,11 @@ At runtime the app merges env vars with this JSON:
 - Set `RESUME_SOURCE_URL` as a GitHub repository variable or secret, then run the `Sync resume content` workflow manually or let the monthly schedule check for changes.
 - The workflow validates that only `data/experience.json` changed, runs formatting/lint/tests, then opens and merges a PR when generated content changes. Unchanged content preserves the previous sync timestamp to avoid noisy PRs.
 - Synced raw `resume_text` redacts email addresses and phone numbers before it is written.
+- Manual GitHub run: Actions -> `Sync resume content` -> `Run workflow` -> branch `main`.
+- Manual CLI run:
+  ```bash
+  gh workflow run sync-resume.yml --repo matthewpergolski/personal_website --ref main
+  ```
 - Local dry run:
   ```bash
   uv run python scripts/sync_resume_content.py --input tests/fixtures/resume_sample.txt --dry-run
@@ -281,8 +286,7 @@ At runtime the app merges env vars with this JSON:
 - Defaults:
   - Base: Python 3.12 (non‑root `vscode` user)
   - uv installed and `uv sync` runs post‑create
-  - Forwards ports 8000 (app) and 11434 (optional Ollama)
-- Optional LLM (future chat): set build arg `OLLAMA=1` to install Ollama and pull `llama3.2:3b`. The start script will run the server if available.
+  - Forwards port 8000 for the FastHTML app
 - Run the app inside the container:
   ```bash
   uv run uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload

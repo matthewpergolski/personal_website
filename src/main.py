@@ -38,7 +38,12 @@ from starlette.requests import Request
 import time
 from captcha.image import ImageCaptcha
 from src.services.github import fetch_github_profile, fetch_github_projects
-from src.components.ui import HeroSection, ensure_url
+from src.components.ui import (
+    HeroSection,
+    display_role_title,
+    display_skill_category,
+    ensure_url,
+)
 from src.utils.render import render_page
 from src.services.github import fetch_language_bytes_aggregate
 from src.services.content import load_experience
@@ -229,34 +234,104 @@ app = FastHTML(
             }
 
             .hero-section {
-                background: radial-gradient(1200px 600px at 10% -10%, rgba(255,255,255,0.15), transparent),
-                            linear-gradient(135deg, var(--primary-color) 0%, #1d4ed8 100%);
-                color: white;
-                padding: clamp(2rem, 8vw, 4rem) 0;
-                text-align: center;
+                background:
+                    radial-gradient(900px 420px at 18% 10%, rgba(96,165,250,.22), transparent 65%),
+                    radial-gradient(740px 360px at 88% 16%, rgba(251,191,36,.10), transparent 60%),
+                    linear-gradient(180deg, rgba(15,23,42,.02), transparent);
+                color: var(--text-color);
+                padding: 4.5rem 0 4rem;
+                text-align: left;
                 position: relative;
                 overflow: hidden;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .hero-layout {
+                display: grid;
+                grid-template-columns: minmax(0, 1.35fr) minmax(260px, .65fr);
+                gap: 2rem;
+                align-items: center;
+            }
+
+            .hero-copy { max-width: 780px; }
+
+            .hero-kicker {
+                color: var(--primary-color);
+                font-weight: 700;
+                margin-bottom: .75rem;
+                text-transform: uppercase;
+                font-size: .85rem;
+            }
+
+            .hero-actions {
+                display: flex;
+                gap: .75rem;
+                flex-wrap: wrap;
+                margin-top: 1.5rem;
+            }
+
+            .hero-aside {
+                display: grid;
+                justify-items: center;
+                gap: 1rem;
+            }
+
+            .hero-current {
+                width: min(100%, 360px);
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                padding: 1rem;
+                background: color-mix(in srgb, var(--surface-1) 82%, transparent);
+            }
+
+            .hero-meta-label,
+            .hero-meta-sub {
+                display: block;
+                color: var(--muted-text);
+                font-size: .9rem;
+            }
+
+            .hero-meta-main {
+                display: block;
+                color: var(--text-color);
+                font-weight: 800;
+                line-height: 1.2;
+                margin: .25rem 0;
             }
 
             .hero-title {
-                /* Responsive but preserves desktop size */
-                font-size: clamp(1.75rem, 6vw + .25rem, 3rem);
+                font-size: 3rem;
+                font-weight: 700;
+                line-height: 1.05;
+                margin-bottom: .85rem;
+            }
+
+            .hero-subtitle {
+                color: var(--primary-color);
+                font-size: 1.15rem;
                 font-weight: 700;
                 margin-bottom: 1rem;
             }
 
-            .hero-subtitle {
-                font-size: clamp(1rem, 3.2vw, 1.25rem);
-                opacity: 0.9;
-                margin-bottom: 2rem;
+            .hero-description {
+                color: var(--text-color);
+                font-size: 1.05rem;
+                max-width: 760px;
+                line-height: 1.55;
             }
 
-            .hero-description {
-                font-size: clamp(.95rem, 2.8vw, 1.1rem);
-                opacity: 0.8;
-                max-width: 600px;
-                margin: 0 auto;
-                line-height: 1.55;
+            @media (max-width: 800px) {
+                .hero-section { padding: 3rem 0; }
+                .hero-layout { grid-template-columns: 1fr; text-align: center; }
+                .hero-actions { justify-content: center; }
+                .hero-title { font-size: 2.25rem; }
+                .hero-description {
+                    display: -webkit-box;
+                    -webkit-line-clamp: 5;
+                    -webkit-box-orient: vertical;
+                    overflow: hidden;
+                }
+                .hero-aside { gap: .75rem; }
             }
 
             .avatar {
@@ -348,6 +423,12 @@ app = FastHTML(
                 align-items: center;
             }
 
+            @media (max-width: 768px) {
+                .nav-actions { display: none !important; }
+                .nav-container { justify-content: space-between; }
+                .nav-toggle { margin-left: auto; }
+            }
+
             .icon-link {
                 display: inline-flex;
                 align-items: center;
@@ -388,6 +469,60 @@ app = FastHTML(
                 text-align: center;
                 margin-bottom: 3rem;
                 color: var(--text-color);
+            }
+
+            .highlight-grid {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 1rem;
+            }
+
+            .highlight-card {
+                min-height: 190px;
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                padding: 1.25rem;
+                background: var(--surface-1);
+                box-shadow: 0 10px 30px rgba(0,0,0,.12);
+            }
+
+            .highlight-index {
+                display: block;
+                color: var(--primary-color);
+                font-size: .85rem;
+                font-weight: 800;
+                margin-bottom: .8rem;
+            }
+
+            .highlight-copy {
+                color: var(--text-color);
+                font-weight: 650;
+                line-height: 1.5;
+            }
+
+            @media (max-width: 900px) {
+                .highlight-grid { grid-template-columns: 1fr; }
+                .highlight-card { min-height: auto; }
+            }
+
+            .resume-callout {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 1rem;
+                margin: -1.5rem auto 2rem;
+                padding: 1rem 1.25rem;
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                background: var(--surface-1);
+            }
+
+            .resume-callout p { color: var(--muted-text); margin: .15rem 0 0; }
+            .resume-callout .btn { flex: 0 0 auto; white-space: nowrap; }
+
+            @media (max-width: 700px) {
+                .resume-callout { align-items: stretch; flex-direction: column; }
+                .resume-callout .btn { text-align: center; }
             }
 
             /* About hero */
@@ -795,35 +930,59 @@ async def home():
         fetch_github_projects(),
     )
     # Build top languages from aggregated byte counts
-    items = sorted((lang_bytes or {}).items(), key=lambda x: x[1], reverse=True)
+    items = sorted(
+        [(name, value) for name, value in (lang_bytes or {}).items() if value > 0],
+        key=lambda x: x[1],
+        reverse=True,
+    )
     top = items[:8]
     if len(items) > 8:
         others_total = sum(v for _, v in items[8:])
         top.append(("Others", others_total))
-    labels = [k for k, _ in top]
-    values = [v for _, v in top]
+    labels_bytes = [k for k, _ in top]
+    values_bytes = [v for _, v in top]
     # Repo counts by primary language (for metric toggle)
     lang_counts = {}
     for r in repos or []:
         lang = r.get("language") or "Other"
         lang_counts[lang] = lang_counts.get(lang, 0) + 1
-    values_cnt = [lang_counts.get(k, 0) for k in labels]
+    repo_items = sorted(
+        [(name, value) for name, value in lang_counts.items() if value > 0],
+        key=lambda x: x[1],
+        reverse=True,
+    )
+    repo_top = repo_items[:8]
+    if len(repo_items) > 8:
+        repo_top.append(("Others", sum(v for _, v in repo_items[8:])))
+    labels_repos = [k for k, _ in repo_top]
+    values_repos = [v for _, v in repo_top]
 
     # Load highlights content
     highlights = []
+    experience_data = {}
     try:
         from pathlib import Path
 
-        data = load_experience(Path(__file__).resolve().parent.parent)
-        if data and isinstance(data.get("highlights"), list):
-            highlights = [str(x) for x in data["highlights"]][:6]
+        experience_data = load_experience(Path(__file__).resolve().parent.parent) or {}
+        if isinstance(experience_data.get("highlights"), list):
+            highlights = [str(x) for x in experience_data["highlights"]][:6]
     except Exception:
         pass
 
     highlights_section = (
         Section(
             H2("Highlights", cls="section-title"),
-            Div(Div(*[P(f"• {h}") for h in highlights], cls="card"), cls="container"),
+            Div(
+                *[
+                    Div(
+                        Span(f"{idx:02d}", cls="highlight-index"),
+                        P(h, cls="highlight-copy"),
+                        cls="highlight-card",
+                    )
+                    for idx, h in enumerate(highlights[:3], start=1)
+                ],
+                cls="container highlight-grid",
+            ),
             cls="section",
         )
         if highlights
@@ -857,11 +1016,12 @@ async def home():
             Script(f"""
                 (function(){{
                   if(!window.Plotly) return;
-                  const labels = {json.dumps(labels)};
-                  const valuesBytes = {json.dumps(values)};
-                  const valuesCnt = {json.dumps(values_cnt)};
+                  const labelsBytes = {json.dumps(labels_bytes)};
+                  const valuesBytes = {json.dumps(values_bytes)};
+                  const labelsRepos = {json.dumps(labels_repos)};
+                  const valuesRepos = {json.dumps(values_repos)};
                   const ghUser = {json.dumps(os.getenv("GITHUB_USERNAME") or "")};
-                  if(!labels.length) return;
+                  if(!labelsBytes.length && !labelsRepos.length) return;
                   function fmtBytes(n) {{
                     const units=['B','KB','MB','GB']; let i=0, x=n; while(x>1024 && i<units.length-1){{x/=1024; i++;}} return (Math.round(x*10)/10)+' '+units[i];
                   }}
@@ -870,11 +1030,13 @@ async def home():
                     const arr=[]; for(let i=0;i<n;i++) arr.push(palette[i%palette.length]); return arr;
                   }}
                   let metric='repos';
-                  function getVals(){{ return metric==='bytes' ? valuesBytes : valuesCnt; }}
+                  function getLabels(){{ return metric==='bytes' ? labelsBytes : labelsRepos; }}
+                  function getVals(){{ return metric==='bytes' ? valuesBytes : valuesRepos; }}
                   function render(kind) {{
                     const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-color').trim() || '#e2e8f0';
                     const bg = 'rgba(0,0,0,0)';
                     let data, layout;
+                    const labels = getLabels();
                     const v = getVals();
                     if(kind==='bar') {{
                       data=[{{ type:'bar', orientation:'h', x:v, y:labels, marker:{{color:colors(v.length)}}, hovertemplate: metric==='bytes' ? '%{{y}}: %{{x:,}} bytes<extra></extra>' : '%{{y}}: %{{x}} repos<extra></extra>' }}];
@@ -884,8 +1046,8 @@ async def home():
                       data=[{{ type:'treemap', labels:labels, parents:labels.map(_=>''), values:v, marker:{{colors:colors(v.length)}}, hovertemplate: metric==='bytes' ? '%{{label}}<br>%{{value:,}} bytes<extra></extra>' : '%{{label}}<br>%{{value}} repos<extra></extra>' }}];
                       layout={{ paper_bgcolor:bg, plot_bgcolor:bg, margin:{{t:10,b:10,l:10,r:10}}, font:{{color:textColor}} }};
                     }} else {{
-                      data=[{{ type:'pie', hole:.5, labels, values:v, marker:{{colors:colors(v.length)}}, textinfo:'label+percent', textposition:'inside', hovertemplate: metric==='bytes' ? '%{{label}}: %{{value:,}} bytes (%{{percent}})<extra></extra>' : '%{{label}}: %{{value}} repos (%{{percent}})<extra></extra>' }}];
-                      layout={{ paper_bgcolor:bg, plot_bgcolor:bg, showlegend:true, legend:{{ font:{{color:textColor}} }}, margin:{{t:10,b:10,l:10,r:10}}, font:{{color:textColor}}, uniformtext:{{mode:'hide', minsize:12}} }};
+                      data=[{{ type:'pie', hole:.5, labels, values:v, marker:{{colors:colors(v.length)}}, textinfo:'label+percent', textposition:'outside', automargin:true, hovertemplate: metric==='bytes' ? '%{{label}}: %{{value:,}} bytes (%{{percent}})<extra></extra>' : '%{{label}}: %{{value}} repos (%{{percent}})<extra></extra>' }}];
+                      layout={{ paper_bgcolor:bg, plot_bgcolor:bg, showlegend:true, legend:{{ font:{{color:textColor}}, orientation:'h', y:-.12 }}, margin:{{t:24,b:80,l:72,r:72}}, font:{{color:textColor}}, uniformtext:{{mode:'show', minsize:11}} }};
                     }}
                     Plotly.newPlot('lang-chart', data, layout, {{displayModeBar:false, responsive:true}}).then(function(g) {{
                       g.on('plotly_click', function(ev) {{
@@ -922,13 +1084,13 @@ async def home():
             """),
             cls="section",
         )
-        if labels and values
+        if labels_bytes and values_bytes
         else Div()
     )
 
     return render_page(
         "Matthew L. Pergolski - Data Scientist & AI/ML Engineer",
-        HeroSection(profile),
+        HeroSection(profile, experience_data),
         highlights_section,
         chart_section,
     )
@@ -1063,7 +1225,7 @@ async def about():
     skills = data.get("skills") or {}
     skill_cards = [
         ft.Div(
-            ft.H4(cat),
+            ft.H4(display_skill_category(cat)),
             ft.Div(*[ft.Span(s, cls="chip") for s in items], cls="chips"),
             cls="card",
         )
@@ -1094,7 +1256,7 @@ async def about():
         ft.Div(
             *[
                 ft.Div(
-                    ft.H4(r.get("title", "Role")),
+                    ft.H4(display_role_title(r.get("title"))),
                     ft.P(
                         f"{r.get('company', 'Company')} • {r.get('period', '')}",
                         style="color: var(--secondary-color);",
@@ -1202,7 +1364,7 @@ def resume():
             bullets = r.get("bullets") or []
             exp_blocks.append(
                 ft.Div(
-                    ft.H4(r.get("title", "Role")),
+                    ft.H4(display_role_title(r.get("title"))),
                     ft.P(
                         f"{r.get('company', 'Company')} • {r.get('period', '')}",
                         style="color: var(--secondary-color);",
@@ -1231,7 +1393,7 @@ def resume():
     if skills:
         skills_blocks.append(ft.H3("Skills"))
         for cat, items in skills.items():
-            skills_blocks.append(ft.H4(cat))
+            skills_blocks.append(ft.H4(display_skill_category(cat)))
             skills_blocks.append(
                 ft.Div(
                     *[ft.Span(s, cls="chip") for s in items],
@@ -1240,9 +1402,6 @@ def resume():
                 )
             )
     right_col = ft.Div(
-        ft.H3("Download Resume"),
-        ft.P("Get a complete PDF version of my professional resume."),
-        ft.A("Download PDF", href="/resume/download", cls="btn"),
         *skills_blocks,
         cls="card",
     )
@@ -1251,6 +1410,16 @@ def resume():
         "Resume - Matthew L. Pergolski",
         ft.Section(
             ft.H2("Professional Resume", cls="section-title"),
+            ft.Div(
+                ft.Div(
+                    ft.H3("Want the PDF version?"),
+                    ft.P(
+                        "Download the formatted resume, or browse the expanded experience details below."
+                    ),
+                ),
+                ft.A("Download Resume", href="/resume/download", cls="btn"),
+                cls="resume-callout",
+            ),
             ft.Div(left_col, right_col, cls="grid-2-1"),
             cls="container section",
         ),

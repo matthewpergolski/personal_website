@@ -1,4 +1,5 @@
 import os
+import re
 from datetime import datetime
 import fasthtml.common as ft
 from fasthtml.common import Nav, Div, A, Button, Section, H1, P, Img, Footer, Span
@@ -11,6 +12,23 @@ def ensure_url(url: str | None) -> str | None:
     if url.startswith("http://") or url.startswith("https://"):
         return url
     return "https://" + url.lstrip("/")
+
+
+def display_role_title(title: str | None) -> str:
+    if not title:
+        return "AI/ML Engineer"
+    return re.sub(r"\s*\([^)]*hours per week[^)]*\)", "", title).strip()
+
+
+def display_skill_category(category: str | None) -> str:
+    labels = {
+        "Application Software": "Programming & Data",
+        "Production Software": "Cloud & Enterprise Platforms",
+        "Other": "Productivity & Analysis",
+    }
+    if not category:
+        return "Skills"
+    return labels.get(category, category)
 
 
 def Navigation():
@@ -100,27 +118,57 @@ def Navigation():
     )
 
 
-def HeroSection(profile: dict | None = None):
+def HeroSection(profile: dict | None = None, experience: dict | None = None):
     name = (profile or {}).get("name") or "Matthew L. Pergolski"
-    bio = (profile or {}).get("bio") or os.getenv(
-        "SITE_DESCRIPTION", "AI/ML Engineer & Data Scientist"
+    gh_user = os.getenv("GITHUB_USERNAME")
+    summary = (experience or {}).get("summary")
+    bio = (
+        summary
+        or (profile or {}).get("bio")
+        or os.getenv("SITE_DESCRIPTION", "AI/ML engineer and data scientist")
     )
-    avatar = (profile or {}).get("avatar_url")
+    avatar = (profile or {}).get("avatar_url") or (
+        f"https://github.com/{gh_user}.png?size=320" if gh_user else None
+    )
+    current_role = ((experience or {}).get("experience") or [{}])[0]
     return Section(
         Div(
-            *([Img(src=avatar, alt=name, cls="avatar avatar-lg")] if avatar else []),
-            H1(name, cls="hero-title"),
-            P(
-                os.getenv("SITE_TITLE", "Data Scientist & AI/ML Engineer"),
-                cls="hero-subtitle",
-            ),
-            P(bio, cls="hero-description"),
             Div(
-                ft.A("View My Work", href="/projects", cls="btn"),
-                ft.A("Get In Touch", href="/contact", cls="btn btn-secondary"),
-                style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;",
+                Div("AI/ML Engineering Portfolio", cls="hero-kicker"),
+                H1(name, cls="hero-title"),
+                P(
+                    os.getenv("SITE_TITLE", "AI/ML Engineer & Data Scientist"),
+                    cls="hero-subtitle",
+                ),
+                P(bio, cls="hero-description"),
+                Div(
+                    ft.A("View Projects", href="/projects", cls="btn"),
+                    ft.A("Experience Chat", href="/chat", cls="btn btn-secondary"),
+                    cls="hero-actions",
+                ),
+                cls="hero-copy",
             ),
-            cls="container",
+            Div(
+                *(
+                    [Img(src=avatar, alt=name, cls="avatar avatar-lg")]
+                    if avatar
+                    else []
+                ),
+                Div(
+                    Span("Current Role", cls="hero-meta-label"),
+                    Span(
+                        display_role_title(current_role.get("title")),
+                        cls="hero-meta-main",
+                    ),
+                    Span(
+                        f"{current_role.get('company', 'Portfolio')} • {current_role.get('period', '')}",
+                        cls="hero-meta-sub",
+                    ),
+                    cls="hero-current",
+                ),
+                cls="hero-aside",
+            ),
+            cls="container hero-layout",
         ),
         cls="hero-section",
     )

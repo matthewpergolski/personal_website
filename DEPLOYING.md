@@ -39,7 +39,15 @@ Set these in the Vercel project Settings → Environment Variables. Do not uploa
   - `SITE_TITLE` (optional)
   - `SITE_DESCRIPTION` (optional)
   - `LINKEDIN_URL` (optional)
-  - `RESUME_URL` (optional)
+  - `RESUME_URL` (optional; public resume download URL)
+
+- Experience chat (optional)
+  - `HUGGINGFACE_API_KEY` (optional; chat still works with local retrieval when omitted, rate-limited, or out of free usage)
+  - `RAG_MAX_RESPONSE_TOKENS` (optional)
+  - `RAG_TEMPERATURE` (optional)
+
+- Resume content sync (GitHub Actions, not Vercel runtime)
+  - `RESUME_SOURCE_URL` as a GitHub repository variable or secret for the scheduled/manual `Sync resume content` workflow
 
 - SMTP (for contact form)
   - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`
