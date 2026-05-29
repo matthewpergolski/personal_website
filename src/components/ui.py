@@ -20,6 +20,17 @@ def display_role_title(title: str | None) -> str:
     return re.sub(r"\s*\([^)]*hours per week[^)]*\)", "", title).strip()
 
 
+def display_skill_category(category: str | None) -> str:
+    labels = {
+        "Application Software": "Programming & Data",
+        "Production Software": "Cloud & Enterprise Platforms",
+        "Other": "Productivity & Analysis",
+    }
+    if not category:
+        return "Skills"
+    return labels.get(category, category)
+
+
 def Navigation():
     gh_user = os.getenv("GITHUB_USERNAME")
     gh_url = ensure_url(f"https://github.com/{gh_user}") if gh_user else None

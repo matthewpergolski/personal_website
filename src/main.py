@@ -38,7 +38,12 @@ from starlette.requests import Request
 import time
 from captcha.image import ImageCaptcha
 from src.services.github import fetch_github_profile, fetch_github_projects
-from src.components.ui import HeroSection, display_role_title, ensure_url
+from src.components.ui import (
+    HeroSection,
+    display_role_title,
+    display_skill_category,
+    ensure_url,
+)
 from src.utils.render import render_page
 from src.services.github import fetch_language_bytes_aggregate
 from src.services.content import load_experience
@@ -1220,7 +1225,7 @@ async def about():
     skills = data.get("skills") or {}
     skill_cards = [
         ft.Div(
-            ft.H4(cat),
+            ft.H4(display_skill_category(cat)),
             ft.Div(*[ft.Span(s, cls="chip") for s in items], cls="chips"),
             cls="card",
         )
@@ -1388,7 +1393,7 @@ def resume():
     if skills:
         skills_blocks.append(ft.H3("Skills"))
         for cat, items in skills.items():
-            skills_blocks.append(ft.H4(cat))
+            skills_blocks.append(ft.H4(display_skill_category(cat)))
             skills_blocks.append(
                 ft.Div(
                     *[ft.Span(s, cls="chip") for s in items],
