@@ -1397,9 +1397,6 @@ def resume():
                 )
             )
     right_col = ft.Div(
-        ft.H3("Download Resume"),
-        ft.P("Get a complete PDF version of my professional resume."),
-        ft.A("Download PDF", href="/resume/download", cls="btn"),
         *skills_blocks,
         cls="card",
     )
