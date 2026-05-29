@@ -26,42 +26,161 @@ from src.services.email import send_email
 import httpx
 from src.config import get_config
 
-async def verify_human(req: Request) -> tuple[bool, str]:
-    """Verify Cloudflare Turnstile or hCaptcha token if configured.
-    Returns (ok, reason). If not configured, returns (True, 'disabled').
+
+# =============================================================================
+# Security & Reliability Utilities (added during security fixes)
+# =============================================================================
+
+def get_client_ip(request):
+    """Best-effort real client IP, respecting common proxy headers."""
+    for header in ("x-forwarded-for", "x-real-ip"):
+        val = request.headers.get(header)
+        if val:
+            return val.split(",")[0].strip()
+    return getattr(request.client, "host", "unknown") if request.client else "unknown"
+
+
+def _safe_filename(value: str) -> str:
+    """Make a string safe to use in filenames (IPv6 etc.)."""
+    if not value:
+        return "unknown"
+    safe = value.replace(":", "-").replace("/", "_").replace("\\", "_")
+    safe = "".join(c for c in safe if c.isalnum() or c in ("-", "_", "."))
+    return safe[:80] or "unknown"
+
+
+def rate_limited(ip: str) -> bool:
+    """Best-effort per-IP and global rate limiting.
+
+    Note: On serverless this is per-instance only. See DEPLOYING.md.
     """
-    form = await req.form()
-    # Prefer Turnstile if present
+    try:
+        limit_ip = int(os.getenv('RATE_IP_PER_HOUR', '3'))
+        limit_global = int(os.getenv('RATE_GLOBAL_PER_DAY', '50'))
+    except Exception:
+        limit_ip, limit_global = 3, 50
+
+    now = int(time.time())
+    rl_dir = BASE_DATA_DIR / 'ratelimit'
+    try:
+        rl_dir.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+
+    safe_ip = _safe_filename(ip)
+    ipf = rl_dir / f"{safe_ip}.json"
+
+    try:
+        lst = json.loads(ipf.read_text())
+    except Exception:
+        lst = []
+
+    lst = [t for t in lst if now - int(t) < 3600]
+    if len(lst) >= limit_ip:
+        try:
+            ipf.write_text(json.dumps(lst))
+        except Exception:
+            pass
+        return True
+
+    lst.append(now)
+    try:
+        ipf.write_text(json.dumps(lst))
+    except Exception:
+        pass
+
+    gf = rl_dir / 'global.json'
+    try:
+        gl = json.loads(gf.read_text())
+    except Exception:
+        gl = []
+
+    gl = [t for t in gl if now - int(t) < 86400]
+    if len(gl) >= limit_global:
+        try:
+            gf.write_text(json.dumps(gl))
+        except Exception:
+            pass
+        return True
+
+    gl.append(now)
+    try:
+        gf.write_text(json.dumps(gl))
+    except Exception:
+        pass
+    return False
+
+
+def validate_startup_config() -> None:
+    """Fail fast with clear messages if critical configuration is missing."""
+    warnings = []
+    errors = []
+
+    if not os.getenv("GITHUB_USERNAME"):
+        warnings.append("GITHUB_USERNAME not set — GitHub features disabled.")
+
+    if not os.getenv("GITHUB_TOKEN"):
+        errors.append("GITHUB_TOKEN is required for GitHub integration.")
+
+    contact_dest = os.getenv("SMTP_TO") or os.getenv("CONTACT_EMAIL") or ""
+    if not contact_dest:
+        warnings.append("No contact destination configured (contact form will save locally).")
+
+    for w in warnings:
+        print(f"⚠️  {w}")
+    for e in errors:
+        print(f"❌ {e}")
+
+    if errors:
+        if os.getenv("DEBUG", "").lower() in ("1", "true", "yes"):
+            print("DEBUG mode — continuing despite errors.")
+        else:
+            raise RuntimeError("Missing required environment variables.")
+
+async def verify_human(
+    req: Request | None = None,
+    *,
+    turnstile_token: str = "",
+    hcaptcha_token: str = "",
+    remote_ip: str = "",
+) -> tuple[bool, str]:
+    """Verify Cloudflare Turnstile or hCaptcha token if configured.
+
+    Supports two styles:
+    - Pass Request (legacy) → reads form internally
+    - Pass pre-extracted tokens (preferred) → avoids double form read
+    """
+    ts_token = turnstile_token
+    hc_token = hcaptcha_token
+    ip = remote_ip
+
+    if req is not None and not (ts_token or hc_token):
+        form = await req.form()
+        ts_token = form.get('cf-turnstile-response') or ''
+        hc_token = form.get('h-captcha-response') or ''
+        ip = ip or getattr(req.client, 'host', '')
+
     ts_secret = os.getenv('TURNSTILE_SECRET_KEY')
-    ts_site = os.getenv('TURNSTILE_SITE_KEY')
-    if ts_secret and ts_site:
-        token = form.get('cf-turnstile-response') or ''
-        if not token:
-            return False, 'missing turnstile token'
+    if ts_secret and ts_token:
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 r = await client.post(
                     'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-                    data={'secret': ts_secret, 'response': token, 'remoteip': getattr(req.client, 'host', '')}
+                    data={'secret': ts_secret, 'response': ts_token, 'remoteip': ip}
                 )
-                j = r.json()
-                return (j.get('success') is True, 'turnstile')
+                return (r.json().get('success') is True, 'turnstile')
         except Exception as e:
             return False, str(e)
-    # hCaptcha fallback
+
     hc_secret = os.getenv('HCAPTCHA_SECRET')
-    hc_site = os.getenv('HCAPTCHA_SITE_KEY')
-    if hc_secret and hc_site:
-        token = form.get('h-captcha-response') or ''
-        if not token:
-            return False, 'missing hcaptcha token'
+    if hc_secret and hc_token:
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
-                r = await client.post('https://hcaptcha.com/siteverify', data={'secret': hc_secret, 'response': token})
-                j = r.json()
-                return (bool(j.get('success')), 'hcaptcha')
+                r = await client.post('https://hcaptcha.com/siteverify', data={'secret': hc_secret, 'response': hc_token})
+                return (bool(r.json().get('success')), 'hcaptcha')
         except Exception as e:
             return False, str(e)
+
     return True, 'disabled'
 
 # Load environment variables
@@ -77,6 +196,8 @@ app = FastHTML(
     hdrs=(
         Link(rel="stylesheet", href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"),
         # Theme Styles
+        Link(rel="icon", type="image/svg+xml", href="/static/favicon.svg"),
+
         Style("""
             :root {
                 --primary-color: #2563eb;
@@ -1218,7 +1339,10 @@ async def contact_submit(req: Request):
 
         alert = None
         # Verify CAPTCHA if configured
-        ok_human, reason = await verify_human(req)
+        turnstile_token = form.get('cf-turnstile-response') or ''
+        hcaptcha_token = form.get('h-captcha-response') or ''
+        remote_ip = get_client_ip(req)
+        ok_human, reason = await verify_human(turnstile_token=turnstile_token, hcaptcha_token=hcaptcha_token, remote_ip=remote_ip)
         if not ok_human:
             errs.append("Please complete the verification challenge.")
 

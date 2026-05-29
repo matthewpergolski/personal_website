@@ -32,6 +32,8 @@ COPY README.md ./
 COPY data/static ./data/static
 
 # Default command: run the app
+# Note: Using shell form so ${PORT} is expanded by the shell.
+# Vercel (and many platforms) set $PORT dynamically.
 EXPOSE 8000
-CMD ["uv", "run", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "${PORT}"]
+CMD uv run uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8000}
 

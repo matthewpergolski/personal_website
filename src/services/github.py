@@ -16,7 +16,7 @@ async def fetch_github_projects() -> List[Dict[str, Any]]:
 
         async with httpx.AsyncClient(timeout=20.0) as client:
             headers = {
-                "Authorization": f"token {token}",
+                "Authorization": f"Bearer {token}",
                 "Accept": "application/vnd.github+json",
             }
 
@@ -65,7 +65,7 @@ async def fetch_github_profile() -> Optional[Dict[str, Any]]:
             return None
         async with httpx.AsyncClient(timeout=10.0) as client:
             headers = {
-                "Authorization": f"token {token}",
+                "Authorization": f"Bearer {token}",
                 "Accept": "application/vnd.github+json",
             }
             url = f"https://api.github.com/users/{username}"
@@ -128,7 +128,7 @@ async def fetch_language_bytes_aggregate() -> Dict[str, int]:
     if not repos:
         return {}
 
-    headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github+json"}
+    headers = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
     sem = asyncio.Semaphore(6)
     async with httpx.AsyncClient(timeout=20.0) as client:
         tasks = [
