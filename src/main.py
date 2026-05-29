@@ -137,6 +137,25 @@ def validate_startup_config() -> None:
         else:
             raise RuntimeError("Missing required environment variables.")
 
+
+# --- Self-hosted Image CAPTCHA (always on, no external services or env vars required) ---
+from captcha.image import ImageCaptcha
+import random
+import string
+import base64
+
+_captcha = ImageCaptcha(width=180, height=60)
+
+
+def generate_captcha() -> tuple[str, str]:
+    """Generate a CAPTCHA image and return (data_url, answer)."""
+    answer = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+    data = _captcha.generate(answer)
+    img_bytes = data.getvalue()
+    b64 = base64.b64encode(img_bytes).decode('utf-8')
+    return f"data:image/png;base64,{b64}", answer
+
+
 async def verify_human(
     req: Request | None = None,
     *,
@@ -1227,6 +1246,10 @@ def contact(req: Request):
         msg = errmap.get(qp.get('err'), "We couldn't send your message right now.")
         alert = ft.Div(ft.P(msg), cls="card", style="border-left:4px solid var(--error-color);")
 
+    # Always generate a fresh self-hosted CAPTCHA for the contact form
+    captcha_image, captcha_answer = generate_captcha()
+    req.session['captcha_answer'] = captcha_answer
+
     return render_page(
         "Contact - Matthew L. Pergolski",
         ft.Section(
@@ -1271,15 +1294,13 @@ def contact(req: Request):
                             cls="form-group"
                         ),
                         ft.Input(type="hidden", name="t0", value=str(int(time.time()))),
-                        # Bot protection widgets
-                        *( [
-                            ft.Div(cls="cf-turnstile", **{"data-sitekey": os.getenv('TURNSTILE_SITE_KEY')}),
-                            ft.Script(src="https://challenges.cloudflare.com/turnstile/v0/api.js", defer=True)
-                           ] if os.getenv('TURNSTILE_SITE_KEY') else [] ),
-                        *( [
-                            ft.Div(cls="h-captcha", **{"data-sitekey": os.getenv('HCAPTCHA_SITE_KEY')}),
-                            ft.Script(src="https://js.hcaptcha.com/1/api.js", async_=True, defer=True)
-                           ] if os.getenv('HCAPTCHA_SITE_KEY') else [] ),
+                        # Self-hosted image CAPTCHA (no external services, no env vars required)
+                        ft.Div(
+                            ft.Label("Verification", fr="captcha"),
+                            ft.Img(src=captcha_image, alt="CAPTCHA", style="border:1px solid var(--border-color); border-radius:4px; margin-bottom:0.5rem; display:block;"),
+                            ft.Input(type="text", id="captcha", name="captcha", required=True, placeholder="Enter the code above", cls="form-input"),
+                            cls="form-group"
+                        ),
                         ft.Button("Send Message", type="submit", cls="btn"),
                         method="post",
                         action="/contact",
@@ -1338,13 +1359,11 @@ async def contact_submit(req: Request):
             errs.append("Please write a slightly longer message.")
 
         alert = None
-        # Verify CAPTCHA if configured
-        turnstile_token = form.get('cf-turnstile-response') or ''
-        hcaptcha_token = form.get('h-captcha-response') or ''
-        remote_ip = get_client_ip(req)
-        ok_human, reason = await verify_human(turnstile_token=turnstile_token, hcaptcha_token=hcaptcha_token, remote_ip=remote_ip)
-        if not ok_human:
-            errs.append("Please complete the verification challenge.")
+        # Self-hosted CAPTCHA validation (always required, one-time use via session)
+        submitted = (form.get('captcha') or '').strip().upper()
+        expected = req.session.pop('captcha_answer', None)
+        if not expected or submitted != expected:
+            errs.append("Please enter the correct verification code.")
 
         # Basic file-backed rate limit (per IP per hour, and global per day)
         def rate_limited(ip: str) -> bool:
