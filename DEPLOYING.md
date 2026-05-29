@@ -1,11 +1,12 @@
 # Deploying the FastHTML App
 
-This guide covers deploying this repository to Vercel using the Dockerfile, plus notes on environment variables, cold starts, and alternatives.
+This guide covers deploying this repository to Vercel (primarily via the Python serverless adapter) plus notes on environment variables, cold starts, and alternatives.
 
 ## Overview
-- Deployment model: Vercel builds the Dockerfile from the repo (no external registry needed).
-- Runtime: Your container must listen on the `PORT` env var. The provided `Dockerfile` already does this.
-- Persistence: Vercel instances are ephemeral. This app writes transient data (rate‑limits, saved messages) to `/tmp` on Vercel.
+- Primary deployment model: Vercel Python serverless functions using `vercel.json` + `api/index.py` (routes everything to the FastHTML ASGI app).
+- Alternative: Docker (see Dockerfile). The container must listen on `$PORT`.
+- Persistence: Vercel instances are ephemeral. Rate limits and saved messages go to `/tmp`.
+- Recent security improvements (contact form validation, rate limiting, CAPTCHA, email handling) are included on `main`.
 
 ## Prerequisites
 - GitHub repository with this code pushed.

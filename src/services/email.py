@@ -45,12 +45,9 @@ async def send_email(subject: str, body: str, *, sender: Optional[str] = None, t
         with smtplib.SMTP(host, port, timeout=15) as smtp:
             smtp.ehlo()
             if use_tls:
-                try:
-                    context = ssl.create_default_context()
-                    smtp.starttls(context=context)
-                    smtp.ehlo()
-                except Exception:
-                    pass
+                context = ssl.create_default_context()
+                smtp.starttls(context=context)
+                smtp.ehlo()
             if user and password:
                 smtp.login(user, password)
             smtp.send_message(msg)
