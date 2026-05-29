@@ -110,6 +110,33 @@ Data scientist focused on useful systems.
     assert "[phone redacted]" in data["resume_text"]
 
 
+def test_parse_resume_text_groups_education_heading_with_degree():
+    text = """
+Education
+Syracuse University, Syracuse, NY Conferred 05/24
+M.S., Applied Data Science
+* Grade: 4.0
+University of Wisconsin-Eau Claire, Eau Claire, WI Conferred 12/17
+B.B.A., Operations/Supply Chain Management
+* Graduated Cum Laude
+"""
+
+    data = parse_resume_text(text)
+
+    assert data["education"] == [
+        {
+            "degree": "M.S., Applied Data Science",
+            "institution": "Syracuse University, Syracuse, NY",
+            "period": "05/24",
+        },
+        {
+            "degree": "B.B.A., Operations/Supply Chain Management",
+            "institution": "University of Wisconsin-Eau Claire, Eau Claire, WI",
+            "period": "12/17",
+        },
+    ]
+
+
 def test_parsed_resume_json_is_serializable():
     data = parse_resume_text(FIXTURE.read_text())
     json.dumps(data)

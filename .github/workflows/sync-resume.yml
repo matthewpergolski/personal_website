@@ -3,7 +3,7 @@ name: Sync resume content
 on:
   workflow_dispatch:
   schedule:
-    - cron: "17 10 * * *"
+    - cron: "17 10 1 * *"
 
 permissions:
   contents: write
@@ -36,7 +36,25 @@ jobs:
       - name: Sync resume content
         run: uv run python scripts/sync_resume_content.py
 
-      - name: Create pull request when content changed
+      - name: Validate generated content
+        run: |
+          if git diff --quiet -- data/experience.json; then
+            echo "No resume content changes detected."
+            exit 0
+          fi
+
+          changed="$(git diff --name-only)"
+          if [ "$changed" != "data/experience.json" ]; then
+            echo "Unexpected generated files changed:"
+            echo "$changed"
+            exit 1
+          fi
+
+          uv run ruff format --check .
+          uv run ruff check .
+          uv run pytest -q
+
+      - name: Create and merge pull request when content changed
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -62,3 +80,9 @@ jobs:
             || gh pr edit "$branch" \
               --title "chore: sync resume content" \
               --body "Updates structured portfolio and RAG content from the configured resume source."
+
+          gh pr merge "$branch" \
+            --merge \
+            --delete-branch \
+            --subject "chore: sync resume content" \
+            --body "Automated resume content sync after generated data validation passed."

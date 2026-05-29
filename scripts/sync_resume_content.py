@@ -376,12 +376,51 @@ def parse_experience(sections: dict[str, list[str]]) -> list[dict[str, Any]]:
     ]
 
 
+def parse_education_heading(line: str) -> dict[str, str] | None:
+    cleaned = strip_bullet(line)
+    date_match = DATE_RE.search(cleaned)
+    if not date_match:
+        return None
+
+    before = cleaned[: date_match.start()].strip(" ,-|")
+    before = re.sub(r"\bConferred\b", "", before, flags=re.IGNORECASE).strip(" ,-|")
+    if "|" in before:
+        return None
+    if not re.search(r"\b(university|college|school|institute)\b", before, re.I):
+        return None
+
+    return {
+        "institution": before,
+        "period": date_match.group("period").strip(),
+    }
+
+
 def parse_education(sections: dict[str, list[str]]) -> list[dict[str, str]]:
     education: list[dict[str, str]] = []
+    pending_heading: dict[str, str] | None = None
     for line in sections.get("education", []):
         body = strip_bullet(line)
         if not body or looks_like_contact(body):
             continue
+        if is_bullet(line):
+            continue
+
+        heading = parse_education_heading(line)
+        if heading:
+            pending_heading = heading
+            continue
+
+        if pending_heading:
+            education.append(
+                {
+                    "degree": body,
+                    "institution": pending_heading["institution"],
+                    "period": pending_heading["period"],
+                }
+            )
+            pending_heading = None
+            continue
+
         period = ""
         date_match = DATE_RE.search(body)
         if date_match:
