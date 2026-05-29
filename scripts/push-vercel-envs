@@ -10,6 +10,13 @@ set -euo pipefail
 
 environment="${1:-production}"
 env_file="${2:-envs.sh}"
+tmpfiles=()
+
+cleanup() {
+  rm -f "${tmpfiles[@]}"
+}
+
+trap cleanup EXIT
 
 if [[ ! "$environment" =~ ^(production|preview|development)$ ]]; then
   echo "Usage: $0 [production|preview|development] [env-file]" >&2
@@ -73,6 +80,8 @@ for key in "${keys[@]}"; do
   fi
 
   tmpfile="$(mktemp)"
+  tmpfiles+=("$tmpfile")
+  chmod 600 "$tmpfile"
   printf "%s" "${!key}" > "$tmpfile"
 
   sensitive_args=()

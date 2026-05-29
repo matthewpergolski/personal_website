@@ -17,12 +17,13 @@ A visually stunning and technically impressive portfolio website built exclusive
 
 ## 🛠️ Technology Stack
 
-- **Framework**: FastHTML (Python web framework)
-- **Language**: Python 3.12+
-- **Styling**: CSS-in-Python with FastHTML's built-in styling system
-- **Dependencies**: python-fasthtml, httpx, python-dotenv, captcha
-  - Optional: SMTP for email delivery
-- **Package Management**: UV (modern Python dependency management)
+- **Backend/API**: Python 3.12 ASGI app built with FastHTML/Starlette. Routes and API endpoints live in `src/main.py`; Vercel enters through `api/index.py`.
+- **UI framework**: FastHTML server-rendered components, in-page CSS, and small vanilla JavaScript helpers. There is no React/Vue frontend.
+- **Chat/RAG**: Free-first local retrieval over committed portfolio data, with optional Hugging Face Inference API response polishing.
+- **Data sources**: `data/experience.json`, optional public `data/site.json`, and GitHub REST API calls through `httpx`.
+- **Deployment/hosting**: Vercel Git integration using `vercel.json` and the Vercel Python runtime.
+- **Dependencies**: Managed by `uv` through `pyproject.toml` and `uv.lock`.
+- **Quality tooling**: Ruff formatting/linting, pytest, pre-commit, and GitHub Actions.
 
 ## 📋 Prerequisites
 
@@ -66,24 +67,27 @@ Open your browser and navigate to:
 
 ```
 fasthtml-portfolio/
+├── api/
+│   └── index.py            # Vercel Python entrypoint
 ├── src/
 │   ├── __init__.py          # Package initialization
-│   └── main.py             # Main FastHTML application
-├── components/             # Reusable UI components (future use)
-├── pages/                  # Page-specific modules (future use)
-├── data/                   # Static data and configuration (future use)
-├── memory-bank/            # Project documentation
-│   ├── projectbrief.md     # Project requirements
-│   ├── productContext.md   # Why this project exists
-│   ├── techContext.md      # Technology decisions
-│   ├── systemPatterns.md   # Architecture patterns
-│   ├── activeContext.md    # Current work focus
-│   └── progress.md         # Project progress
+│   ├── config.py            # Environment/public site configuration
+│   ├── main.py              # Main FastHTML application
+│   ├── components/          # Reusable FastHTML UI components
+│   ├── services/            # GitHub, email, content, and chat services
+│   └── utils/               # Rendering and rate-limit helpers
+├── data/
+│   ├── experience.json      # Portfolio/resume/chat source content
+│   └── site.json.example    # Optional public site config template
+├── tests/                   # pytest coverage
+├── scripts/
+│   └── push-vercel-envs     # Sync selected envs.sh values to Vercel
+├── AGENTS.md                # Shared coding-agent instructions
 ├── app.sh                  # Application launcher script
-├── envs.sh                 # Environment variables (configure this)
 ├── envs.sh.example         # Environment template
 ├── pyproject.toml          # UV project configuration
 ├── uv.lock                 # Dependency lock file
+├── vercel.json             # Vercel routing/build configuration
 └── README.md               # This file
 ```
 
@@ -120,11 +124,30 @@ export RESUME_URL="https://docs.google.com/document/d/YOUR_FILE_ID/export?format
 # export SMTP_FROM=your_gmail@gmail.com
 # export SMTP_TO=your_hide_my_email@icloud.com   # or your inbox
 
-### Public site config (non‑secret)
+# Recommended on Vercel: stable session/cookie secret.
+# export SESSION_SECRET="replace-with-a-long-random-string"
 
-For non‑secret values that you want in source control (public email alias, default titles, links), add a `data/site.json` (see `data/site.json.example`):
+# Optional CAPTCHA hash secret. If omitted, the app uses SESSION_SECRET/session key.
+# export CAPTCHA_SECRET="replace-with-a-long-random-string"
 
+# Rate limits (server-side safeguards)
+export RATE_IP_PER_HOUR=3
+export RATE_GLOBAL_PER_DAY=50
+
+# Optional experience chat generation.
+# If omitted, chat still works with local retrieval only.
+# If configured and Hugging Face is rate-limited, chat falls back to local retrieval.
+# export HUGGINGFACE_API_KEY=hf_xxx
+# export HUGGINGFACE_CHAT_MODEL=HuggingFaceTB/SmolLM2-1.7B-Instruct
+# export RAG_MAX_RESPONSE_TOKENS=220
+# export RAG_TEMPERATURE=0.2
 ```
+
+### Public site config (non-secret)
+
+For non-secret values that you want in source control, such as a public email alias, default titles, or links, add `data/site.json` from `data/site.json.example`:
+
+```json
 {
   "site_title": "Personal Portfolio",
   "site_description": "AI/ML Engineer & Data Scientist",
@@ -136,20 +159,9 @@ For non‑secret values that you want in source control (public email alias, def
 ```
 
 At runtime the app merges env vars with this JSON:
-- Env vars override JSON (e.g., `PUBLIC_EMAIL`, `SITE_TITLE`).
+- Env vars override JSON, for example `PUBLIC_EMAIL` or `SITE_TITLE`.
 - `PUBLIC_EMAIL` or `CONTACT_EMAIL`/`SMTP_TO` populate the Contact page.
-- Keep secrets (tokens, SMTP credentials) in env vars only.
-
-# Recommended on Vercel: stable session/cookie secret.
-# export SESSION_SECRET="replace-with-a-long-random-string"
-
-# Optional CAPTCHA hash secret. If omitted, the app uses SESSION_SECRET/session key.
-# export CAPTCHA_SECRET="replace-with-a-long-random-string"
-
-# Rate limits (server-side safeguards)
-export RATE_IP_PER_HOUR=3
-export RATE_GLOBAL_PER_DAY=50
-```
+- Keep secrets such as tokens and SMTP credentials in env vars only.
 
 ### GitHub Token Setup
 1. Go to GitHub Settings → Developer settings → Personal access tokens
@@ -190,9 +202,9 @@ export RATE_GLOBAL_PER_DAY=50
 
 ### Experience Chat
 - A floating chat widget appears on every page, with a full-page experience at `/chat`.
-- Chat history is stored in browser `sessionStorage`, so it carries across pages until the tab/session ends.
+- Chat history is stored in browser `sessionStorage`, so it carries across pages for the same visitor and tab/session only. It is not stored server-side and is not visible to other visitors.
 - Retrieval is local and free: the app ranks committed portfolio/experience data for each question.
-- `HUGGINGFACE_API_KEY` is optional. When configured, a small Hugging Face model can polish responses; if it is missing or rate-limited, the local retrieved answer is still returned.
+- `HUGGINGFACE_API_KEY` is optional. When configured, a small Hugging Face model can polish responses; if it is missing, rate-limited, or out of free usage, the local retrieved answer is still returned.
 
 ### Development Checks
 - Install Git hooks with `uv run pre-commit install`.
@@ -204,6 +216,12 @@ export RATE_GLOBAL_PER_DAY=50
 - Push selected values from `envs.sh` with `./scripts/push-vercel-envs production`.
 - Use `preview` or `development` as the first argument for those Vercel environments.
 - The script marks token/password/secret/key variables as sensitive and overwrites existing values.
+- The repo must be linked first with `vercel link` so the CLI knows which Vercel project to update.
+
+### Agent Instructions
+- `AGENTS.md` is the single source of truth for coding-agent behavior.
+- `CLAUDE.md`, `.claude`, `.cline/skills`, and `.cline/rules/AGENTS.md` point back to the same shared instructions and skill scaffold.
+- Future reusable local skills should live under `.codex/skills/`.
 
 ## 📊 Performance Features
 
@@ -220,6 +238,9 @@ export RATE_GLOBAL_PER_DAY=50
 - Input validation and sanitization
 - CSRF protection via FastHTML
 - Secure headers implementation
+- Contact-form abuse protections: honeypot, minimum submit time, CAPTCHA, and server-side rate limits.
+- Vercel environment values containing tokens, passwords, secrets, or keys should be marked sensitive.
+- After vendor security notices, rotate provider tokens and Vercel environment variables, then review the Vercel activity log and recent deployments.
 
 ## 🚀 Deployment
 
@@ -229,9 +250,9 @@ export RATE_GLOBAL_PER_DAY=50
 ```
 
 ### Production Deployment
-- Recommended (long‑running Python app): Fly.io, Railway, Render, or Cloud Run.
-- Vercel note: Python on Vercel runs as serverless functions; to use Vercel, you’d adapt the app to their Python runtime (not covered here). Docker deploys on Vercel are ephemeral and must listen on `$PORT`.
-- Classic container: run with `uvicorn src.main:app --host 0.0.0.0 --port 8000` behind a process manager or reverse proxy.
+- Vercel is the primary hosting target for this repo.
+- Vercel builds from the Git branch, installs dependencies from `pyproject.toml`/`uv.lock`, and routes requests through `api/index.py`.
+- Classic container hosting is still possible with `uvicorn src.main:app --host 0.0.0.0 --port 8000` behind a process manager or reverse proxy.
 
 ### Dev Container
 - Open in VS Code Dev Containers (or Codespaces) — `.devcontainer` is configured.
