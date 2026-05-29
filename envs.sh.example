@@ -1,41 +1,95 @@
-#!/bin/bash
+# Chat Widget Configuration - 2024 Full Update for FREE AI
+# Priority: huggingface → groq → together → local → fallback
 
-# GitHub Integration (required for dynamic portfolio data)
-export GITHUB_USERNAME="your-github-username"
-export GITHUB_TOKEN="your-github-personal-access-token"
+# ===============================================
+# WORKING FREE AI SOLUTIONS (2024)
+# ===============================================
 
-# Contact Information
-export CONTACT_EMAIL="your-email@example.com"
+# 🔥 YOUR IMMEDIATE SOLUTION - JUST ADD THIS AND GO!
+export HUGGINGFACE_API_KEY=""  # Empty = FREE! No signup needed
+# This will work instantly with Phi-2 or TinyLlama models!
 
-# Social Media Links
-export LINKEDIN_URL="https://linkedin.com/in/your-profile"
+# 🚀 STRONGLY RECOMMENDED - Best fast cheap AI
+export GROQ_API_KEY="your-key-here"  # ⚠️ DO NOT COMMIT THIS TO GIT!
+# 14K requests free/month, 100x faster than free options
+# Get key here: https://groq.com - takes 5 minutes
 
-# Resume (Google link)
-export RESUME_URL="https://docs.google.com/document/d/YOUR_FILE_ID/export?format=pdf"
+# ⚡ GOOD ALTERNATIVE - Free credits for new users
+export TOGETHER_API_KEY="your-key-here"  # ⚠️ DO NOT COMMIT THIS TO GIT!
+# Free credits when you sign up
+# Get key here: https://together.ai - takes 3 minutes
 
-# Optional: Override static directory (default: data/static)
-# export STATIC_DIR="/workspaces/project/data/static"
+# ===============================================
+# YOUR EXISTING CONFIGURATION (UNCHANGED)
+# ===============================================
 
-# Application Settings
-export DEBUG="true"
-export SITE_TITLE="Personal Portfolio"  # Will be overridden by GitHub profile data
-export SITE_DESCRIPTION="AI/ML Engineer & Data Scientist"  # Will be overridden by GitHub bio
-
-# Optional: SMTP settings for contact form
-export SMTP_HOST="smtp.yourprovider.com"
-export SMTP_PORT="587"
-export SMTP_USER="your_username"
-export SMTP_PASSWORD="your_password"
-export SMTP_FROM="you@example.com"     # defaults to CONTACT_EMAIL
-export SMTP_TO="you@example.com"       # defaults to CONTACT_EMAIL
-export SMTP_TLS="true"                 # true/false
+export GITHUB_USERNAME=matthewpergolski
+export GITHUB_TOKEN=github_pat_YOUR_TOKEN_HERE
+export CONTACT_EMAIL=wickets.macadam_0p@icloud.com
+export LINKEDIN_URL=https://www.linkedin.com/in/matthew-pergolski-2378b170
+export RESUME_URL=https://docs.google.com/document/d/19so6EeIFDn9frkvWZDVNeSa41iCB-4es/export?format=pdf
+export DEBUG=true
+export SITE_TITLE=Personal Portfolio
+export SITE_DESCRIPTION=Full-stack developer passionate about creating amazing web experiences
+export SMTP_HOST=smtp.gmail.com
+export SMTP_PORT=587
+export SMTP_USER=matthewpergolski@gmail.com
+export SMTP_PASSWORD=REDACTED-SMTP-PASSWORD
+export SMTP_FROM=matthewpergolski@gmail.com
+export SMTP_TO=cerise.03-finery@icloud.com
+export SMTP_TLS=true
 export RATE_IP_PER_HOUR=3
 export RATE_GLOBAL_PER_DAY=50
 
-# Optional: Bot protection (choose one)
-# Cloudflare Turnstile (recommended)
-# export TURNSTILE_SITE_KEY="1x00000000000000000000AA"   # test key (always passes)
-# export TURNSTILE_SECRET_KEY="1x0000000000000000000000000000000AA"  # test secret
-# hCaptcha (alternative)
-# export HCAPTCHA_SITE_KEY="10000000-ffff-ffff-ffff-000000000001"   # test key (always passes)
-# export HCAPTCHA_SECRET="0x0000000000000000000000000000000000000000"  # test secret
+# ===============================================
+# RAG CONFIG - OPTIMIZED FOR FREE AI
+# ===============================================
+
+export USE_GLOBAL_RAG=false    # Faster startup
+export RAG_MAX_RESPONSE_TOKENS=150
+export RAG_TEMPERATURE=0.3      # More consistent responses
+export RAG_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+export RAG_VECTOR_STORE_SOURCE=build
+
+# ===============================================
+# DEPLOYMENT CONFIG
+# ===============================================
+
+export STATIC_DIR="./data/static"
+# Vercel environment (added automatically)
+export VERCEL=true
+export DEBUG=false  # Change to true for development
+
+# ===============================================
+# 🔐 SECURITY - IMPORTANT!
+# ===============================================
+
+##🛡️  NEVER COMMIT API KEYS TO GIT!
+#   Your /workspaces/fasthtml_sample_app/ should be in .gitignore
+#   Keep API keys in private envs.sh file only
+
+# Missing? Add these if you need them:
+# export SMTP_TLS=true
+# export RATE_IP_PER_HOUR=3
+# export SMTP_USER="your-email@gmail.com"
+# export SMTP_PASSWORD="your-app-password"
+# export SMTP_FROM="your-email@gmail.com"
+# export SMTP_TO="your-email@gmail.com"
+
+# Anti-spam settings
+export RATE_IP_PER_HOUR=3
+export RATE_GLOBAL_PER_DAY=50
+export CONTACT_MIN_MSG_LEN=10
+export CONTACT_MIN_SECONDS=2.5
+
+# Alternative bot protection (Cloudflare Turnstile preferred)
+# Turnstile: https://www.cloudflare.com/turnstile/
+# export TURNSTILE_SITE_KEY=""
+# export TURNSTILE_SECRET_KEY=""
+
+# hCaptcha alternative: https://hcaptcha.com/
+# export HCAPTCHA_SITE_KEY=""
+# export HCAPTCHA_SECRET_KEY=""
+
+# Static file serving
+export STATIC_DIR="./data/static"
