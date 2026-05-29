@@ -36,6 +36,7 @@ def Navigation():
                     A("About", href="/about", cls="nav-link"),
                     A("Resume", href="/resume", cls="nav-link"),
                     A("Contact", href="/contact", cls="nav-link"),
+                    A("AI Chat", href="/chat", cls="nav-link"),
                     id="nav-links", cls="nav-links",
                 ),
                 Div(
