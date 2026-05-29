@@ -326,7 +326,7 @@ app = FastHTML(
                     -webkit-box-orient: vertical;
                     overflow: hidden;
                 }
-                .hero-aside .avatar-lg { display: none; }
+                .hero-aside { gap: .75rem; }
             }
 
             .avatar {

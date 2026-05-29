@@ -109,13 +109,16 @@ def Navigation():
 
 def HeroSection(profile: dict | None = None, experience: dict | None = None):
     name = (profile or {}).get("name") or "Matthew L. Pergolski"
+    gh_user = os.getenv("GITHUB_USERNAME")
     summary = (experience or {}).get("summary")
     bio = (
         summary
         or (profile or {}).get("bio")
         or os.getenv("SITE_DESCRIPTION", "AI/ML engineer and data scientist")
     )
-    avatar = (profile or {}).get("avatar_url")
+    avatar = (profile or {}).get("avatar_url") or (
+        f"https://github.com/{gh_user}.png?size=320" if gh_user else None
+    )
     current_role = ((experience or {}).get("experience") or [{}])[0]
     return Section(
         Div(

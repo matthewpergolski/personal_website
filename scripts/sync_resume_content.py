@@ -48,14 +48,18 @@ SECTION_ALIASES = {
     },
     "education": {"education", "academic background"},
     "skills": {
-        "additional information",
         "skills",
         "technical skills",
         "core skills",
-        "other qualifications",
         "software",
         "tools",
         "technologies",
+    },
+    "ignored": {
+        "additional information",
+        "certificates",
+        "certifications",
+        "other qualifications",
     },
 }
 
@@ -462,11 +466,25 @@ def parse_skills(sections: dict[str, list[str]]) -> dict[str, list[str]]:
 
 
 def split_skill_values(value: str) -> list[str]:
-    return [
-        item.strip()
-        for item in re.split(r"[,;|]", value)
-        if item.strip() and len(item.strip()) <= 40
-    ]
+    value = re.sub(r"\((?:i\.e\.|e\.g\.)[,]?\s*", ", ", value, flags=re.IGNORECASE)
+    items = []
+    seen = set()
+    for raw_item in re.split(r"[,;|]", value):
+        item = clean_skill_value(raw_item)
+        if item and item not in seen and len(item) <= 40:
+            items.append(item)
+            seen.add(item)
+    return items
+
+
+def clean_skill_value(value: str) -> str:
+    item = re.sub(r"\b(?:i\.e\.|e\.g\.)\b[,]?\s*", "", value, flags=re.IGNORECASE)
+    item = item.strip(" .")
+    if item.endswith(")") and item.count(")") > item.count("("):
+        item = item[:-1].rstrip()
+    if item.startswith("(") and item.count("(") > item.count(")"):
+        item = item[1:].lstrip()
+    return item
 
 
 def merge_nonempty(existing: dict[str, Any], parsed: dict[str, Any]) -> dict[str, Any]:
