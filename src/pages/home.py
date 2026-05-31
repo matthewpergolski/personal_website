@@ -71,19 +71,65 @@ def build_home_page(
                 Div(
                     Div(
                         Div(
-                            Span("View:"),
-                            Button("Donut", id="chart-donut", cls="icon-link"),
-                            Button("Bar", id="chart-bar", cls="icon-link"),
-                            Button("Treemap", id="chart-tree", cls="icon-link"),
-                            Span("Metric:"),
-                            Button("Repos", id="metric-repos", cls="icon-link"),
-                            Button("Bytes", id="metric-bytes", cls="icon-link"),
-                            Button("Export PNG", id="chart-export", cls="icon-link"),
-                            cls="chart-controls",
+                            Span("View", cls="chart-control-label"),
+                            Div(
+                                Button(
+                                    "Donut",
+                                    id="chart-donut",
+                                    cls="icon-link chart-option",
+                                    title="Shows proportional share of the tech stack.",
+                                    data_chart_tip="Shows proportional share of the tech stack.",
+                                ),
+                                Button(
+                                    "Bar",
+                                    id="chart-bar",
+                                    cls="icon-link chart-option",
+                                    title="Compares absolute totals across languages.",
+                                    data_chart_tip="Compares absolute totals across languages.",
+                                ),
+                                Button(
+                                    "Treemap",
+                                    id="chart-tree",
+                                    cls="icon-link chart-option",
+                                    title="Shows mix and relative size in one compact map.",
+                                    data_chart_tip="Shows mix and relative size in one compact map.",
+                                ),
+                                cls="chart-segment",
+                            ),
+                            cls="chart-control-group",
+                        ),
+                        Div(
+                            Span("Metric", cls="chart-control-label"),
+                            Div(
+                                Button(
+                                    "Repos",
+                                    id="metric-repos",
+                                    cls="icon-link chart-option",
+                                    title="Counts how often each language appears across repositories.",
+                                    data_chart_tip="Counts how often each language appears across repositories.",
+                                ),
+                                Button(
+                                    "Bytes",
+                                    id="metric-bytes",
+                                    cls="icon-link chart-option",
+                                    title="Weights languages by code volume.",
+                                    data_chart_tip="Weights languages by code volume.",
+                                ),
+                                cls="chart-segment",
+                            ),
+                            cls="chart-control-group",
+                        ),
+                        Button(
+                            "Download PNG",
+                            id="chart-export",
+                            cls="icon-link chart-export",
+                            title="Download chart as PNG",
                         ),
                         cls="chart-toolbar",
                     ),
+                    P(id="chart-hint", cls="chart-hint"),
                     Div(id="lang-chart", cls="chart-canvas"),
+                    Div(id="chart-key", cls="chart-key"),
                     cls="chart-shell",
                 ),
             ),
@@ -130,24 +176,103 @@ def _chart_script(
             const arr=[]; for(let i=0;i<n;i++) arr.push(palette[i%palette.length]); return arr;
           }}
           let metric='repos';
+          const viewHints = {{
+            donut: 'Donut shows proportional share across the selected metric.',
+            bar: 'Bar compares absolute totals, making ranking easiest to scan.',
+            tree: 'Treemap shows the overall mix in a compact space.'
+          }};
+          const metricHints = {{
+            repos: 'Repos counts how often each language appears across projects.',
+            bytes: 'Bytes weights the view by code volume.'
+          }};
           function getLabels(){{ return metric==='bytes' ? labelsBytes : labelsRepos; }}
           function getVals(){{ return metric==='bytes' ? valuesBytes : valuesRepos; }}
+          function compactName(label) {{
+            const map = {{
+              'Jupyter Notebook': 'Jupyter',
+              'Dockerfile': 'Docker',
+              'TypeScript': 'TS',
+              'JavaScript': 'JS'
+            }};
+            return map[label] || label;
+          }}
+          function compactPieText(labels, values, compact) {{
+            if(!compact) return labels.map(_ => '');
+            const total = values.reduce((acc, val) => acc + val, 0) || 1;
+            return labels.map((label, index) => {{
+              const pct = values[index] / total;
+              if(pct < 0.08) return '';
+              return `${{compactName(label)}}<br>${{(pct * 100).toFixed(1)}}%`;
+            }});
+          }}
+          function formatChartValue(value) {{
+            if(metric === 'repos') return value + ' repo' + (value === 1 ? '' : 's');
+            const units = ['bytes', 'KB', 'MB', 'GB'];
+            let amount = value;
+            let unitIndex = 0;
+            while(amount >= 1024 && unitIndex < units.length - 1) {{
+              amount = amount / 1024;
+              unitIndex += 1;
+            }}
+            const decimals = amount >= 10 || unitIndex === 0 ? 0 : 1;
+            return amount.toFixed(decimals) + ' ' + units[unitIndex];
+          }}
+          function chartPercent(value, total) {{
+            const pct = (value / (total || 1)) * 100;
+            return (pct < 1 ? pct.toFixed(2) : pct.toFixed(1)) + '%';
+          }}
+          function renderChartKey(labels, values, palette, compact) {{
+            const key = document.getElementById('chart-key');
+            if(!key) return;
+            if(!compact) {{
+              key.replaceChildren();
+              return;
+            }}
+            const total = values.reduce((acc, val) => acc + val, 0) || 1;
+            const list = document.createElement('div');
+            list.className = 'chart-key-list';
+            labels.forEach((label, index) => {{
+              const item = document.createElement('div');
+              item.className = 'chart-key-item';
+              item.setAttribute('aria-label', label + ', ' + formatChartValue(values[index]) + ', ' + chartPercent(values[index], total));
+
+              const swatch = document.createElement('span');
+              swatch.className = 'chart-key-swatch';
+              swatch.style.background = palette[index];
+
+              const name = document.createElement('span');
+              name.className = 'chart-key-label';
+              name.textContent = compactName(label);
+              name.title = label;
+
+              const value = document.createElement('span');
+              value.className = 'chart-key-value';
+              value.textContent = formatChartValue(values[index]) + ' / ' + chartPercent(values[index], total);
+
+              item.append(swatch, name, value);
+              list.append(item);
+            }});
+            key.replaceChildren(list);
+          }}
           function render(kind) {{
             const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-color').trim() || '#e2e8f0';
             const bg = 'rgba(0,0,0,0)';
+            const compactChart = window.matchMedia('(max-width: 640px)').matches;
             let data, layout;
             const labels = getLabels();
             const v = getVals();
+            const palette = colors(v.length);
+            renderChartKey(labels, v, palette, compactChart);
             if(kind==='bar') {{
-              data=[{{ type:'bar', orientation:'h', x:v, y:labels, marker:{{color:colors(v.length)}}, hovertemplate: metric==='bytes' ? '%{{y}}: %{{x:,}} bytes<extra></extra>' : '%{{y}}: %{{x}} repos<extra></extra>' }}];
+              data=[{{ type:'bar', orientation:'h', x:v, y:labels, marker:{{color:palette}}, hovertemplate: metric==='bytes' ? '%{{y}}: %{{x:,}} bytes<extra></extra>' : '%{{y}}: %{{x}} repos<extra></extra>' }}];
               const xtitle = metric==='bytes' ? 'Bytes' : 'Repositories';
-              layout={{ paper_bgcolor:bg, plot_bgcolor:bg, margin:{{t:10,b:30,l:140,r:10}}, xaxis:{{tickfont:{{color:textColor}}, gridcolor:'rgba(255,255,255,0.05)', title:xtitle, rangemode:'tozero'}}, yaxis:{{tickfont:{{color:textColor}}}}, font:{{color:textColor}}, showlegend:false, uniformtext:{{mode:'hide', minsize:10}} }};
+              layout={{ paper_bgcolor:bg, plot_bgcolor:bg, margin: compactChart ? {{t:10,b:44,l:122,r:16}} : {{t:10,b:30,l:140,r:10}}, xaxis:{{tickfont:{{color:textColor}}, gridcolor:'rgba(255,255,255,0.05)', title:xtitle, rangemode:'tozero'}}, yaxis:{{tickfont:{{color:textColor}}}}, font:{{color:textColor}}, showlegend:false, uniformtext:{{mode:'hide', minsize:10}} }};
             }} else if (kind==='tree') {{
-              data=[{{ type:'treemap', labels:labels, parents:labels.map(_=>''), values:v, marker:{{colors:colors(v.length)}}, hovertemplate: metric==='bytes' ? '%{{label}}<br>%{{value:,}} bytes<extra></extra>' : '%{{label}}<br>%{{value}} repos<extra></extra>' }}];
+              data=[{{ type:'treemap', labels:labels, parents:labels.map(_=>''), values:v, marker:{{colors:palette}}, hovertemplate: metric==='bytes' ? '%{{label}}<br>%{{value:,}} bytes<extra></extra>' : '%{{label}}<br>%{{value}} repos<extra></extra>' }}];
               layout={{ paper_bgcolor:bg, plot_bgcolor:bg, margin:{{t:10,b:10,l:10,r:10}}, font:{{color:textColor}} }};
             }} else {{
-              data=[{{ type:'pie', hole:.5, labels, values:v, marker:{{colors:colors(v.length)}}, textinfo:'label+percent', textposition:'outside', automargin:true, hovertemplate: metric==='bytes' ? '%{{label}}: %{{value:,}} bytes (%{{percent}})<extra></extra>' : '%{{label}}: %{{value}} repos (%{{percent}})<extra></extra>' }}];
-              layout={{ paper_bgcolor:bg, plot_bgcolor:bg, showlegend:true, legend:{{ font:{{color:textColor}}, orientation:'h', y:-.12 }}, margin:{{t:24,b:80,l:72,r:72}}, font:{{color:textColor}}, uniformtext:{{mode:'show', minsize:11}} }};
+              data=[{{ type:'pie', hole:.5, labels, values:v, text:compactPieText(labels, v, compactChart), marker:{{colors:palette}}, textinfo: compactChart ? 'text' : 'label+percent', textposition: compactChart ? 'auto' : 'outside', insidetextorientation:'horizontal', automargin:true, hovertemplate: metric==='bytes' ? '%{{label}}: %{{value:,}} bytes (%{{percent}})<extra></extra>' : '%{{label}}: %{{value}} repos (%{{percent}})<extra></extra>' }}];
+              layout={{ paper_bgcolor:bg, plot_bgcolor:bg, showlegend:!compactChart, legend:{{ font:{{color:textColor}}, orientation:'h', y:-.12 }}, margin: compactChart ? {{t:18,b:24,l:28,r:28}} : {{t:24,b:80,l:72,r:72}}, font:{{color:textColor}}, uniformtext:{{mode:'show', minsize: compactChart ? 9 : 11}} }};
             }}
             Plotly.newPlot('lang-chart', data, layout, {{displayModeBar:false, responsive:true}}).then(function(g) {{
               g.on('plotly_click', function(ev) {{
@@ -157,7 +282,8 @@ def _chart_script(
                 const url = ghUser ? `https://github.com/${{ghUser}}?tab=repositories&language=${{encodeURIComponent(lang)}}` : `https://github.com/search?q=language:${{encodeURIComponent(lang)}}&type=repositories`;
                 window.open(url, '_blank');
               }});
-              document.getElementById('chart-export')?.addEventListener('click', async ()=>{{ try{{ const img=await Plotly.toImage(g, {{format:'png', height:700, width:1000, scale:2}}); const a=document.createElement('a'); a.href=img; a.download='tech-stack.png'; a.click(); }}catch(e){{}} }});
+              const exportButton = document.getElementById('chart-export');
+              if(exportButton) exportButton.onclick = async () => {{ try{{ const img=await Plotly.toImage(g, {{format:'png', height:700, width:1000, scale:2}}); const a=document.createElement('a'); a.href=img; a.download='tech-stack.png'; a.click(); }}catch(e){{}} }};
             }});
           }}
           let current='donut';
@@ -173,6 +299,8 @@ def _chart_script(
               const el=document.getElementById(id); if(!el) return;
               if(map[id]) el.classList.add('active'); else el.classList.remove('active');
             }});
+            const hint = document.getElementById('chart-hint');
+            if(hint) hint.textContent = `${{viewHints[current]}} ${{metricHints[metric]}}`;
           }}
           render(current); setActive();
           document.getElementById('chart-bar')?.addEventListener('click', ()=>{{current='bar'; render(current); setActive();}});

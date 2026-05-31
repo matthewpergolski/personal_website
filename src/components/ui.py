@@ -194,14 +194,14 @@ def MobileTabBar():
             cls="tab",
         ),
         A(
-            Span("📦", cls="tab-ico"),
+            Span("👤", cls="tab-ico"),
             Span("About", cls="tab-txt"),
             href="/about",
             id="tab-about",
             cls="tab",
         ),
         A(
-            Span("👤", cls="tab-ico"),
+            Span("🧩", cls="tab-ico"),
             Span("Projects", cls="tab-txt"),
             href="/projects",
             id="tab-projects",

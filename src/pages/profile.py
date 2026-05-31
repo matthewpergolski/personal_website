@@ -55,9 +55,12 @@ def build_about_page(data: dict, profile: dict | None, config: SiteConfig):
         cls="about-hero",
     )
 
-    left_col = Card(
+    highlights_card = Card(
         ft.H3("Highlights"),
         BulletList(highlights, cls="bullet-list-loose"),
+    )
+
+    roles_card = Card(
         ft.H3("Recent Roles"),
         ft.Div(
             *[
@@ -71,6 +74,8 @@ def build_about_page(data: dict, profile: dict | None, config: SiteConfig):
             cls="timeline",
         ),
     )
+
+    left_col = ft.Div(highlights_card, roles_card, cls="about-content-stack")
 
     right_col = Card(
         ft.H3("Snapshot"),
