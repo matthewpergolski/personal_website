@@ -44,12 +44,12 @@ class ChatWidget:
         chat_placeholder = (
             "Ask about my skills, projects, background, or fit..."
             if ai_polish_enabled
-            else "Free-tier chat. Less capable."
+            else "Free-tier chat. Limited answers."
         )
         chat_status = (
             "Advanced chat mode is enabled for more conversational answers."
             if ai_polish_enabled
-            else ("Free-tier chat. Less capable. Advanced models available.")
+            else ("Free-tier chat. Limited answers. Advanced models available.")
         )
         suggestions = [
             "What AI/ML work have you done?",
