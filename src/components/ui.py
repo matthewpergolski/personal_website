@@ -1,8 +1,9 @@
-import os
 import re
 from datetime import datetime
 import fasthtml.common as ft
 from fasthtml.common import Nav, Div, A, Button, Section, H1, P, Img, Footer, Span
+
+from src.config import get_config
 
 
 def ensure_url(url: str | None) -> str | None:
@@ -32,10 +33,11 @@ def display_skill_category(category: str | None) -> str:
 
 
 def Navigation():
-    gh_user = os.getenv("GITHUB_USERNAME")
+    config = get_config()
+    gh_user = config.github_username
     gh_url = ensure_url(f"https://github.com/{gh_user}") if gh_user else None
     brand_avatar = f"https://github.com/{gh_user}.png?size=40" if gh_user else None
-    li_url = ensure_url(os.getenv("LINKEDIN_URL"))
+    li_url = ensure_url(config.linkedin_url)
     return Nav(
         Div(
             Div(
@@ -45,8 +47,8 @@ def Navigation():
                         if brand_avatar
                         else []
                     ),
-                    Span("MLP", cls="brand-initials"),
-                    Span("Portfolio", cls="brand-sub"),
+                    Span(config.brand_initials, cls="brand-initials"),
+                    Span(config.brand_subtitle, cls="brand-sub"),
                     href="/",
                     cls="nav-brand",
                 ),
@@ -119,14 +121,11 @@ def Navigation():
 
 
 def HeroSection(profile: dict | None = None, experience: dict | None = None):
-    name = (profile or {}).get("name") or "Matthew L. Pergolski"
-    gh_user = os.getenv("GITHUB_USERNAME")
+    config = get_config()
+    name = (profile or {}).get("name") or config.owner_name
+    gh_user = config.github_username
     summary = (experience or {}).get("summary")
-    bio = (
-        summary
-        or (profile or {}).get("bio")
-        or os.getenv("SITE_DESCRIPTION", "AI/ML engineer and data scientist")
-    )
+    bio = summary or (profile or {}).get("bio") or config.site_description
     avatar = (profile or {}).get("avatar_url") or (
         f"https://github.com/{gh_user}.png?size=320" if gh_user else None
     )
@@ -134,16 +133,13 @@ def HeroSection(profile: dict | None = None, experience: dict | None = None):
     return Section(
         Div(
             Div(
-                Div("AI/ML Engineering Portfolio", cls="hero-kicker"),
+                Div(config.hero_kicker, cls="hero-kicker"),
                 H1(name, cls="hero-title"),
-                P(
-                    os.getenv("SITE_TITLE", "AI/ML Engineer & Data Scientist"),
-                    cls="hero-subtitle",
-                ),
+                P(config.site_title, cls="hero-subtitle"),
                 P(bio, cls="hero-description"),
                 Div(
-                    ft.A("View Projects", href="/projects", cls="btn"),
-                    ft.A("Experience Chat", href="/chat", cls="btn btn-secondary"),
+                    ft.A(config.hero_primary_cta, href="/projects", cls="btn"),
+                    ft.A(config.hero_chat_cta, href="/chat", cls="btn btn-secondary"),
                     cls="hero-actions",
                 ),
                 cls="hero-copy",
@@ -175,11 +171,12 @@ def HeroSection(profile: dict | None = None, experience: dict | None = None):
 
 
 def SiteFooter():
+    config = get_config()
     year = datetime.now().year
     return Footer(
         Div(
-            P(f"© {year} Matthew L. Pergolski. Built with FastHTML."),
-            P("Data Science • Machine Learning • AI Engineering"),
+            P(f"© {year} {config.owner_name}. Built with FastHTML."),
+            P(config.footer_tagline),
             cls="container",
         ),
         cls="footer",

@@ -144,6 +144,7 @@ mount_static(app)
 @app.get("/")
 async def home():
     """Home page"""
+    config = get_config()
     profile, lang_bytes, repos = await asyncio.gather(
         fetch_github_profile(),
         fetch_language_bytes_aggregate(),
@@ -152,13 +153,13 @@ async def home():
     experience_data = load_experience(ROOT_DIR) or {}
 
     return render_page(
-        "Matthew L. Pergolski - Data Scientist & AI/ML Engineer",
+        f"{config.owner_name} - {config.site_description}",
         *build_home_page(
             profile,
             lang_bytes,
             repos,
             experience_data,
-            get_config().github_username,
+            config.github_username,
         ),
     )
 
@@ -166,18 +167,19 @@ async def home():
 @app.get("/projects")
 async def projects():
     """Projects page with GitHub integration"""
+    config = get_config()
     try:
         projects_data, profile = await asyncio.gather(
             fetch_github_projects(), fetch_github_profile()
         )
         projects_content = build_projects_page(
-            projects_data, profile, get_config().github_username
+            projects_data, profile, config.github_username
         )
     except Exception as e:
         projects_content = build_projects_error(e)
 
     return render_page(
-        "Projects - Matthew L. Pergolski",
+        f"Projects - {config.owner_name}",
         projects_content,
     )
 
@@ -185,44 +187,48 @@ async def projects():
 @app.get("/about")
 async def about():
     """About page with hero, highlights, mini timeline, and snapshot panel."""
+    config = get_config()
     data = load_experience(ROOT_DIR) or {}
     profile = await fetch_github_profile()
 
     return render_page(
-        "About - Matthew L. Pergolski",
-        build_about_page(data, profile, get_config()),
+        f"About - {config.owner_name}",
+        build_about_page(data, profile, config),
     )
 
 
 @app.get("/resume")
 def resume():
     """Resume page"""
+    config = get_config()
     data = load_experience(ROOT_DIR) or {}
 
     return render_page(
-        "Resume - Matthew L. Pergolski",
-        build_resume_page(data),
+        f"Resume - {config.owner_name}",
+        build_resume_page(data, config),
     )
 
 
 @app.get("/contact")
 def contact(req: Request):
     """Contact page"""
+    config = get_config()
     # Generate self-hosted CAPTCHA and store with timestamp (supports multiple tabs)
     captcha_image, captcha_answer = generate_captcha()
     add_captcha_answer(req.session, captcha_answer_hash(captcha_answer))
 
     return render_page(
-        "Contact - Matthew L. Pergolski",
-        build_contact_page(req.query_params, get_config(), captcha_image),
+        f"Contact - {config.owner_name}",
+        build_contact_page(req.query_params, config, captcha_image),
     )
 
 
 @app.get("/chat")
 def chat_page():
     """Dedicated chat page with the same session-scoped conversation as the widget."""
+    config = get_config()
     return render_page(
-        "Chat - Matthew L. Pergolski",
+        f"Chat - {config.owner_name}",
         build_chat_page(),
         include_chat=False,
     )
@@ -298,7 +304,7 @@ async def contact_submit(req: Request):
 @app.get("/resume/download")
 def resume_download():
     """Redirect to the configured resume URL or local static fallback."""
-    url = os.getenv("RESUME_URL") or "/static/resume.pdf"
+    url = get_config().resume_url or "/static/resume.pdf"
     return RedirectResponse(url, status_code=307)
 
 

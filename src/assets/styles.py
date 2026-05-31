@@ -388,6 +388,7 @@ GLOBAL_STYLES = r"""
                 align-items: center;
             }
             @media (max-width: 640px){ .about-hero { grid-template-columns: 1fr; text-align:center; } }
+            .about-hero .avatar { justify-self: center; margin: 0 auto 1rem; object-fit: cover; object-position: center; }
 
             .hero-cta { display:flex; gap:.75rem; flex-wrap:wrap; }
             @media (max-width: 640px){

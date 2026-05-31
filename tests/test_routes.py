@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 from starlette.testclient import TestClient
 
 import main as main_mod
@@ -70,6 +72,20 @@ def test_resume_download_redirect(monkeypatch):
 
     assert response.status_code == 307
     assert response.headers["location"] == "https://example.com/resume.pdf"
+
+
+def test_resume_download_uses_public_site_config(monkeypatch):
+    monkeypatch.delenv("RESUME_URL", raising=False)
+    monkeypatch.setattr(
+        main_mod,
+        "get_config",
+        lambda: SimpleNamespace(resume_url="https://example.com/from-site-json.pdf"),
+    )
+
+    response = TestClient(main_mod.app).get("/resume/download", follow_redirects=False)
+
+    assert response.status_code == 307
+    assert response.headers["location"] == "https://example.com/from-site-json.pdf"
 
 
 def test_navigation_orders_about_before_projects():

@@ -114,6 +114,7 @@ export LINKEDIN_URL="your-linkedin-profile"
 
 # Application Settings
 export DEBUG="true"
+export OWNER_NAME="Your Name"
 export SITE_TITLE="Your Name - Professional Title"
 export SITE_DESCRIPTION="Brief professional description"
 
@@ -157,22 +158,34 @@ export RATE_GLOBAL_PER_DAY=50
 
 ### Public site config (non-secret)
 
-For non-secret values that you want in source control, such as a public email alias, default titles, or links, add `data/site.json` from `data/site.json.example`:
+For non-secret values that you want in source control, such as public display copy, a public email alias, default titles, or links, add `data/site.json` from `data/site.json.example`:
 
 ```json
 {
+  "owner_name": "Your Name",
+  "brand_initials": "YN",
+  "brand_subtitle": "Portfolio",
   "site_title": "Personal Portfolio",
   "site_description": "AI/ML Engineer & Data Scientist",
+  "hero_kicker": "AI/ML Engineering Portfolio",
+  "hero_primary_cta": "View Projects",
+  "hero_chat_cta": "Experience Chat",
+  "footer_tagline": "Data Science • Machine Learning • AI Engineering",
   "public_email": "contact@your-domain.com",
   "linkedin_url": "https://linkedin.com/in/your-profile",
   "github_username": "your-github-username",
-  "resume_url": "https://docs.../export?format=pdf"
+  "resume_url": "https://docs.../export?format=pdf",
+  "contact_intro": "I'm always interested in discussing new opportunities.",
+  "contact_response_time": "I typically respond to emails within 24 hours.",
+  "resume_pdf_prompt": "Want the PDF version?",
+  "resume_pdf_description": "Download the formatted resume, or browse the expanded experience details below."
 }
 ```
 
 At runtime the app merges env vars with this JSON:
-- Env vars override JSON, for example `PUBLIC_EMAIL` or `SITE_TITLE`.
-- `PUBLIC_EMAIL` or `CONTACT_EMAIL`/`SMTP_TO` populate the Contact page.
+- Env vars override JSON for deployment-specific values, for example `OWNER_NAME`, `SITE_TITLE`, `SITE_DESCRIPTION`, `PUBLIC_EMAIL`, social links, and resume links.
+- `PUBLIC_EMAIL` is preferred for the Contact page; `CONTACT_EMAIL` and `SMTP_TO` are fallbacks.
+- `data/experience.json` remains the source of truth for resume-derived About, Resume, Highlights, Skills, and chat retrieval content.
 - Keep secrets such as tokens and SMTP credentials in env vars only.
 
 ### GitHub Token Setup

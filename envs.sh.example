@@ -22,6 +22,9 @@ export RESUME_URL="https://docs.google.com/document/d/YOUR_FILE_ID/export?format
 
 # Application Settings
 export DEBUG="true"
+export OWNER_NAME="Your Name"
+export BRAND_INITIALS="YN"
+export BRAND_SUBTITLE="Portfolio"
 export SITE_TITLE="Personal Portfolio"  # Will be overridden by GitHub profile data
 export SITE_DESCRIPTION="AI/ML Engineer & Data Scientist"  # Will be overridden by GitHub bio
 export SESSION_SECRET="replace-with-a-long-random-string"
