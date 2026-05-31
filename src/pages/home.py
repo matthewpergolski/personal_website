@@ -73,9 +73,27 @@ def build_home_page(
                         Div(
                             Span("View", cls="chart-control-label"),
                             Div(
-                                Button("Donut", id="chart-donut", cls="icon-link"),
-                                Button("Bar", id="chart-bar", cls="icon-link"),
-                                Button("Treemap", id="chart-tree", cls="icon-link"),
+                                Button(
+                                    "Donut",
+                                    id="chart-donut",
+                                    cls="icon-link chart-option",
+                                    title="Shows proportional share of the tech stack.",
+                                    data_chart_tip="Shows proportional share of the tech stack.",
+                                ),
+                                Button(
+                                    "Bar",
+                                    id="chart-bar",
+                                    cls="icon-link chart-option",
+                                    title="Compares absolute totals across languages.",
+                                    data_chart_tip="Compares absolute totals across languages.",
+                                ),
+                                Button(
+                                    "Treemap",
+                                    id="chart-tree",
+                                    cls="icon-link chart-option",
+                                    title="Shows mix and relative size in one compact map.",
+                                    data_chart_tip="Shows mix and relative size in one compact map.",
+                                ),
                                 cls="chart-segment",
                             ),
                             cls="chart-control-group",
@@ -83,8 +101,20 @@ def build_home_page(
                         Div(
                             Span("Metric", cls="chart-control-label"),
                             Div(
-                                Button("Repos", id="metric-repos", cls="icon-link"),
-                                Button("Bytes", id="metric-bytes", cls="icon-link"),
+                                Button(
+                                    "Repos",
+                                    id="metric-repos",
+                                    cls="icon-link chart-option",
+                                    title="Counts how often each language appears across repositories.",
+                                    data_chart_tip="Counts how often each language appears across repositories.",
+                                ),
+                                Button(
+                                    "Bytes",
+                                    id="metric-bytes",
+                                    cls="icon-link chart-option",
+                                    title="Weights languages by code volume.",
+                                    data_chart_tip="Weights languages by code volume.",
+                                ),
                                 cls="chart-segment",
                             ),
                             cls="chart-control-group",
@@ -97,6 +127,7 @@ def build_home_page(
                         ),
                         cls="chart-toolbar",
                     ),
+                    P(id="chart-hint", cls="chart-hint"),
                     Div(id="lang-chart", cls="chart-canvas"),
                     Div(id="chart-key", cls="chart-key"),
                     cls="chart-shell",
@@ -145,6 +176,15 @@ def _chart_script(
             const arr=[]; for(let i=0;i<n;i++) arr.push(palette[i%palette.length]); return arr;
           }}
           let metric='repos';
+          const viewHints = {{
+            donut: 'Donut shows proportional share across the selected metric.',
+            bar: 'Bar compares absolute totals, making ranking easiest to scan.',
+            tree: 'Treemap shows the overall mix in a compact space.'
+          }};
+          const metricHints = {{
+            repos: 'Repos counts how often each language appears across projects.',
+            bytes: 'Bytes weights the view by code volume.'
+          }};
           function getLabels(){{ return metric==='bytes' ? labelsBytes : labelsRepos; }}
           function getVals(){{ return metric==='bytes' ? valuesBytes : valuesRepos; }}
           function compactName(label) {{
@@ -259,6 +299,8 @@ def _chart_script(
               const el=document.getElementById(id); if(!el) return;
               if(map[id]) el.classList.add('active'); else el.classList.remove('active');
             }});
+            const hint = document.getElementById('chart-hint');
+            if(hint) hint.textContent = `${{viewHints[current]}} ${{metricHints[metric]}}`;
           }}
           render(current); setActive();
           document.getElementById('chart-bar')?.addEventListener('click', ()=>{{current='bar'; render(current); setActive();}});

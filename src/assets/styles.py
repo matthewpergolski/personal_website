@@ -430,6 +430,7 @@ GLOBAL_STYLES = r"""
             }
             @media (max-width: 640px){ .about-hero { grid-template-columns: 1fr; text-align:center; } }
             .about-hero .avatar { justify-self: center; margin: 0 auto 1rem; object-fit: cover; object-position: center; }
+            .about-content-stack { display: grid; gap: 1.25rem; }
 
             .hero-cta { display:flex; gap:.75rem; flex-wrap:wrap; }
             @media (max-width: 640px){
@@ -529,6 +530,15 @@ GLOBAL_STYLES = r"""
             .chart-control-label { color: var(--muted-text); font-size:.78rem; font-weight:800; }
             .chart-segment { display:flex; gap:.35rem; padding:.25rem; border:1px solid var(--border-color); border-radius:999px; background: color-mix(in srgb, var(--surface-2) 76%, transparent); }
             .chart-segment .icon-link { box-shadow:none; border-color:transparent; background:transparent; }
+            .chart-option { position: relative; }
+            .chart-hint {
+                max-width: 680px;
+                margin: -.15rem auto .75rem;
+                color: var(--muted-text);
+                font-size: .88rem;
+                line-height: 1.45;
+                text-align: center;
+            }
             .chart-controls { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; }
             .chart-canvas { height:480px; }
             .chart-key { display: none; }
@@ -644,6 +654,35 @@ GLOBAL_STYLES = r"""
             .chart-controls .icon-link.active { background: var(--primary-color); color: #fff; border-color: transparent; }
             .chart-segment .icon-link.active { background: var(--primary-color); color: #fff; border-color: transparent; box-shadow: 0 8px 20px color-mix(in srgb, var(--primary-color) 22%, transparent); }
             .chart-export { margin-left:auto; align-self:end; border-style:dashed; background: color-mix(in srgb, var(--surface-1) 72%, transparent); }
+            @media (hover: hover) and (pointer: fine) {
+                .chart-option::after {
+                    content: attr(data-chart-tip);
+                    position: absolute;
+                    left: 50%;
+                    bottom: calc(100% + .6rem);
+                    width: max-content;
+                    max-width: 260px;
+                    padding: .55rem .7rem;
+                    border: 1px solid var(--border-color);
+                    border-radius: var(--radius-sm);
+                    background: color-mix(in srgb, var(--surface-2) 96%, #000);
+                    color: var(--text-color);
+                    box-shadow: var(--shadow-md);
+                    font-size: .78rem;
+                    font-weight: 650;
+                    line-height: 1.35;
+                    opacity: 0;
+                    pointer-events: none;
+                    transform: translate(-50%, .2rem);
+                    transition: opacity .15s ease, transform .15s ease;
+                    z-index: 5;
+                }
+                .chart-option:hover::after,
+                .chart-option:focus-visible::after {
+                    opacity: 1;
+                    transform: translate(-50%, 0);
+                }
+            }
             .contact-form { display:grid; gap:1rem; max-width: 720px; }
             .contact-form .form-group { display:block; width:100%; }
             .contact-form label { display:block; font-weight:600; margin-bottom:.35rem; color: var(--muted-text); }
@@ -661,13 +700,19 @@ GLOBAL_STYLES = r"""
                 .grid-2-1 { gap: 1rem; }
                 .highlight-grid { gap: .85rem; }
                 .chart-shell { padding: .75rem; display: flex; flex-direction: column; }
-                .chart-canvas { height: 320px; order: 3; }
+                .chart-canvas { height: 320px; order: 4; }
                 .chart-toolbar { justify-content:center; align-items:center; gap:.75rem; }
                 .chart-control-group { justify-items:center; }
                 .chart-control-label { text-align:center; }
                 .chart-export { width:100%; max-width: 180px; margin:0 auto; }
-                .chart-key {
+                .chart-hint {
                     order: 2;
+                    margin: .25rem auto .5rem;
+                    padding: 0 .25rem;
+                    font-size: .8rem;
+                }
+                .chart-key {
+                    order: 3;
                     display: block;
                     margin: .5rem 0 .25rem;
                     padding: .75rem 0;

@@ -33,6 +33,7 @@ Use this checklist for visual or interaction-heavy PRs. Keep it lightweight: the
    - Mobile nav opens and closes without covering the bottom tab bar.
    - Resume and About content still reflects `data/experience.json`.
    - Chat page and floating chat remain reachable.
+   - Tech Stack controls explain the selected view/metric and small mobile slices have a readable key.
 
 ## Required Commands
 
@@ -44,4 +45,3 @@ uv run pre-commit run --all-files
 ## Vercel Preview
 
 Before merge, verify GitHub checks, the Vercel preview deployment, and any protected-preview limitations. If Vercel preview requires login, local browser verification plus green Vercel deployment status is acceptable, but say so in the PR notes.
-
