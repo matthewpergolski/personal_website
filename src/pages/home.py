@@ -98,6 +98,7 @@ def build_home_page(
                         cls="chart-toolbar",
                     ),
                     Div(id="lang-chart", cls="chart-canvas"),
+                    Div(id="chart-key", cls="chart-key"),
                     cls="chart-shell",
                 ),
             ),
@@ -164,6 +165,55 @@ def _chart_script(
               return `${{compactName(label)}}<br>${{(pct * 100).toFixed(1)}}%`;
             }});
           }}
+          function formatChartValue(value) {{
+            if(metric === 'repos') return value + ' repo' + (value === 1 ? '' : 's');
+            const units = ['bytes', 'KB', 'MB', 'GB'];
+            let amount = value;
+            let unitIndex = 0;
+            while(amount >= 1024 && unitIndex < units.length - 1) {{
+              amount = amount / 1024;
+              unitIndex += 1;
+            }}
+            const decimals = amount >= 10 || unitIndex === 0 ? 0 : 1;
+            return amount.toFixed(decimals) + ' ' + units[unitIndex];
+          }}
+          function chartPercent(value, total) {{
+            const pct = (value / (total || 1)) * 100;
+            return (pct < 1 ? pct.toFixed(2) : pct.toFixed(1)) + '%';
+          }}
+          function renderChartKey(labels, values, palette, compact) {{
+            const key = document.getElementById('chart-key');
+            if(!key) return;
+            if(!compact) {{
+              key.replaceChildren();
+              return;
+            }}
+            const total = values.reduce((acc, val) => acc + val, 0) || 1;
+            const list = document.createElement('div');
+            list.className = 'chart-key-list';
+            labels.forEach((label, index) => {{
+              const item = document.createElement('div');
+              item.className = 'chart-key-item';
+              item.setAttribute('aria-label', label + ', ' + formatChartValue(values[index]) + ', ' + chartPercent(values[index], total));
+
+              const swatch = document.createElement('span');
+              swatch.className = 'chart-key-swatch';
+              swatch.style.background = palette[index];
+
+              const name = document.createElement('span');
+              name.className = 'chart-key-label';
+              name.textContent = compactName(label);
+              name.title = label;
+
+              const value = document.createElement('span');
+              value.className = 'chart-key-value';
+              value.textContent = formatChartValue(values[index]) + ' / ' + chartPercent(values[index], total);
+
+              item.append(swatch, name, value);
+              list.append(item);
+            }});
+            key.replaceChildren(list);
+          }}
           function render(kind) {{
             const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-color').trim() || '#e2e8f0';
             const bg = 'rgba(0,0,0,0)';
@@ -171,15 +221,17 @@ def _chart_script(
             let data, layout;
             const labels = getLabels();
             const v = getVals();
+            const palette = colors(v.length);
+            renderChartKey(labels, v, palette, compactChart);
             if(kind==='bar') {{
-              data=[{{ type:'bar', orientation:'h', x:v, y:labels, marker:{{color:colors(v.length)}}, hovertemplate: metric==='bytes' ? '%{{y}}: %{{x:,}} bytes<extra></extra>' : '%{{y}}: %{{x}} repos<extra></extra>' }}];
+              data=[{{ type:'bar', orientation:'h', x:v, y:labels, marker:{{color:palette}}, hovertemplate: metric==='bytes' ? '%{{y}}: %{{x:,}} bytes<extra></extra>' : '%{{y}}: %{{x}} repos<extra></extra>' }}];
               const xtitle = metric==='bytes' ? 'Bytes' : 'Repositories';
               layout={{ paper_bgcolor:bg, plot_bgcolor:bg, margin: compactChart ? {{t:10,b:44,l:122,r:16}} : {{t:10,b:30,l:140,r:10}}, xaxis:{{tickfont:{{color:textColor}}, gridcolor:'rgba(255,255,255,0.05)', title:xtitle, rangemode:'tozero'}}, yaxis:{{tickfont:{{color:textColor}}}}, font:{{color:textColor}}, showlegend:false, uniformtext:{{mode:'hide', minsize:10}} }};
             }} else if (kind==='tree') {{
-              data=[{{ type:'treemap', labels:labels, parents:labels.map(_=>''), values:v, marker:{{colors:colors(v.length)}}, hovertemplate: metric==='bytes' ? '%{{label}}<br>%{{value:,}} bytes<extra></extra>' : '%{{label}}<br>%{{value}} repos<extra></extra>' }}];
+              data=[{{ type:'treemap', labels:labels, parents:labels.map(_=>''), values:v, marker:{{colors:palette}}, hovertemplate: metric==='bytes' ? '%{{label}}<br>%{{value:,}} bytes<extra></extra>' : '%{{label}}<br>%{{value}} repos<extra></extra>' }}];
               layout={{ paper_bgcolor:bg, plot_bgcolor:bg, margin:{{t:10,b:10,l:10,r:10}}, font:{{color:textColor}} }};
             }} else {{
-              data=[{{ type:'pie', hole:.5, labels, values:v, text:compactPieText(labels, v, compactChart), marker:{{colors:colors(v.length)}}, textinfo: compactChart ? 'text' : 'label+percent', textposition: compactChart ? 'auto' : 'outside', insidetextorientation:'horizontal', automargin:true, hovertemplate: metric==='bytes' ? '%{{label}}: %{{value:,}} bytes (%{{percent}})<extra></extra>' : '%{{label}}: %{{value}} repos (%{{percent}})<extra></extra>' }}];
+              data=[{{ type:'pie', hole:.5, labels, values:v, text:compactPieText(labels, v, compactChart), marker:{{colors:palette}}, textinfo: compactChart ? 'text' : 'label+percent', textposition: compactChart ? 'auto' : 'outside', insidetextorientation:'horizontal', automargin:true, hovertemplate: metric==='bytes' ? '%{{label}}: %{{value:,}} bytes (%{{percent}})<extra></extra>' : '%{{label}}: %{{value}} repos (%{{percent}})<extra></extra>' }}];
               layout={{ paper_bgcolor:bg, plot_bgcolor:bg, showlegend:!compactChart, legend:{{ font:{{color:textColor}}, orientation:'h', y:-.12 }}, margin: compactChart ? {{t:18,b:24,l:28,r:28}} : {{t:24,b:80,l:72,r:72}}, font:{{color:textColor}}, uniformtext:{{mode:'show', minsize: compactChart ? 9 : 11}} }};
             }}
             Plotly.newPlot('lang-chart', data, layout, {{displayModeBar:false, responsive:true}}).then(function(g) {{

@@ -531,6 +531,40 @@ GLOBAL_STYLES = r"""
             .chart-segment .icon-link { box-shadow:none; border-color:transparent; background:transparent; }
             .chart-controls { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; }
             .chart-canvas { height:480px; }
+            .chart-key { display: none; }
+            .chart-key-list {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: .45rem .7rem;
+            }
+            .chart-key-item {
+                display: flex;
+                align-items: center;
+                gap: .4rem;
+                min-width: 0;
+                color: var(--muted-text);
+                font-size: .78rem;
+                line-height: 1.25;
+            }
+            .chart-key-swatch {
+                width: .7rem;
+                height: .7rem;
+                border-radius: 3px;
+                flex: 0 0 auto;
+                box-shadow: inset 0 0 0 1px rgba(255,255,255,.22);
+            }
+            .chart-key-label {
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                color: var(--text-color);
+                font-weight: 720;
+            }
+            .chart-key-value {
+                white-space: nowrap;
+                color: var(--muted-text);
+            }
 
             .btn {
                 display: inline-flex;
@@ -626,11 +660,19 @@ GLOBAL_STYLES = r"""
                 .card-grid { grid-template-columns: 1fr; gap: 1rem; }
                 .grid-2-1 { gap: 1rem; }
                 .highlight-grid { gap: .85rem; }
-                .chart-shell { padding: .75rem; }
-                .chart-canvas { height: 390px; }
+                .chart-shell { padding: .75rem; display: flex; flex-direction: column; }
+                .chart-canvas { height: 320px; order: 3; }
                 .chart-toolbar { justify-content:center; align-items:center; gap:.75rem; }
                 .chart-control-group { justify-items:center; }
                 .chart-control-label { text-align:center; }
                 .chart-export { width:100%; max-width: 180px; margin:0 auto; }
+                .chart-key {
+                    order: 2;
+                    display: block;
+                    margin: .5rem 0 .25rem;
+                    padding: .75rem 0;
+                    border-top: 1px solid var(--border-color);
+                    border-bottom: 1px solid var(--border-color);
+                }
             }
 """
