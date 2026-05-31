@@ -146,13 +146,22 @@ def _chart_script(
           let metric='repos';
           function getLabels(){{ return metric==='bytes' ? labelsBytes : labelsRepos; }}
           function getVals(){{ return metric==='bytes' ? valuesBytes : valuesRepos; }}
+          function compactName(label) {{
+            const map = {{
+              'Jupyter Notebook': 'Jupyter',
+              'Dockerfile': 'Docker',
+              'TypeScript': 'TS',
+              'JavaScript': 'JS'
+            }};
+            return map[label] || label;
+          }}
           function compactPieText(labels, values, compact) {{
             if(!compact) return labels.map(_ => '');
             const total = values.reduce((acc, val) => acc + val, 0) || 1;
             return labels.map((label, index) => {{
               const pct = values[index] / total;
-              if(pct < 0.1) return '';
-              return `${{label}}<br>${{(pct * 100).toFixed(pct >= 0.1 ? 1 : 2)}}%`;
+              if(pct < 0.08) return '';
+              return `${{compactName(label)}}<br>${{(pct * 100).toFixed(1)}}%`;
             }});
           }}
           function render(kind) {{
@@ -170,8 +179,8 @@ def _chart_script(
               data=[{{ type:'treemap', labels:labels, parents:labels.map(_=>''), values:v, marker:{{colors:colors(v.length)}}, hovertemplate: metric==='bytes' ? '%{{label}}<br>%{{value:,}} bytes<extra></extra>' : '%{{label}}<br>%{{value}} repos<extra></extra>' }}];
               layout={{ paper_bgcolor:bg, plot_bgcolor:bg, margin:{{t:10,b:10,l:10,r:10}}, font:{{color:textColor}} }};
             }} else {{
-              data=[{{ type:'pie', hole:.5, labels, values:v, text:compactPieText(labels, v, compactChart), marker:{{colors:colors(v.length)}}, textinfo: compactChart ? 'text' : 'label+percent', textposition: compactChart ? 'inside' : 'outside', insidetextorientation:'horizontal', automargin:true, hovertemplate: metric==='bytes' ? '%{{label}}: %{{value:,}} bytes (%{{percent}})<extra></extra>' : '%{{label}}: %{{value}} repos (%{{percent}})<extra></extra>' }}];
-              layout={{ paper_bgcolor:bg, plot_bgcolor:bg, showlegend:!compactChart, legend:{{ font:{{color:textColor}}, orientation:'h', y:-.12 }}, margin: compactChart ? {{t:16,b:18,l:18,r:18}} : {{t:24,b:80,l:72,r:72}}, font:{{color:textColor}}, uniformtext:{{mode:'hide', minsize: compactChart ? 9 : 11}} }};
+              data=[{{ type:'pie', hole:.5, labels, values:v, text:compactPieText(labels, v, compactChart), marker:{{colors:colors(v.length)}}, textinfo: compactChart ? 'text' : 'label+percent', textposition: compactChart ? 'auto' : 'outside', insidetextorientation:'horizontal', automargin:true, hovertemplate: metric==='bytes' ? '%{{label}}: %{{value:,}} bytes (%{{percent}})<extra></extra>' : '%{{label}}: %{{value}} repos (%{{percent}})<extra></extra>' }}];
+              layout={{ paper_bgcolor:bg, plot_bgcolor:bg, showlegend:!compactChart, legend:{{ font:{{color:textColor}}, orientation:'h', y:-.12 }}, margin: compactChart ? {{t:18,b:24,l:28,r:28}} : {{t:24,b:80,l:72,r:72}}, font:{{color:textColor}}, uniformtext:{{mode:'show', minsize: compactChart ? 9 : 11}} }};
             }}
             Plotly.newPlot('lang-chart', data, layout, {{displayModeBar:false, responsive:true}}).then(function(g) {{
               g.on('plotly_click', function(ev) {{
