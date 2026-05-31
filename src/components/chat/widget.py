@@ -47,15 +47,12 @@ class ChatWidget:
         chat_placeholder = (
             "Ask about my skills, projects, background, or fit..."
             if ai_polish_enabled
-            else "Free-tier chat: ask about my skills, projects, background, or fit..."
+            else "Free-tier chat. Less capable."
         )
         chat_status = (
             "Advanced chat mode is enabled for more conversational answers."
             if ai_polish_enabled
-            else (
-                "Free-tier chat: answers are limited to portfolio context. "
-                "An advanced model can be added later."
-            )
+            else ("Free-tier chat. Less capable. Advanced models available.")
         )
         suggestions = [
             "What AI/ML work have you done?",
@@ -214,13 +211,16 @@ class ChatWidget:
                 min-height: 420px;
                 overflow: visible;
             }
-            .experience-chat-page.chat-has-suggestions .chat-messages { min-height: 190px; }
+            .experience-chat-page.chat-has-suggestions .chat-messages { min-height: 160px; }
             .experience-chat-page .chat-form {
                 position: sticky;
                 bottom: 0;
                 z-index: 3;
                 background: var(--surface-1);
             }
+            .chat-page-section { padding: 2.75rem 0 0; }
+            .chat-page-title { margin-bottom: 1.5rem; }
+            .chat-page-container { padding-bottom: 1.5rem; }
             @media (max-width: 768px) {
                 .experience-chat { right: 12px; bottom: 78px; }
                 .chat-panel { width: calc(100vw - 24px); height: min(660px, calc(100vh - 112px)); }
@@ -230,11 +230,11 @@ class ChatWidget:
                     height: auto;
                     min-height: calc(100svh - 178px);
                     border-radius: 10px;
-                    padding-bottom: 94px;
+                    padding-bottom: 180px;
                 }
                 .experience-chat-page .chat-messages { min-height: 300px; padding: .9rem; }
-                .experience-chat-page.chat-has-suggestions .chat-messages { min-height: 170px; }
-                .experience-chat-page .chat-status { padding: .55rem .9rem 0; }
+                .experience-chat-page.chat-has-suggestions .chat-messages { min-height: 120px; }
+                .experience-chat-page .chat-status { padding: .55rem .9rem 1rem; }
                 .experience-chat-page .chat-form {
                     position: fixed;
                     left: max(12px, env(safe-area-inset-left));
@@ -246,9 +246,14 @@ class ChatWidget:
                     box-shadow: 0 -12px 36px rgba(0,0,0,.28);
                 }
                 .chat-input { font-size: 16px; }
-                .chat-header { align-items: start; }
-                .chat-header-actions { flex-wrap: wrap; justify-content: end; }
+                .chat-header { align-items: stretch; flex-direction: column; gap: .75rem; }
+                .chat-subtitle { max-width: 34rem; }
+                .chat-header-actions { flex-wrap: wrap; justify-content: start; }
+                .chat-reset, .chat-copy { flex: 1 1 calc(50% - .25rem); min-width: 0; }
                 .chat-message { max-width: 94%; }
+                .chat-page-section { padding-top: 1.4rem; }
+                .chat-page-title { margin-bottom: 1.1rem; }
+                .chat-page-container { padding-bottom: 110px; }
             }
         """)
 
