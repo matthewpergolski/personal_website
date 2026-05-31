@@ -4,7 +4,7 @@ import json
 
 from fasthtml.common import Button, Div, H2, P, Script, Section, Span
 
-from src.assets.loader import load_asset_text
+from src.assets.loader import asset_script
 from src.components.ui import HeroSection
 
 
@@ -147,9 +147,7 @@ def build_home_page(
                 id="tech-stack-chart-data",
                 type="application/json",
             ),
-            Script(
-                load_asset_text("tech-stack-chart.js"),
-            ),
+            asset_script("tech-stack-chart.js"),
             cls="section",
         )
         if labels_bytes and values_bytes

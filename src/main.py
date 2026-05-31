@@ -133,12 +133,6 @@ def generate_captcha() -> tuple[str, str]:
 app = create_app(SESSION_KEY_FNAME, SESSION_SECRET)
 mount_static(app)
 
-# GitHub API calls moved to src/services/github.py
-
-"""UI components moved to src/components/ui.py"""
-
-"""render_page helper moved to src/utils/render.py"""
-
 
 # Routes
 @app.get("/")

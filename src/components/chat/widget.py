@@ -5,7 +5,7 @@ import os
 
 import fasthtml.common as ft
 
-from src.assets.loader import load_asset_text
+from src.assets.loader import asset_script, asset_style
 from src.config import get_config
 
 
@@ -168,7 +168,7 @@ class ChatWidget:
         )
 
     def _script(self):
-        return ft.Script(load_asset_text("chat.js"))
+        return asset_script("chat.js")
 
     def _styles(self):
-        return ft.Style(load_asset_text("chat.css"))
+        return asset_style("chat.css")
