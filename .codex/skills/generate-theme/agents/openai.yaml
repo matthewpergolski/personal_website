@@ -1,0 +1,4 @@
+interface:
+  display_name: "Generate Theme"
+  short_description: "Create portfolio theme packs from style references."
+  default_prompt: "Create a new theme pack for this FastHTML portfolio from a URL, screenshot, brand colors, or style brief."
