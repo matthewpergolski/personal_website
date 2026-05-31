@@ -70,3 +70,10 @@ def test_resume_download_redirect(monkeypatch):
 
     assert response.status_code == 307
     assert response.headers["location"] == "https://example.com/resume.pdf"
+
+
+def test_navigation_orders_about_before_projects():
+    response = TestClient(main_mod.app).get("/resume")
+
+    assert response.status_code == 200
+    assert response.text.index(">About<") < response.text.index(">Projects<")
