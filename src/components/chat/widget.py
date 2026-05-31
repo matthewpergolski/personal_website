@@ -251,7 +251,11 @@ class ChatWidget:
                 .chat-message { max-width: 94%; }
                 .chat-page-section { padding-top: 1.4rem; }
                 .chat-page-title { margin-bottom: 1.1rem; }
-                .chat-page-container { padding-bottom: 190px; }
+                .chat-page-container { padding-bottom: 1rem; }
+                .chat-page-section ~ .footer {
+                    margin-top: 120px;
+                    margin-bottom: 104px;
+                }
             }
         """)
 
