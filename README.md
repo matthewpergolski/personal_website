@@ -24,6 +24,7 @@ A visually stunning and technically impressive portfolio website built exclusive
 - **Deployment/hosting**: Vercel Git integration using `vercel.json` and the Vercel Python runtime.
 - **Dependencies**: Python dependencies are managed by `uv` through `pyproject.toml` and `uv.lock`; Biome frontend tooling is managed by Bun.
 - **Quality tooling**: Ruff formatting/linting, Biome CSS/JS/JSON checks, pytest, pre-commit, deterministic UI smoke checks, Playwright browser smoke checks, and GitHub Actions.
+- **Agent skills**: Shared coding-agent skills live under `.codex/skills/`; `generate-theme` documents how to add future theme packs from screenshots, URLs, brand colors, or style briefs.
 
 ## 📋 Prerequisites
 

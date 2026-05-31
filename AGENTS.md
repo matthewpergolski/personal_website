@@ -21,6 +21,7 @@ Start with these files, depending on the task:
 - Chat/RAG: `src/components/chat/widget.py`, `src/services/rag/simple_chat.py`, `tests/test_rag_chat.py`.
 - Contact/security: `src/main.py`, `src/pages/contact.py`, `src/services/contact_form.py`, `src/services/email.py`, `src/utils/rate_limit.py`, `tests/test_contact.py`.
 - Content changes: `data/experience.json`, optionally `data/site.json.example`.
+- Theme changes: `src/themes.py`, `src/assets/global.css`, `data/site.json.example`, and `.codex/skills/generate-theme/` when deriving new themes from a URL, screenshot, brand colors, or style brief.
 - Dependencies/tooling: `pyproject.toml`, `uv.lock`, `.pre-commit-config.yaml`.
 
 Do not bulk-read generated or lock files unless the task requires dependency or deploy debugging.
@@ -94,6 +95,7 @@ If the user explicitly says "update memory bank", review all memory-bank files a
 ## Agent Skill Scaffolding
 
 - Shared future skills live under `.codex/skills/`.
+- Use `.codex/skills/generate-theme/` when adding or deriving theme packs for this portfolio template.
 - `.claude` points to `.codex` so Claude-facing skills share the same files.
 - `.cline/skills` points to `.codex/skills`.
 - `.cline/rules/AGENTS.md` points back to this file.
