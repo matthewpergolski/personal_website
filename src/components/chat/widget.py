@@ -47,14 +47,14 @@ class ChatWidget:
         chat_placeholder = (
             "Ask about my skills, projects, background, or fit..."
             if ai_polish_enabled
-            else "Free local mode: ask about my skills, projects, background, or fit..."
+            else "Free-tier chat: ask about my skills, projects, background, or fit..."
         )
         chat_status = (
-            "AI-polished answers are enabled; portfolio retrieval still grounds responses."
+            "Advanced chat mode is enabled for more conversational answers."
             if ai_polish_enabled
             else (
-                "Free local mode: answers use portfolio retrieval instead of a paid "
-                "general chat model."
+                "Free-tier chat: answers are limited to portfolio context. "
+                "An advanced model can be added later."
             )
         )
         suggestions = [
