@@ -12,3 +12,10 @@ repos:
         entry: uv run ruff check --fix
         language: system
         types_or: [python, pyi]
+
+      - id: biome-check
+        name: biome check
+        entry: bun run check
+        language: system
+        files: ^(src/assets/.*\.(css|js)|biome\.json|package\.json)$
+        pass_filenames: false

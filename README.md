@@ -22,8 +22,8 @@ A visually stunning and technically impressive portfolio website built exclusive
 - **Chat/RAG**: Free-first local retrieval over committed portfolio data, with optional Hugging Face Inference API response polishing.
 - **Data sources**: `data/experience.json`, optional public `data/site.json`, an optional Google Docs/Drive resume source sync, and GitHub REST API calls through `httpx`.
 - **Deployment/hosting**: Vercel Git integration using `vercel.json` and the Vercel Python runtime.
-- **Dependencies**: Managed by `uv` through `pyproject.toml` and `uv.lock`.
-- **Quality tooling**: Ruff formatting/linting, pytest, pre-commit, deterministic UI smoke checks, Playwright browser smoke checks, and GitHub Actions.
+- **Dependencies**: Python dependencies are managed by `uv` through `pyproject.toml` and `uv.lock`; Biome frontend tooling is managed by Bun.
+- **Quality tooling**: Ruff formatting/linting, Biome CSS/JS/JSON checks, pytest, pre-commit, deterministic UI smoke checks, Playwright browser smoke checks, and GitHub Actions.
 
 ## 📋 Prerequisites
 
@@ -95,6 +95,9 @@ fasthtml-portfolio/
 ├── app.sh                  # Application launcher script
 ├── envs.sh.example         # Environment template
 ├── pyproject.toml          # UV project configuration
+├── package.json            # Biome frontend asset tooling run with Bun
+├── bun.lock                # Bun lockfile for frontend tooling
+├── biome.json              # CSS/JS/JSON formatter/check configuration
 ├── uv.lock                 # Dependency lock file
 ├── vercel.json             # Vercel routing/build configuration
 └── README.md               # This file
@@ -257,8 +260,10 @@ At runtime the app merges env vars with this JSON:
 
 ### Development Checks
 - Install Git hooks with `uv run pre-commit install`.
-- Hooks run Ruff formatting and Ruff lint fixes.
-- GitHub Actions runs formatting, linting, tests, deterministic UI smoke checks, and Playwright desktop/mobile browser smoke checks.
+- Install frontend tooling with `bun install --frozen-lockfile`.
+- Hooks run Ruff formatting, Ruff lint fixes, and Biome frontend asset checks.
+- GitHub Actions runs formatting, linting, Biome checks, tests, deterministic UI smoke checks, and Playwright desktop/mobile browser smoke checks.
+- Run frontend asset checks locally with `bun run check`.
 - Run deterministic UI checks locally with `uv run python scripts/verify_ui_smoke.py`.
 - Install the local Chromium test browser with `uv run playwright install chromium`, then run browser checks with `uv run python scripts/verify_ui_browser.py`.
 - Vercel installs Python dependencies from the committed `pyproject.toml` and `uv.lock`.

@@ -78,6 +78,13 @@ def _assert_contains(text: str, path: str, expected: list[str]) -> None:
         raise AssertionError(f"{path} missing expected content: {missing}")
 
 
+def _assert_css_contains(css: str, path: str, expected: list[str]) -> None:
+    compact_css = "".join(css.split())
+    missing = [item for item in expected if "".join(item.split()) not in compact_css]
+    if missing:
+        raise AssertionError(f"{path} missing expected CSS: {missing}")
+
+
 def _check_public_routes(client: TestClient) -> None:
     expectations = {
         "/": ["Matthew L. Pergolski", "Tech Stack Snapshot", "mobile-tabbar"],
@@ -132,13 +139,13 @@ def _check_mobile_css_contracts() -> None:
     css = GLOBAL_STYLES
     expected = [
         "@media (max-width: 768px)",
-        ".mobile-tabbar { display:flex; }",
+        ".mobile-tabbar { display: flex; }",
         "body { padding-bottom: 74px; }",
         ".experience-chat:not(.experience-chat-page) { display: none; }",
         "body.nav-open .mobile-tabbar",
         "body.nav-open .experience-chat { display: none; }",
     ]
-    _assert_contains(css, "GLOBAL_STYLES", expected)
+    _assert_css_contains(css, "GLOBAL_STYLES", expected)
 
     chat_html = _response_text(TestClient(main_mod.app), "/chat")
     chat_expected = [
@@ -149,7 +156,7 @@ def _check_mobile_css_contracts() -> None:
         "margin-bottom: 104px",
         "chat-page-container { padding-bottom: 1rem; }",
     ]
-    _assert_contains(chat_html, "/chat inline chat styles", chat_expected)
+    _assert_css_contains(chat_html, "/chat inline chat styles", chat_expected)
 
 
 def _check_chat_api(client: TestClient) -> None:
