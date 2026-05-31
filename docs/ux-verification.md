@@ -32,7 +32,7 @@ Use this checklist for visual or interaction-heavy PRs. Keep it lightweight: the
    - Section headings match their content density.
    - Mobile nav opens and closes without covering the bottom tab bar.
    - Resume and About content still reflects `data/experience.json`.
-   - Chat page and floating chat remain reachable.
+   - Chat page and floating chat remain reachable, share browser-session history, and show source/provider context.
    - Tech Stack controls explain the selected view/metric and small mobile slices have a readable key.
 
 ## Required Commands
