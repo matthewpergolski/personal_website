@@ -41,9 +41,31 @@ async def test_chat_falls_back_without_hugging_face(monkeypatch):
     assert result["success"] is True
     assert result["provider"] == "local"
     assert result["provider_label"] == "Local portfolio retrieval"
-    assert "portfolio context" in result["response"].lower()
+    assert "strongest matches" in result["response"].lower()
     assert result["sources"]
     assert {"label", "snippet"} <= set(result["sources"][0])
+
+
+@pytest.mark.asyncio
+async def test_chat_greeting_does_not_reuse_prior_context(monkeypatch):
+    monkeypatch.delenv("HUGGINGFACE_API_KEY", raising=False)
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+
+    result = await handle_chat_payload(
+        {
+            "message": "Hello",
+            "history": [
+                {
+                    "role": "user",
+                    "content": "What AI/ML work have you done?",
+                }
+            ],
+        }
+    )
+
+    assert result["success"] is True
+    assert "Hi, I can answer questions" in result["response"]
+    assert result["sources"] == []
 
 
 @pytest.mark.asyncio

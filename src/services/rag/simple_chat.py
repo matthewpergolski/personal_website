@@ -44,6 +44,28 @@ STOPWORDS = {
     "your",
 }
 
+GREETING_PATTERNS = {
+    "hello",
+    "hello!",
+    "hey",
+    "hey!",
+    "hi",
+    "hi!",
+    "yo",
+}
+
+FOLLOW_UP_MARKERS = {
+    "also",
+    "compare",
+    "elaborate",
+    "expand",
+    "more",
+    "same",
+    "that",
+    "those",
+    "this",
+}
+
 
 @dataclass(frozen=True)
 class ChatSource:
@@ -65,6 +87,22 @@ def _tokens(text: str) -> set[str]:
         for tok in re.findall(r"[a-z0-9+#.]+", text.lower())
         if len(tok) > 1 and tok not in STOPWORDS
     }
+
+
+def _is_greeting(text: str) -> bool:
+    normalized = re.sub(r"\s+", " ", text.strip().lower())
+    return normalized in GREETING_PATTERNS
+
+
+def _should_use_history(query: str) -> bool:
+    lowered = query.lower()
+    query_tokens = _tokens(query)
+    return (
+        "what about" in lowered
+        or "how about" in lowered
+        or "tell me more" in lowered
+        or bool(query_tokens & FOLLOW_UP_MARKERS)
+    )
 
 
 def _load_site_json() -> dict[str, Any]:
@@ -199,6 +237,54 @@ def _history_search_text(history: Any) -> str:
     return "\n".join(user_messages[-3:])
 
 
+def _best_source_points(query: str, sources: list[ChatSource]) -> list[str]:
+    query_tokens = _tokens(query)
+    candidates: list[tuple[int, int, str]] = []
+
+    for source_index, source in enumerate(sources[:3]):
+        raw_lines = [line.strip() for line in source.text.splitlines() if line.strip()]
+        lines = [line for line in raw_lines if line.startswith("- ")]
+        if not lines:
+            # Summaries and compact sources usually have sentence-shaped text.
+            lines = [
+                sentence.strip()
+                for sentence in re.split(r"(?<=[.!?])\s+", source.text.strip())
+                if sentence.strip()
+            ][:2]
+
+        for line_index, line in enumerate(lines[:5]):
+            point = line.removeprefix("- ").strip()
+            if not point:
+                continue
+            overlap = len(query_tokens & _tokens(point))
+            candidates.append((overlap, source_index * 10 + line_index, point))
+
+    candidates.sort(key=lambda item: (-item[0], item[1]))
+    points: list[str] = []
+    seen: set[str] = set()
+    for overlap, _index, point in candidates:
+        if overlap == 0 and points:
+            continue
+        key = point.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        points.append(point)
+        if len(points) >= 5:
+            break
+    return points
+
+
+def _greeting_answer() -> str:
+    cfg = get_config()
+    first_name = cfg.owner_name.split()[0] if cfg.owner_name else "this portfolio"
+    return (
+        f"Hi, I can answer questions about {first_name}'s experience, AI/ML work, "
+        "projects, skills, education, and fit for technical roles. Try asking about "
+        "AI platforms, Python projects, Lockheed Martin experience, or role fit."
+    )
+
+
 def _fallback_answer(query: str, sources: list[ChatSource]) -> str:
     cfg = get_config()
     if not sources:
@@ -206,6 +292,16 @@ def _fallback_answer(query: str, sources: list[ChatSource]) -> str:
             "I do not have enough portfolio context to answer that yet, but I can discuss "
             f"{cfg.owner_name}'s AI/ML, data science, Python, automation, and project experience."
         )
+
+    points = _best_source_points(query, sources)
+    if points:
+        lines = ["Here are the strongest matches from the portfolio context:", ""]
+        lines.extend(f"- {point}" for point in points)
+        lines.append("")
+        lines.append(
+            "I can narrow this to a specific role, project, toolset, leadership example, or company fit."
+        )
+        return "\n".join(lines)
 
     lines = [
         "Based on the portfolio context I have, here is the most relevant information:",
@@ -293,7 +389,18 @@ Answer:"""
 async def answer_chat(query: str, *, history: Any = None) -> dict[str, Any]:
     started = time.time()
     cleaned = query.strip()
-    history_text = _history_search_text(history)
+    if _is_greeting(cleaned):
+        return {
+            "success": True,
+            "response": _greeting_answer(),
+            "sources": [],
+            "provider": "local",
+            "provider_label": "Local portfolio retrieval",
+            "model_note": None,
+            "elapsed_ms": int((time.time() - started) * 1000),
+        }
+
+    history_text = _history_search_text(history) if _should_use_history(cleaned) else ""
     retrieval_query = f"{history_text}\n{cleaned}".strip() if history_text else cleaned
     sources = retrieve_sources(retrieval_query)
     response, model_note = await _call_hugging_face(cleaned, sources)
