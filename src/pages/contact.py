@@ -4,6 +4,7 @@ import time
 
 import fasthtml.common as ft
 
+from src.components.forms import CaptchaField, TextInput, TextareaField
 from src.components.patterns import Card, IconLink, InlineActions
 from src.components.ui import ensure_url
 from src.config import SiteConfig
@@ -44,67 +45,12 @@ def build_contact_page(
             Card(
                 ft.H3("Send a Message"),
                 ft.Form(
-                    ft.Div(
-                        ft.Label("Name", fr="name"),
-                        ft.Input(
-                            type="text",
-                            id="name",
-                            name="name",
-                            required=True,
-                            cls="form-input",
-                        ),
-                        cls="form-group",
-                    ),
-                    ft.Div(
-                        ft.Label("Email", fr="email"),
-                        ft.Input(
-                            type="email",
-                            id="email",
-                            name="email",
-                            required=True,
-                            cls="form-input",
-                        ),
-                        cls="form-group",
-                    ),
-                    ft.Div(
-                        ft.Label("Company", fr="company"),
-                        ft.Input(
-                            type="text",
-                            id="company",
-                            name="company",
-                            cls="form-input",
-                        ),
-                        cls="hp-wrap",
-                    ),
-                    ft.Div(
-                        ft.Label("Message", fr="message"),
-                        ft.Textarea(
-                            id="message",
-                            name="message",
-                            required=True,
-                            rows=5,
-                            cls="form-input",
-                        ),
-                        cls="form-group",
-                    ),
+                    TextInput("Name", "name", required=True),
+                    TextInput("Email", "email", input_type="email", required=True),
+                    TextInput("Company", "company", cls="hp-wrap"),
+                    TextareaField("Message", "message", required=True),
                     ft.Input(type="hidden", name="t0", value=str(int(time.time()))),
-                    ft.Div(
-                        ft.Label("Verification", fr="captcha"),
-                        ft.Img(
-                            src=captcha_image,
-                            alt="CAPTCHA",
-                            cls="captcha-img",
-                        ),
-                        ft.Input(
-                            type="text",
-                            id="captcha",
-                            name="captcha",
-                            required=True,
-                            placeholder="Enter the code above",
-                            cls="form-input",
-                        ),
-                        cls="form-group",
-                    ),
+                    CaptchaField(captcha_image),
                     ft.Button("Send Message", type="submit", cls="btn"),
                     method="post",
                     action="/contact",

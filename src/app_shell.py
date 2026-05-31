@@ -4,11 +4,10 @@ import os
 from pathlib import Path
 
 from fasthtml import FastHTML
-from fasthtml.common import Link, Script, Style
+from fasthtml.common import Link, Script
 from starlette.staticfiles import StaticFiles
 
-from src.assets.scripts import DARK_MODE_SCRIPT, GLOBAL_INTERACTIONS_SCRIPT
-from src.assets.styles import GLOBAL_STYLES
+from src.assets.loader import asset_script, asset_style
 from src.config import ROOT_DIR, get_config
 
 
@@ -29,10 +28,10 @@ def create_app(session_key_fname: str, session_secret: str | None) -> FastHTML:
                 ),
             ),
             Link(rel="icon", type="image/svg+xml", href="/static/favicon.svg"),
-            Style(GLOBAL_STYLES),
+            asset_style("global.css"),
             Script(src="https://cdn.plot.ly/plotly-2.35.2.min.js"),
-            Script(DARK_MODE_SCRIPT),
-            Script(GLOBAL_INTERACTIONS_SCRIPT),
+            asset_script("dark-mode.js"),
+            asset_script("interactions.js"),
         ),
     )
 

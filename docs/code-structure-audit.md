@@ -18,6 +18,7 @@ Future refactors should stay incremental. Keep route behavior unchanged, add or 
 | Browser assets | `src/assets/*.css`, `src/assets/*.js`, `src/assets/loader.py` | First-class CSS/JS files loaded into FastHTML |
 | Page composition | `src/pages/*.py` | Home, projects, about/resume, contact, and chat builders |
 | Shared UI primitives | `src/components/ui.py` | Navigation, hero, footer, mobile tabs |
+| Shared form primitives | `src/components/forms.py` | FastHTML form groups, text inputs, textareas, CAPTCHA field |
 | Chat UI | `src/components/chat/widget.py` | Self-contained CSS/JS widget |
 | RAG logic | `src/services/rag/simple_chat.py` | Reasonably scoped service module |
 | Resume sync parser | `scripts/sync_resume_content.py` | Large, but isolated CLI/parser responsibility |
@@ -25,13 +26,13 @@ Future refactors should stay incremental. Keep route behavior unchanged, add or 
 | Contact form rules | `src/services/contact_form.py` | Validation, CAPTCHA session helpers, local fallback persistence |
 | Rate limiting | `src/utils/rate_limit.py` | Isolated helper, file-backed best-effort limits |
 
-Largest Python files after the first refactor pass:
+Largest Python files after the FastHTML idiom pass:
 
 - `scripts/sync_resume_content.py`: 609 lines
 - `src/main.py`: about 300 lines
-- `src/services/rag/simple_chat.py`: 291 lines
-- `src/components/ui.py`: 236 lines
-- `src/components/chat/widget.py`: 235 lines
+- `src/services/rag/simple_chat.py`: about 500 lines
+- `src/components/ui.py`: about 220 lines
+- `src/components/chat/widget.py`: about 175 lines
 
 Largest remaining route/workflow functions in `src/main.py` are now small enough to review directly. The next size risk is `scripts/sync_resume_content.py`, which is acceptable while it remains an isolated CLI/parser responsibility.
 
@@ -67,19 +68,20 @@ Remaining optional improvement:
 
 - Consider static `/static/app.css` and `/static/app.js` if cache/versioning needs justify it.
 
-### 3. Page Composition Is Ready For Further UX Work
+### 3. Page Composition Uses Reusable FastHTML Helpers
 
 Home, Projects, About, Resume, Contact, and Chat now have page builders under `src/pages/`. This is the right base for the next UX pass.
 
-Impact:
+Current improvements:
 
-- Future layout work will keep inflating `src/main.py`.
-- Reused patterns such as cards, chips, timeline rows, stat boxes, and CTAs are recreated inline.
-- Inline `style=` attributes are scattered through page functions.
+- Cards, chips, timelines, stats, buttons, and action rows live in `src/components/patterns.py`.
+- Contact form field markup lives in `src/components/forms.py`.
+- Navigation and mobile tab links share one `NAV_ITEMS` source of truth.
+- Page modules do not use inline `style=`.
 
-Recommended next step:
+Remaining optional improvement:
 
-- Promote repeated UI pieces into small components only after the page modules exist.
+- Add more small component helpers only when repetition is real.
 - Continue route smoke tests for `/`, `/projects`, `/about`, `/resume`, `/contact`, `/chat`, and `/resume/download`.
 
 ### 4. Contact Form Workflow Is Isolated Enough For Current Risk

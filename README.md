@@ -72,7 +72,7 @@ fasthtml-portfolio/
 ├── src/
 │   ├── __init__.py          # Package initialization
 │   ├── app_shell.py         # FastHTML app/header/static setup
-│   ├── assets/              # Global CSS/JavaScript strings wired into FastHTML headers
+│   ├── assets/              # CSS/JavaScript asset files and FastHTML asset loaders
 │   ├── config.py            # Environment/public site configuration
 │   ├── main.py              # Route orchestration and stable Vercel app export
 │   ├── components/          # Reusable FastHTML UI components

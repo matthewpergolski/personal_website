@@ -1,9 +1,29 @@
 import re
 from datetime import datetime
+from dataclasses import dataclass
+
 import fasthtml.common as ft
 from fasthtml.common import Nav, Div, A, Button, Section, H1, P, Img, Footer, Span
 
 from src.config import get_config
+
+
+@dataclass(frozen=True)
+class NavItem:
+    label: str
+    href: str
+    tab_id: str
+    icon: str
+
+
+NAV_ITEMS = (
+    NavItem("Home", "/", "tab-home", "🏠"),
+    NavItem("About", "/about", "tab-about", "👤"),
+    NavItem("Projects", "/projects", "tab-projects", "🧩"),
+    NavItem("Resume", "/resume", "tab-resume", "📄"),
+    NavItem("Contact", "/contact", "tab-contact", "✉️"),
+    NavItem("Chat", "/chat", "tab-chat", "💬"),
+)
 
 
 def ensure_url(url: str | None) -> str | None:
@@ -65,12 +85,10 @@ def Navigation():
                     Button(
                         "×", id="nav-close", cls="nav-close", aria_label="Close menu"
                     ),
-                    A("Home", href="/", cls="nav-link"),
-                    A("About", href="/about", cls="nav-link"),
-                    A("Projects", href="/projects", cls="nav-link"),
-                    A("Resume", href="/resume", cls="nav-link"),
-                    A("Contact", href="/contact", cls="nav-link"),
-                    A("Chat", href="/chat", cls="nav-link"),
+                    *[
+                        A(item.label, href=item.href, cls="nav-link")
+                        for item in NAV_ITEMS
+                    ],
                     id="nav-links",
                     cls="nav-links",
                 ),
@@ -186,48 +204,16 @@ def SiteFooter():
 def MobileTabBar():
     """Fixed bottom tab bar for mobile only (CSS controls visibility)."""
     return Div(
-        A(
-            Span("🏠", cls="tab-ico"),
-            Span("Home", cls="tab-txt"),
-            href="/",
-            id="tab-home",
-            cls="tab",
-        ),
-        A(
-            Span("👤", cls="tab-ico"),
-            Span("About", cls="tab-txt"),
-            href="/about",
-            id="tab-about",
-            cls="tab",
-        ),
-        A(
-            Span("🧩", cls="tab-ico"),
-            Span("Projects", cls="tab-txt"),
-            href="/projects",
-            id="tab-projects",
-            cls="tab",
-        ),
-        A(
-            Span("📄", cls="tab-ico"),
-            Span("Resume", cls="tab-txt"),
-            href="/resume",
-            id="tab-resume",
-            cls="tab",
-        ),
-        A(
-            Span("✉️", cls="tab-ico"),
-            Span("Contact", cls="tab-txt"),
-            href="/contact",
-            id="tab-contact",
-            cls="tab",
-        ),
-        A(
-            Span("💬", cls="tab-ico"),
-            Span("Chat", cls="tab-txt"),
-            href="/chat",
-            id="tab-chat",
-            cls="tab",
-        ),
+        *[
+            A(
+                Span(item.icon, cls="tab-ico"),
+                Span(item.label, cls="tab-txt"),
+                href=item.href,
+                id=item.tab_id,
+                cls="tab",
+            )
+            for item in NAV_ITEMS
+        ],
         id="mobile-tabbar",
         cls="mobile-tabbar",
     )

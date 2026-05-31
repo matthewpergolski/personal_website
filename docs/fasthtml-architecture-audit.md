@@ -83,6 +83,9 @@ src/
 
 - Added this audit as a tracked reference.
 - Added `src/components/patterns.py` for repeated FastHTML structures.
+- Added `src/components/forms.py` for repeated contact form field structures.
+- Made desktop navigation and mobile tab navigation share one typed source of truth.
+- Added asset helper functions so FastHTML headers/components load CSS/JS through a consistent boundary.
 - Removed inline `style=` usage from page/component builders.
 - Extracted large CSS/JS strings into first-class asset files and added Biome checks.
 - Kept route behavior and visual design intentionally stable.
