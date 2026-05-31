@@ -52,6 +52,13 @@ class ChatSource:
     score: float = 0.0
 
 
+def _source_payload(source: ChatSource) -> dict[str, str]:
+    snippet = re.sub(r"\s+", " ", source.text).strip()
+    if len(snippet) > 180:
+        snippet = snippet[:177].rstrip() + "..."
+    return {"label": source.label, "snippet": snippet}
+
+
 def _tokens(text: str) -> set[str]:
     return {
         tok
@@ -92,6 +99,11 @@ def _chunk_text(text: str, *, max_chars: int = 1200) -> list[str]:
     return chunks
 
 
+def _experience_label(role: dict[str, Any]) -> str:
+    title = re.sub(r"\s*\([^)]*\)\s*", " ", str(role.get("title") or "Role")).strip()
+    return f"Experience: {title or role.get('company', 'Company')}"
+
+
 def _experience_sources() -> list[ChatSource]:
     data = load_experience(ROOT_DIR) or {}
     site = _load_site_json()
@@ -115,9 +127,7 @@ def _experience_sources() -> list[ChatSource]:
                 *[f"- {b}" for b in role.get("bullets") or []],
             ]
         )
-        sources.append(
-            ChatSource(f"Experience: {role.get('company', 'Company')}", text)
-        )
+        sources.append(ChatSource(_experience_label(role), text))
 
     for school in data.get("education") or []:
         text = f"{school.get('degree', 'Degree')} - {school.get('institution', 'Institution')} ({school.get('period', '')})"
@@ -162,11 +172,31 @@ def retrieve_sources(query: str, *, limit: int = 4) -> list[ChatSource]:
         source_tokens = _tokens(f"{source.label} {source.text}")
         overlap = len(query_tokens & source_tokens)
         density = overlap / math.sqrt(max(len(source_tokens), 1))
+        if source.label.startswith("Experience"):
+            density *= 1.2
+        elif source.label in {"Highlights", "Professional summary"}:
+            density *= 1.1
+        elif source.label.startswith("Resume text"):
+            density *= 0.65
         scored.append(ChatSource(source.label, source.text, density))
 
     scored.sort(key=lambda source: source.score, reverse=True)
     matches = [source for source in scored if source.score > 0]
     return (matches or scored)[:limit]
+
+
+def _history_search_text(history: Any) -> str:
+    if not isinstance(history, list):
+        return ""
+
+    user_messages: list[str] = []
+    for item in history[-8:]:
+        if not isinstance(item, dict) or item.get("role") != "user":
+            continue
+        content = str(item.get("content") or "").strip()
+        if content:
+            user_messages.append(content[:240])
+    return "\n".join(user_messages[-3:])
 
 
 def _fallback_answer(query: str, sources: list[ChatSource]) -> str:
@@ -260,12 +290,15 @@ Answer:"""
     return generated, None
 
 
-async def answer_chat(query: str) -> dict[str, Any]:
+async def answer_chat(query: str, *, history: Any = None) -> dict[str, Any]:
     started = time.time()
     cleaned = query.strip()
-    sources = retrieve_sources(cleaned)
+    history_text = _history_search_text(history)
+    retrieval_query = f"{history_text}\n{cleaned}".strip() if history_text else cleaned
+    sources = retrieve_sources(retrieval_query)
     response, model_note = await _call_hugging_face(cleaned, sources)
     provider = "huggingface" if response else "local"
+    provider_label = "AI-polished answer" if response else "Local portfolio retrieval"
     if not response:
         response = _fallback_answer(cleaned, sources)
         if model_note:
@@ -278,8 +311,9 @@ async def answer_chat(query: str) -> dict[str, Any]:
     return {
         "success": True,
         "response": response,
-        "sources": [source.label for source in sources[:3]],
+        "sources": [_source_payload(source) for source in sources[:3]],
         "provider": provider,
+        "provider_label": provider_label,
         "model_note": model_note,
         "elapsed_ms": int((time.time() - started) * 1000),
     }
@@ -291,4 +325,4 @@ async def handle_chat_payload(payload: dict[str, Any]) -> dict[str, Any]:
         return {"success": False, "error": "Message is required."}
     if len(message) > 700:
         return {"success": False, "error": "Message is too long."}
-    return await answer_chat(message)
+    return await answer_chat(message, history=payload.get("history"))

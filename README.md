@@ -247,9 +247,10 @@ At runtime the app merges env vars with this JSON:
 - Anti‑spam: honeypot + min submit time + self-hosted image CAPTCHA + per‑IP/hour and daily global rate‑limits.
 
 ### Experience Chat
-- A floating chat widget appears on every page, with a full-page experience at `/chat`.
+- The assistant is available from every page through the desktop floating widget, mobile Chat tab, and full-page experience at `/chat`.
 - Chat history is stored in browser `sessionStorage`, so it carries across pages for the same visitor and tab/session only. It is not stored server-side and is not visible to other visitors.
-- Retrieval is local and free: the app ranks committed portfolio/experience data for each question.
+- Retrieval is local and free: the app ranks committed portfolio/experience data for each question, including recent user turns for follow-up context.
+- Responses show the answer path and source labels so visitors can tell whether the answer came from local retrieval or optional AI polishing.
 - `HUGGINGFACE_API_KEY` is optional. When configured, a small Hugging Face model can polish responses; if it is missing, rate-limited, or out of free usage, the local retrieved answer is still returned.
 
 ### Development Checks
