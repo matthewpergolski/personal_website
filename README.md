@@ -17,8 +17,8 @@ A visually stunning and technically impressive portfolio website built exclusive
 
 ## 🛠️ Technology Stack
 
-- **Backend/API**: Python 3.12 ASGI app built with FastHTML/Starlette. Routes and API endpoints live in `src/main.py`; Vercel enters through `api/index.py`.
-- **UI framework**: FastHTML server-rendered components, in-page CSS, and small vanilla JavaScript helpers. There is no React/Vue frontend.
+- **Backend/API**: Python 3.12 ASGI app built with FastHTML/Starlette. `src/main.py` keeps the public route entrypoints, `src/app_shell.py` builds the FastHTML app, and Vercel enters through `api/index.py`.
+- **UI framework**: FastHTML server-rendered page builders in `src/pages/`, reusable components in `src/components/`, in-page CSS, and small vanilla JavaScript helpers. There is no React/Vue frontend.
 - **Chat/RAG**: Free-first local retrieval over committed portfolio data, with optional Hugging Face Inference API response polishing.
 - **Data sources**: `data/experience.json`, optional public `data/site.json`, an optional Google Docs/Drive resume source sync, and GitHub REST API calls through `httpx`.
 - **Deployment/hosting**: Vercel Git integration using `vercel.json` and the Vercel Python runtime.
@@ -71,10 +71,12 @@ fasthtml-portfolio/
 │   └── index.py            # Vercel Python entrypoint
 ├── src/
 │   ├── __init__.py          # Package initialization
+│   ├── app_shell.py         # FastHTML app/header/static setup
 │   ├── assets/              # Global CSS/JavaScript strings wired into FastHTML headers
 │   ├── config.py            # Environment/public site configuration
-│   ├── main.py              # Main FastHTML application
+│   ├── main.py              # Route orchestration and stable Vercel app export
 │   ├── components/          # Reusable FastHTML UI components
+│   ├── pages/               # Page body builders for public routes
 │   ├── services/            # GitHub, email, content, and chat services
 │   └── utils/               # Rendering and rate-limit helpers
 ├── data/
@@ -82,7 +84,7 @@ fasthtml-portfolio/
 │   └── site.json.example    # Optional public site config template
 ├── docs/
 │   └── code-structure-audit.md # Refactor audit and recommended PR sequence
-├── tests/                   # pytest coverage
+├── tests/                   # pytest coverage, including route smoke tests
 ├── scripts/
 │   ├── push-vercel-envs     # Sync selected envs.sh values to Vercel
 │   └── sync_resume_content.py # Parse resume source into data/experience.json

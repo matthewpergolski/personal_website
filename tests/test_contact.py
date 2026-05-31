@@ -14,6 +14,12 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from main import app, captcha_answer_hash, get_client_ip  # type: ignore
+from src.services.contact_form import (
+    ContactSubmission,
+    ContactThresholds,
+    consume_matching_captcha,
+    validate_contact_fields,
+)
 
 
 @pytest.fixture(scope="module")
@@ -97,6 +103,42 @@ def test_vercel_disables_ephemeral_contact_fallback(client, monkeypatch):
 
     assert resp.status_code == 303
     assert resp.headers["location"] == "/contact?err=server"
+
+
+def test_contact_field_validation_enforces_basic_rules():
+    submission = ContactSubmission(
+        name="X",
+        email="not-an-email",
+        message="short",
+        company="",
+        submitted_at=100,
+        captcha="ABCDE",
+    )
+
+    errors = validate_contact_fields(
+        submission,
+        ContactThresholds(min_message_length=10, min_submit_seconds=2.5),
+        now=101,
+    )
+
+    assert "Submission was too fast; please try again." in errors
+    assert "Please enter your name." in errors
+    assert "Please enter a valid email address." in errors
+    assert "Please write a slightly longer message." in errors
+
+
+def test_contact_captcha_match_is_consumed():
+    session = {"captcha_answers": [{"answer_hash": "match", "ts": 100}]}
+
+    matched = consume_matching_captcha(
+        session,
+        "ABCDE",
+        lambda answer: "match" if answer == "ABCDE" else "miss",
+        now=101,
+    )
+
+    assert matched is True
+    assert session["captcha_answers"] == []
 
 
 # -------------------------- Rate Limiting --------------------------
