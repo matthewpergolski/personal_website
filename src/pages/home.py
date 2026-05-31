@@ -135,6 +135,7 @@ def _chart_script(
           function render(kind) {{
             const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-color').trim() || '#e2e8f0';
             const bg = 'rgba(0,0,0,0)';
+            const compactChart = window.matchMedia('(max-width: 640px)').matches;
             let data, layout;
             const labels = getLabels();
             const v = getVals();
@@ -147,7 +148,7 @@ def _chart_script(
               layout={{ paper_bgcolor:bg, plot_bgcolor:bg, margin:{{t:10,b:10,l:10,r:10}}, font:{{color:textColor}} }};
             }} else {{
               data=[{{ type:'pie', hole:.5, labels, values:v, marker:{{colors:colors(v.length)}}, textinfo:'label+percent', textposition:'outside', automargin:true, hovertemplate: metric==='bytes' ? '%{{label}}: %{{value:,}} bytes (%{{percent}})<extra></extra>' : '%{{label}}: %{{value}} repos (%{{percent}})<extra></extra>' }}];
-              layout={{ paper_bgcolor:bg, plot_bgcolor:bg, showlegend:true, legend:{{ font:{{color:textColor}}, orientation:'h', y:-.12 }}, margin:{{t:24,b:80,l:72,r:72}}, font:{{color:textColor}}, uniformtext:{{mode:'show', minsize:11}} }};
+              layout={{ paper_bgcolor:bg, plot_bgcolor:bg, showlegend:!compactChart, legend:{{ font:{{color:textColor}}, orientation:'h', y:-.12 }}, margin: compactChart ? {{t:18,b:32,l:42,r:42}} : {{t:24,b:80,l:72,r:72}}, font:{{color:textColor}}, uniformtext:{{mode:'show', minsize: compactChart ? 10 : 11}} }};
             }}
             Plotly.newPlot('lang-chart', data, layout, {{displayModeBar:false, responsive:true}}).then(function(g) {{
               g.on('plotly_click', function(ev) {{
