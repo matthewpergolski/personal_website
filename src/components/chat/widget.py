@@ -70,7 +70,7 @@ class ChatWidget:
                             else "chat-full-link chat-toggle-hidden",
                         ),
                         ft.Button(
-                            "New",
+                            "New chat",
                             id="chat-reset",
                             cls="chat-reset",
                             type="button",
@@ -149,12 +149,19 @@ class ChatWidget:
     def _styles(self):
         return ft.Style("""
             .experience-chat { position: fixed; right: 24px; bottom: 84px; z-index: 1200; font-family: inherit; }
-            .experience-chat-page { position: static; z-index: auto; width: min(980px, 100%); margin: 0 auto; }
+            .experience-chat-page { position: static; z-index: auto; width: min(1120px, 100%); margin: 0 auto; }
             .chat-toggle { width: 56px; height: 56px; border-radius: 999px; border: 1px solid var(--border-color); background: var(--primary-color); color: #fff; font-weight: 700; cursor: pointer; box-shadow: 0 12px 32px rgba(0,0,0,.24); }
             .chat-toggle-hidden { display: none !important; }
             .chat-panel { width: min(440px, calc(100vw - 32px)); height: min(650px, calc(100vh - 124px)); display: grid; grid-template-rows: auto 1fr auto auto auto; overflow: hidden; background: var(--surface-1); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 24px 70px rgba(0,0,0,.35); }
             .chat-panel-closed { display: none; }
-            .chat-panel-page { width: 100%; height: min(720px, calc(100vh - 180px)); min-height: 560px; box-shadow: none; }
+            .chat-panel-page {
+                width: 100%;
+                height: auto;
+                min-height: min(900px, calc(100svh - 220px));
+                grid-template-rows: auto auto auto auto auto;
+                overflow: visible;
+                box-shadow: none;
+            }
             .chat-header { display: flex; justify-content: space-between; gap: 1rem; padding: 1rem; border-bottom: 1px solid var(--border-color); background: var(--surface-2); }
             .chat-title { margin: 0 0 .25rem; font-size: 1rem; }
             .chat-subtitle { margin: 0; color: var(--muted-text); font-size: .88rem; }
@@ -174,13 +181,43 @@ class ChatWidget:
             .chat-suggestion:hover { border-color: var(--primary-color); color: var(--primary-color); }
             .chat-status { padding: .65rem 1rem 0; color: var(--muted-text); font-size: .78rem; border-top: 1px solid var(--border-color); }
             .chat-form { display: grid; grid-template-columns: 1fr auto; gap: .65rem; padding: 1rem; border-top: 1px solid var(--border-color); }
-            .chat-input { min-height: 44px; max-height: 140px; resize: vertical; }
+            .chat-input { min-height: 44px; max-height: 140px; resize: vertical; font-size: 1rem; line-height: 1.35; }
             .chat-send { border-radius: 8px; border: none; padding: 0 1rem; background: var(--primary-color); color: #fff; cursor: pointer; font-weight: 700; }
             .chat-send:disabled { opacity: .6; cursor: wait; }
+            .experience-chat-page .chat-messages {
+                min-height: 420px;
+                overflow: visible;
+            }
+            .experience-chat-page .chat-form {
+                position: sticky;
+                bottom: 0;
+                z-index: 3;
+                background: var(--surface-1);
+            }
             @media (max-width: 768px) {
                 .experience-chat { right: 12px; bottom: 78px; }
                 .chat-panel { width: calc(100vw - 24px); height: min(660px, calc(100vh - 112px)); }
-                .chat-panel-page { height: min(600px, calc(100svh - 290px)); min-height: 430px; }
+                .experience-chat-page { width: 100%; }
+                .experience-chat-page .chat-panel {
+                    width: 100%;
+                    height: auto;
+                    min-height: calc(100svh - 178px);
+                    border-radius: 10px;
+                    padding-bottom: 94px;
+                }
+                .experience-chat-page .chat-messages { min-height: 380px; padding: .9rem; }
+                .experience-chat-page .chat-status { padding: .55rem .9rem 0; }
+                .experience-chat-page .chat-form {
+                    position: fixed;
+                    left: max(12px, env(safe-area-inset-left));
+                    right: max(12px, env(safe-area-inset-right));
+                    bottom: calc(74px + env(safe-area-inset-bottom));
+                    padding: .85rem;
+                    border: 1px solid var(--border-color);
+                    border-radius: 10px;
+                    box-shadow: 0 -12px 36px rgba(0,0,0,.28);
+                }
+                .chat-input { font-size: 16px; }
                 .chat-header { align-items: start; }
                 .chat-header-actions { flex-wrap: wrap; justify-content: end; }
                 .chat-message { max-width: 94%; }
@@ -194,6 +231,7 @@ class ChatWidget:
               let pending = false;
               function byId(id){ return document.getElementById(id); }
               function getRoot(){ return byId('experience-chat'); }
+              function canAutoFocus(){ return window.matchMedia('(hover: hover) and (pointer: fine)').matches; }
               function loadMessages(root){
                 try {
                   const saved = sessionStorage.getItem(STORE_KEY);
@@ -275,7 +313,7 @@ class ChatWidget:
                 renderMessages(messages);
                 setStatus('Started a new browser-session chat.');
                 const input = byId('chat-input');
-                if (input) input.focus();
+                if (input && canAutoFocus()) input.focus();
               }
               async function submitMessage(text){
                 const form = byId('chat-form');
@@ -314,7 +352,7 @@ class ChatWidget:
                   renderMessages(messages);
                   saveMessages(messages);
                   if (send) { send.disabled = false; send.textContent = 'Send'; }
-                  if (input) input.focus();
+                  if (input && canAutoFocus()) input.focus();
                 }
               }
               function init(){
