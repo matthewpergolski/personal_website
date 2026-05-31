@@ -30,6 +30,15 @@ jobs:
       - name: Run tests
         run: uv run pytest -q
 
+      - name: Run UI smoke verification
+        run: uv run python scripts/verify_ui_smoke.py
+
+      - name: Install Playwright Chromium
+        run: uv run playwright install --with-deps chromium
+
+      - name: Run browser UI smoke verification
+        run: uv run python scripts/verify_ui_browser.py
+
       - name: Smoke test resume source sync
         if: ${{ vars.RESUME_SOURCE_URL != '' }}
         env:
