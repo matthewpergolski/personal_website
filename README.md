@@ -257,6 +257,7 @@ At runtime the app merges env vars with this JSON:
 - Hooks run Ruff formatting and Ruff lint fixes.
 - GitHub Actions runs formatting, linting, and tests.
 - Vercel installs Python dependencies from the committed `pyproject.toml` and `uv.lock`.
+- Visual/UX-heavy PRs should also follow `docs/ux-verification.md` for desktop and mobile screenshot checks.
 
 ### Vercel Environment Variables
 - Push selected values from `envs.sh` with `./scripts/push-vercel-envs production`.
