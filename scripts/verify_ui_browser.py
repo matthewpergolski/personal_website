@@ -37,6 +37,9 @@ ROUTES = {
     "/chat": [".chat-page-title", "#chat-form", "#chat-suggestions"],
 }
 
+THEMES = ("cosmic", "graphite", "evergreen", "atelier", "sunrise", "spectrum")
+APPEARANCES = ("light", "dark")
+
 
 def _available_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -151,6 +154,69 @@ def _check_chat_mobile_interaction(
         raise AssertionError(f"mobile chat title is cramped: {layout}")
 
 
+def _check_theme_controls(page: Page, base_url: str, viewport: Viewport) -> None:
+    page.goto(f"{base_url}/", wait_until="domcontentloaded")
+    if viewport.is_mobile:
+        _assert_visible(page, "#theme-toggle-mobile", f"{viewport.name} theme toggle")
+        page.locator("#nav-toggle").click()
+        _assert_visible(
+            page,
+            '.nav-theme-panel [data-theme-select="mobile-menu"]',
+            f"{viewport.name} theme select",
+        )
+        _assert_visible(
+            page,
+            '.nav-theme-panel [data-appearance-choice="system"]',
+            f"{viewport.name} mode controls",
+        )
+    else:
+        _assert_visible(page, "#theme-toggle", f"{viewport.name} theme toggle")
+        page.locator(".theme-summary").click()
+        _assert_visible(
+            page,
+            '.theme-popover [data-theme-select="desktop-menu"]',
+            f"{viewport.name} theme select",
+        )
+        _assert_visible(
+            page,
+            '.theme-popover [data-appearance-choice="system"]',
+            f"{viewport.name} mode controls",
+        )
+    _assert_no_horizontal_overflow(page, f"{viewport.name} theme controls")
+
+
+def _check_theme_matrix(page: Page, base_url: str, viewport: Viewport) -> None:
+    for theme in THEMES:
+        for appearance in APPEARANCES:
+            page.goto(f"{base_url}/", wait_until="domcontentloaded")
+            page.evaluate(
+                """([theme, appearance]) => {
+                    localStorage.setItem('site_theme_v1', theme);
+                    localStorage.setItem('site_appearance_v1', appearance);
+                }""",
+                [theme, appearance],
+            )
+            page.reload(wait_until="domcontentloaded")
+            attrs = page.evaluate(
+                """() => ({
+                    theme: document.documentElement.getAttribute('data-theme'),
+                    appearance: document.documentElement.getAttribute('data-appearance'),
+                    bg: getComputedStyle(document.body).backgroundColor,
+                    color: getComputedStyle(document.body).color
+                })"""
+            )
+            if attrs["theme"] != theme or attrs["appearance"] != appearance:
+                raise AssertionError(
+                    f"{viewport.name} theme attrs mismatch for {theme}/{appearance}: {attrs}"
+                )
+            _assert_visible(
+                page, ".hero-title", f"{viewport.name} {theme}/{appearance}"
+            )
+            _assert_no_horizontal_overflow(
+                page, f"{viewport.name} {theme}/{appearance}"
+            )
+
+
 def run_browser_checks(headed: bool = False) -> None:
     _patch_external_services()
     port = _available_port()
@@ -173,6 +239,8 @@ def run_browser_checks(headed: bool = False) -> None:
                     try:
                         for route in ROUTES:
                             _check_route(page, base_url, route, viewport)
+                        _check_theme_controls(page, base_url, viewport)
+                        _check_theme_matrix(page, base_url, viewport)
                         if viewport.is_mobile:
                             _check_chat_mobile_interaction(page, base_url, viewport)
                         print(f"PASS {viewport.name} browser smoke")

@@ -86,6 +86,7 @@ src/
 - Added `src/components/forms.py` for repeated contact form field structures.
 - Made desktop navigation and mobile tab navigation share one typed source of truth.
 - Added asset helper functions so FastHTML headers/components load CSS/JS through a consistent boundary.
+- Added a typed theme registry plus shared desktop/mobile FastHTML controls for theme and appearance mode.
 - Removed inline `style=` usage from page/component builders.
 - Extracted large CSS/JS strings into first-class asset files and added Biome checks.
 - Kept route behavior and visual design intentionally stable.
@@ -95,4 +96,4 @@ src/
 1. UX redesign pass: improve visual hierarchy, homepage first impression, desktop/mobile layout, and CTA ergonomics.
 2. Content source-of-truth pass: move more profile/about/project copy out of Python literals and into structured content.
 3. Chat/RAG quality pass: review the chat widget boundary, answer rendering, source display, and free-tier fallback UX.
-4. Theme configuration pass: add reusable professional theme packs with light/dark/system support.
+4. Theme expansion pass: add more branded theme packs only after the token contract remains stable through real use.

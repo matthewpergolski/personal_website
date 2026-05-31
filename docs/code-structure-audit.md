@@ -16,6 +16,7 @@ Future refactors should stay incremental. Keep route behavior unchanged, add or 
 | App entrypoint and route orchestration | `src/main.py` | Thin Vercel-stable route layer around app/page/service modules |
 | App shell, headers, static mount | `src/app_shell.py` | FastHTML app construction and shared assets |
 | Browser assets | `src/assets/*.css`, `src/assets/*.js`, `src/assets/loader.py` | First-class CSS/JS files loaded into FastHTML |
+| Themes | `src/themes.py`, `src/assets/global.css` | Registered theme metadata plus CSS token implementations |
 | Page composition | `src/pages/*.py` | Home, projects, about/resume, contact, and chat builders |
 | Shared UI primitives | `src/components/ui.py` | Navigation, hero, footer, mobile tabs |
 | Shared form primitives | `src/components/forms.py` | FastHTML form groups, text inputs, textareas, CAPTCHA field |

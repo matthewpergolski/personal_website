@@ -6,6 +6,7 @@ import fasthtml.common as ft
 from fasthtml.common import Nav, Div, A, Button, Section, H1, P, Img, Footer, Span
 
 from src.config import get_config
+from src.themes import APPEARANCE_OPTIONS, THEME_OPTIONS
 
 
 @dataclass(frozen=True)
@@ -52,6 +53,70 @@ def display_skill_category(category: str | None) -> str:
     return labels.get(category, category)
 
 
+def AppearanceToggle(toggle_id: str | None = None, cls: str = "icon-link theme-toggle"):
+    return Button(
+        "🌗",
+        id=toggle_id,
+        cls=cls,
+        title="Toggle light or dark mode",
+        aria_label="Toggle light or dark mode",
+        data_appearance_toggle="true",
+    )
+
+
+def ThemeControls(scope: str):
+    return Div(
+        Div(
+            Span("Theme", cls="theme-control-label"),
+            ft.Select(
+                *[
+                    ft.Option(
+                        theme.label,
+                        value=theme.slug,
+                        title=theme.description,
+                    )
+                    for theme in THEME_OPTIONS
+                ],
+                cls="theme-select",
+                aria_label="Select theme",
+                data_theme_select=scope,
+            ),
+            cls="theme-control-row",
+        ),
+        Div(
+            Span("Mode", cls="theme-control-label"),
+            Div(
+                *[
+                    Button(
+                        appearance.label,
+                        type="button",
+                        cls="theme-mode-option",
+                        title=appearance.description,
+                        data_appearance_choice=appearance.slug,
+                    )
+                    for appearance in APPEARANCE_OPTIONS
+                ],
+                cls="theme-mode-group",
+            ),
+            cls="theme-control-row",
+        ),
+        cls="theme-controls",
+    )
+
+
+def ThemeMenu():
+    return ft.Details(
+        ft.Summary(
+            Span("🌗", aria_hidden="true"),
+            Span("Theme", cls="theme-summary-label"),
+            cls="icon-link theme-summary",
+            title="Theme settings",
+        ),
+        Div(ThemeControls("desktop-menu"), cls="theme-popover"),
+        cls="theme-menu",
+    )
+
+
 def Navigation():
     config = get_config()
     gh_user = config.github_username
@@ -72,14 +137,18 @@ def Navigation():
                     href="/",
                     cls="nav-brand",
                 ),
-                Button(
-                    "☰",
-                    id="nav-toggle",
-                    cls="nav-toggle",
-                    aria_label="Toggle navigation",
-                    aria_controls="nav-links",
-                    aria_expanded="false",
-                    title="Menu",
+                Div(
+                    AppearanceToggle("theme-toggle-mobile", cls="mobile-theme-toggle"),
+                    Button(
+                        "☰",
+                        id="nav-toggle",
+                        cls="nav-toggle",
+                        aria_label="Toggle navigation",
+                        aria_controls="nav-links",
+                        aria_expanded="false",
+                        title="Menu",
+                    ),
+                    cls="mobile-nav-actions",
                 ),
                 Div(
                     Button(
@@ -89,6 +158,7 @@ def Navigation():
                         A(item.label, href=item.href, cls="nav-link")
                         for item in NAV_ITEMS
                     ],
+                    Div(ThemeControls("mobile-menu"), cls="nav-theme-panel"),
                     id="nav-links",
                     cls="nav-links",
                 ),
@@ -121,12 +191,8 @@ def Navigation():
                             else []
                         )
                         + [
-                            Button(
-                                "🌗",
-                                id="theme-toggle",
-                                cls="icon-link theme-toggle",
-                                title="Toggle theme",
-                            )
+                            AppearanceToggle("theme-toggle"),
+                            ThemeMenu(),
                         ]
                     ),
                     cls="nav-actions",

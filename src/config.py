@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
+from src.themes import normalize_appearance, normalize_theme
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
@@ -28,6 +29,8 @@ class SiteConfig:
     linkedin_url: Optional[str]
     github_username: Optional[str]
     resume_url: Optional[str]
+    default_theme: str
+    default_appearance: str
     contact_intro: str
     contact_response_time: str
     resume_pdf_prompt: str
@@ -88,6 +91,12 @@ def get_config() -> SiteConfig:
         github_username=os.getenv("GITHUB_USERNAME")
         or (data.get("github_username") or None),
         resume_url=os.getenv("RESUME_URL") or (data.get("resume_url") or None),
+        default_theme=normalize_theme(
+            os.getenv("SITE_THEME") or str(data.get("theme") or "")
+        ),
+        default_appearance=normalize_appearance(
+            os.getenv("SITE_APPEARANCE") or str(data.get("appearance") or "")
+        ),
         contact_intro=str(
             data.get("contact_intro")
             or (

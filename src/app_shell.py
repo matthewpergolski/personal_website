@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 
@@ -9,6 +10,15 @@ from starlette.staticfiles import StaticFiles
 
 from src.assets.loader import asset_script, asset_style
 from src.config import ROOT_DIR, get_config
+
+
+def _theme_defaults_script() -> Script:
+    config = get_config()
+    defaults = {
+        "theme": config.default_theme,
+        "appearance": config.default_appearance,
+    }
+    return Script(f"window.__SITE_THEME_DEFAULTS__ = {json.dumps(defaults)};")
 
 
 def create_app(session_key_fname: str, session_secret: str | None) -> FastHTML:
@@ -28,9 +38,10 @@ def create_app(session_key_fname: str, session_secret: str | None) -> FastHTML:
                 ),
             ),
             Link(rel="icon", type="image/svg+xml", href="/static/favicon.svg"),
+            _theme_defaults_script(),
+            asset_script("dark-mode.js"),
             asset_style("global.css"),
             Script(src="https://cdn.plot.ly/plotly-2.35.2.min.js"),
-            asset_script("dark-mode.js"),
             asset_script("interactions.js"),
         ),
     )
