@@ -79,24 +79,12 @@ def build_home_page(
                             Button("Repos", id="metric-repos", cls="icon-link"),
                             Button("Bytes", id="metric-bytes", cls="icon-link"),
                             Button("Export PNG", id="chart-export", cls="icon-link"),
-                            style=(
-                                "display:flex; gap:.5rem; flex-wrap:wrap; "
-                                "align-items:center;"
-                            ),
                             cls="chart-controls",
                         ),
-                        style=(
-                            "display:flex; justify-content:flex-end; "
-                            "margin-bottom:.5rem;"
-                        ),
+                        cls="chart-toolbar",
                     ),
-                    Div(id="lang-chart", style="height:480px;"),
-                    style=(
-                        "max-width:1000px;margin:0 auto;background:var(--surface-1);"
-                        "border:1px solid var(--border-color);border-radius:16px;"
-                        "padding:1rem;box-shadow: 0 10px 40px rgba(0,0,0,.25);"
-                        "backdrop-filter: blur(4px);"
-                    ),
+                    Div(id="lang-chart", cls="chart-canvas"),
+                    cls="chart-shell",
                 ),
             ),
             Script(
