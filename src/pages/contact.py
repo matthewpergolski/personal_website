@@ -4,6 +4,7 @@ import time
 
 import fasthtml.common as ft
 
+from src.components.patterns import Card, IconLink, InlineActions
 from src.components.ui import ensure_url
 from src.config import SiteConfig
 
@@ -18,7 +19,7 @@ def build_contact_page(
     return ft.Section(
         ft.H2("Get In Touch", cls="section-title"),
         ft.Div(
-            ft.Div(
+            Card(
                 alert if alert else ft.Div(),
                 ft.H3("Let's Connect"),
                 ft.P(
@@ -28,33 +29,23 @@ def build_contact_page(
                 ),
                 ft.H4("Contact Information"),
                 ft.P(f"📧 Email: {config.public_email or ''}"),
-                ft.Div(
-                    ft.A(
+                InlineActions(
+                    IconLink(
                         "💼 LinkedIn",
                         href=ensure_url(config.linkedin_url),
-                        cls="icon-link",
-                        target="_blank",
-                        rel="noopener noreferrer",
                     ),
-                    ft.A(
+                    IconLink(
                         "🐙 GitHub",
                         href=ensure_url(f"https://github.com/{config.github_username}")
                         if config.github_username
                         else "https://github.com/",
-                        cls="icon-link",
-                        target="_blank",
-                        rel="noopener noreferrer",
                     ),
-                    style=(
-                        "display:flex; gap:.75rem; flex-wrap:wrap; "
-                        "margin: .5rem 0 1rem;"
-                    ),
+                    cls="contact-links",
                 ),
                 ft.H4("Response Time"),
                 ft.P("I typically respond to emails within 24 hours."),
-                cls="card",
             ),
-            ft.Div(
+            Card(
                 ft.H3("Send a Message"),
                 ft.Form(
                     ft.Div(
@@ -106,11 +97,7 @@ def build_contact_page(
                         ft.Img(
                             src=captcha_image,
                             alt="CAPTCHA",
-                            style=(
-                                "border:1px solid var(--border-color); "
-                                "border-radius:4px; margin-bottom:0.5rem; "
-                                "display:block;"
-                            ),
+                            cls="captcha-img",
                         ),
                         ft.Input(
                             type="text",
@@ -127,7 +114,6 @@ def build_contact_page(
                     action="/contact",
                     cls="contact-form",
                 ),
-                cls="card",
             ),
             cls="card-grid",
         ),
@@ -137,16 +123,14 @@ def build_contact_page(
 
 def _contact_alert(query_params):
     if "sent" in query_params:
-        return ft.Div(
+        return Card(
             ft.P("Thanks! Your message was sent."),
-            cls="card",
-            style="border-left:4px solid var(--success-color);",
+            cls="alert-success",
         )
     if "saved" in query_params:
-        return ft.Div(
+        return Card(
             ft.P("Message saved locally (email not configured)."),
-            cls="card",
-            style="border-left:4px solid var(--accent-color);",
+            cls="alert-info",
         )
     if "err" in query_params:
         errmap = {
@@ -158,7 +142,5 @@ def _contact_alert(query_params):
         msg = errmap.get(
             query_params.get("err"), "We couldn't send your message right now."
         )
-        return ft.Div(
-            ft.P(msg), cls="card", style="border-left:4px solid var(--error-color);"
-        )
+        return Card(ft.P(msg), cls="alert-error")
     return None

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from fasthtml.common import A, Div, H2, H3, P, Section, Span
+from fasthtml.common import A, Div, H2, H3, P, Section
+
+from src.components.patterns import Card, ChipList, MutedText
 
 
 def build_projects_page(
@@ -24,36 +26,19 @@ def build_projects_page(
         f"https://github.com/{github_username}" if github_username else None
     )
     project_cards = [
-        Div(
+        Card(
             H3(project["name"].replace("_", "_\u200b"), cls="card-title"),
             P(f"Language: {project['language']}", cls="card-subtitle"),
             P(project["description"], cls="card-description"),
-            (
-                Div(
-                    *[
-                        Span(topic, cls="chip")
-                        for topic in (project.get("topics") or [])
-                    ],
-                    cls="chips",
-                )
-                if project.get("topics")
-                else Div()
-            ),
+            (ChipList(project.get("topics") or []) if project.get("topics") else Div()),
             Div(
                 A("View Project", href=project["url"], cls="btn", target="_blank"),
-                P(
+                MutedText(
                     f"⭐ {project['stars']} • Updated {project['updated']}",
-                    style=(
-                        "margin-top: 1rem; font-size: 0.9rem; "
-                        "color: var(--secondary-color);"
-                    ),
+                    cls="project-card-meta",
                 ),
-                style=(
-                    "display: flex; justify-content: space-between; "
-                    "align-items: center; flex-wrap: wrap; gap: 1rem;"
-                ),
+                cls="project-card-footer",
             ),
-            cls="card",
         )
         for project in projects_data
     ]
@@ -61,7 +46,7 @@ def build_projects_page(
     return Section(
         H2("Featured Projects", cls="section-title"),
         Div(
-            P(
+            MutedText(
                 f"Showing {len(projects_data)} repositories",
                 (" • " if github_url else ""),
                 (
@@ -74,9 +59,7 @@ def build_projects_page(
                     if github_url
                     else ""
                 ),
-                style=(
-                    "text-align:center;color:var(--secondary-color);margin-top:-1.5rem;"
-                ),
+                cls="section-kicker",
             ),
             cls="container",
         ),

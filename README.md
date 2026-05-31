@@ -83,7 +83,8 @@ fasthtml-portfolio/
 │   ├── experience.json      # Portfolio/resume/chat source content
 │   └── site.json.example    # Optional public site config template
 ├── docs/
-│   └── code-structure-audit.md # Refactor audit and recommended PR sequence
+│   ├── code-structure-audit.md # Refactor audit and recommended PR sequence
+│   └── fasthtml-architecture-audit.md # FastHTML usage and structure guidance
 ├── tests/                   # pytest coverage, including route smoke tests
 ├── scripts/
 │   ├── push-vercel-envs     # Sync selected envs.sh values to Vercel
