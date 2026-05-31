@@ -38,6 +38,20 @@ Do not bulk-read generated or lock files unless the task requires dependency or 
 - Prefer small, focused changes over broad rewrites.
 - Treat docs as part of done: update `README.md` or other tracked docs in the same PR when changes affect setup, operations, deployment, workflows, or user-facing behavior.
 
+## Git/PR Hygiene
+
+- Keep feature branches short-lived and scoped to one PR.
+- Do not delete a branch while its PR is open.
+- After a PR merges, confirm GitHub auto-deleted the head branch or delete it manually.
+- Keep GitHub's "Automatically delete head branches" repository setting enabled unless there is a specific reason not to.
+- Before merging, verify required GitHub checks, Vercel preview, and any relevant local/browser smoke checks are passing.
+
+## Agent Collaboration
+
+- When the active coding tool supports subagents, fan out a small team for context derivation, codebase reconnaissance, documentation review, or focused research when it materially improves quality or protects the main context window.
+- Do not use subagents by default for narrow edits or simple questions; use them only when the added coordination cost is justified by project complexity, uncertainty, or context volume.
+- Keep subagent tasks scoped and concrete, then synthesize their findings into the main implementation or review.
+
 ## Security Rules
 
 - Never commit `envs.sh`, real API keys, SMTP passwords, Vercel tokens, GitHub tokens, or provider secrets.
