@@ -23,7 +23,7 @@ A visually stunning and technically impressive portfolio website built exclusive
 - **Data sources**: `data/experience.json`, optional public `data/site.json`, an optional Google Docs/Drive resume source sync, and GitHub REST API calls through `httpx`.
 - **Deployment/hosting**: Vercel Git integration using `vercel.json` and the Vercel Python runtime.
 - **Dependencies**: Managed by `uv` through `pyproject.toml` and `uv.lock`.
-- **Quality tooling**: Ruff formatting/linting, pytest, pre-commit, and GitHub Actions.
+- **Quality tooling**: Ruff formatting/linting, pytest, pre-commit, deterministic UI smoke checks, Playwright browser smoke checks, and GitHub Actions.
 
 ## 📋 Prerequisites
 
@@ -88,7 +88,9 @@ fasthtml-portfolio/
 ├── tests/                   # pytest coverage, including route smoke tests
 ├── scripts/
 │   ├── push-vercel-envs     # Sync selected envs.sh values to Vercel
-│   └── sync_resume_content.py # Parse resume source into data/experience.json
+│   ├── sync_resume_content.py # Parse resume source into data/experience.json
+│   ├── verify_ui_smoke.py   # Deterministic route/chat/mobile contract checks
+│   └── verify_ui_browser.py # Playwright desktop/mobile browser smoke checks
 ├── AGENTS.md                # Shared coding-agent instructions
 ├── app.sh                  # Application launcher script
 ├── envs.sh.example         # Environment template
@@ -256,7 +258,9 @@ At runtime the app merges env vars with this JSON:
 ### Development Checks
 - Install Git hooks with `uv run pre-commit install`.
 - Hooks run Ruff formatting and Ruff lint fixes.
-- GitHub Actions runs formatting, linting, and tests.
+- GitHub Actions runs formatting, linting, tests, deterministic UI smoke checks, and Playwright desktop/mobile browser smoke checks.
+- Run deterministic UI checks locally with `uv run python scripts/verify_ui_smoke.py`.
+- Install the local Chromium test browser with `uv run playwright install chromium`, then run browser checks with `uv run python scripts/verify_ui_browser.py`.
 - Vercel installs Python dependencies from the committed `pyproject.toml` and `uv.lock`.
 - Visual/UX-heavy PRs should also follow `docs/ux-verification.md` for desktop and mobile screenshot checks.
 
