@@ -77,6 +77,14 @@ class ChatWidget:
                             aria_label="Start a new chat",
                         ),
                         ft.Button(
+                            "Copy",
+                            id="chat-copy",
+                            cls="chat-copy",
+                            type="button",
+                            title="Copy conversation",
+                            aria_label="Copy conversation to clipboard",
+                        ),
+                        ft.Button(
                             "x",
                             id="chat-close",
                             cls="chat-close"
@@ -166,7 +174,8 @@ class ChatWidget:
             .chat-title { margin: 0 0 .25rem; font-size: 1rem; }
             .chat-subtitle { margin: 0; color: var(--muted-text); font-size: .88rem; }
             .chat-header-actions { display: flex; align-items: start; gap: .4rem; flex: 0 0 auto; }
-            .chat-full-link, .chat-reset { min-height: 32px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border-color); border-radius: 8px; background: var(--surface-1); color: var(--text-color); text-decoration: none; cursor: pointer; font: inherit; font-size: .78rem; font-weight: 720; padding: 0 .55rem; }
+            .chat-full-link, .chat-reset, .chat-copy { min-height: 32px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border-color); border-radius: 8px; background: var(--surface-1); color: var(--text-color); text-decoration: none; cursor: pointer; font: inherit; font-size: .78rem; font-weight: 720; padding: 0 .55rem; }
+            .chat-copy:disabled { opacity: .65; cursor: default; }
             .chat-close { width: 32px; height: 32px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--surface-1); color: var(--text-color); cursor: pointer; }
             .chat-messages { overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: .75rem; }
             .chat-message { max-width: 88%; padding: .7rem .85rem; border-radius: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -245,6 +254,61 @@ class ChatWidget:
               function setStatus(text){
                 const status = byId('chat-status');
                 if (status) status.textContent = text || '';
+              }
+              function transcriptLine(message){
+                const speaker = message.role === 'user' ? 'You' : 'Portfolio assistant';
+                return speaker + ': ' + (message.content || '').trim();
+              }
+              function conversationTranscript(){
+                return loadMessages(getRoot())
+                  .filter(function(message){ return !message.pending && (message.content || '').trim(); })
+                  .map(transcriptLine)
+                  .join('\\n\\n');
+              }
+              function fallbackCopyText(text){
+                const area = document.createElement('textarea');
+                area.value = text;
+                area.setAttribute('readonly', '');
+                area.style.position = 'fixed';
+                area.style.left = '-9999px';
+                area.style.top = '0';
+                document.body.appendChild(area);
+                area.select();
+                const copied = document.execCommand('copy');
+                document.body.removeChild(area);
+                if (!copied) throw new Error('copy failed');
+              }
+              async function copyConversation(){
+                const copy = byId('chat-copy');
+                const transcript = conversationTranscript();
+                if (!transcript) {
+                  setStatus('No conversation to copy yet.');
+                  return;
+                }
+                try {
+                  let copied = false;
+                  if (navigator.clipboard && window.isSecureContext) {
+                    try {
+                      await navigator.clipboard.writeText(transcript);
+                      copied = true;
+                    } catch (_) {}
+                  }
+                  if (!copied) {
+                    fallbackCopyText(transcript);
+                  }
+                  setStatus('Conversation copied to clipboard.');
+                  if (copy) {
+                    const label = copy.textContent;
+                    copy.textContent = 'Copied';
+                    copy.disabled = true;
+                    window.setTimeout(function(){
+                      copy.textContent = label || 'Copy';
+                      copy.disabled = false;
+                    }, 1200);
+                  }
+                } catch (_) {
+                  setStatus('Clipboard copy was blocked by this browser.');
+                }
               }
               function sourceLabel(source){
                 if (!source) return '';
@@ -363,12 +427,14 @@ class ChatWidget:
                 const toggle = byId('chat-toggle');
                 const close = byId('chat-close');
                 const reset = byId('chat-reset');
+                const copy = byId('chat-copy');
                 const form = byId('chat-form');
                 const input = byId('chat-input');
                 renderMessages(loadMessages(root));
                 if (toggle) toggle.addEventListener('click', function(){ panel && panel.classList.toggle('chat-panel-closed'); });
                 if (close) close.addEventListener('click', function(){ panel && panel.classList.add('chat-panel-closed'); });
                 if (reset) reset.addEventListener('click', resetChat);
+                if (copy) copy.addEventListener('click', copyConversation);
                 if (form) form.addEventListener('submit', function(e){ e.preventDefault(); submitMessage((input && input.value) || ''); });
                 document.querySelectorAll('.chat-suggestion').forEach(function(btn){
                   btn.addEventListener('click', function(){ submitMessage(btn.dataset.question || btn.textContent || ''); });
