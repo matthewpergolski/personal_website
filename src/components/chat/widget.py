@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 
 import fasthtml.common as ft
 
@@ -39,6 +40,22 @@ class ChatWidget:
         subtitle = (
             "Same session-scoped conversation across the site. "
             "Answers use portfolio and resume context first."
+        )
+        ai_polish_enabled = bool(
+            os.getenv("HUGGINGFACE_API_KEY") or os.getenv("HF_TOKEN")
+        )
+        chat_placeholder = (
+            "Ask about my skills, projects, background, or fit..."
+            if ai_polish_enabled
+            else "Free local mode: ask about my skills, projects, background, or fit..."
+        )
+        chat_status = (
+            "AI-polished answers are enabled; portfolio retrieval still grounds responses."
+            if ai_polish_enabled
+            else (
+                "Free local mode: answers use portfolio retrieval instead of a paid "
+                "general chat model."
+            )
         )
         suggestions = [
             "What AI/ML work have you done?",
@@ -109,7 +126,7 @@ class ChatWidget:
                     cls="chat-suggestions",
                 ),
                 ft.Div(
-                    "Local retrieval is available even without a paid AI provider.",
+                    chat_status,
                     id="chat-status",
                     cls="chat-status",
                     role="status",
@@ -122,7 +139,7 @@ class ChatWidget:
                         name="message",
                         rows="2",
                         maxlength="700",
-                        placeholder="Ask about my skills, projects, background, or fit...",
+                        placeholder=chat_placeholder,
                         cls="chat-input",
                         aria_label="Chat message",
                     ),
