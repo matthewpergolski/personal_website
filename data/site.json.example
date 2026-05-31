@@ -12,6 +12,8 @@
   "linkedin_url": "https://linkedin.com/in/your-profile",
   "github_username": "your-github-username",
   "resume_url": "https://docs.google.com/document/d/YOUR_FILE_ID/export?format=pdf",
+  "theme": "cosmic",
+  "appearance": "dark",
   "contact_intro": "I'm always interested in discussing new opportunities, interesting projects, or just having a chat about data science and AI.",
   "contact_response_time": "I typically respond to emails within 24 hours.",
   "resume_pdf_prompt": "Want the PDF version?",

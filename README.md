@@ -180,6 +180,8 @@ For non-secret values that you want in source control, such as public display co
   "linkedin_url": "https://linkedin.com/in/your-profile",
   "github_username": "your-github-username",
   "resume_url": "https://docs.../export?format=pdf",
+  "theme": "cosmic",
+  "appearance": "dark",
   "contact_intro": "I'm always interested in discussing new opportunities.",
   "contact_response_time": "I typically respond to emails within 24 hours.",
   "resume_pdf_prompt": "Want the PDF version?",
@@ -190,6 +192,8 @@ For non-secret values that you want in source control, such as public display co
 At runtime the app merges env vars with this JSON:
 - Env vars override JSON for deployment-specific values, for example `OWNER_NAME`, `SITE_TITLE`, `SITE_DESCRIPTION`, `PUBLIC_EMAIL`, social links, and resume links.
 - `PUBLIC_EMAIL` is preferred for the Contact page; `CONTACT_EMAIL` and `SMTP_TO` are fallbacks.
+- `theme` selects a registered theme pack. Current options are `cosmic`, `graphite`, `evergreen`, `atelier`, `sunrise`, and `spectrum`.
+- `appearance` selects the default mode: `dark`, `light`, or `system`. Visitors can override it in their browser with the theme controls.
 - `data/experience.json` remains the source of truth for resume-derived About, Resume, Highlights, Skills, and chat retrieval content.
 - Keep secrets such as tokens and SMTP credentials in env vars only.
 

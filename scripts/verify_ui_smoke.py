@@ -110,10 +110,33 @@ def _check_mobile_navigation(client: TestClient) -> None:
         'id="tab-chat"',
         'aria-controls="nav-links"',
         'id="nav-toggle"',
+        'id="theme-toggle-mobile"',
+        'data-appearance-toggle="true"',
+        'data-theme-select="mobile-menu"',
     ]
     _assert_contains(html, "/", expected)
     if html.index(">About<") > html.index(">Projects<"):
         raise AssertionError("Navigation order should put About before Projects")
+
+
+def _check_theme_ui_contract(client: TestClient) -> None:
+    html = _response_text(client, "/")
+    expected = [
+        "window.__SITE_THEME_DEFAULTS__",
+        '"theme": "cosmic"',
+        '"appearance": "dark"',
+        'data-theme-select="desktop-menu"',
+        'data-theme-select="mobile-menu"',
+        'data-appearance-choice="system"',
+        'data-appearance-choice="light"',
+        'data-appearance-choice="dark"',
+        'value="graphite"',
+        'value="evergreen"',
+        'value="atelier"',
+        'value="sunrise"',
+        'value="spectrum"',
+    ]
+    _assert_contains(html, "/", expected)
 
 
 def _check_chat_ui_contract(client: TestClient) -> None:
@@ -181,6 +204,7 @@ def run_smoke_checks() -> None:
     checks = [
         SmokeCheck("public routes", lambda: _check_public_routes(client)),
         SmokeCheck("mobile navigation", lambda: _check_mobile_navigation(client)),
+        SmokeCheck("theme UI contract", lambda: _check_theme_ui_contract(client)),
         SmokeCheck("chat UI contract", lambda: _check_chat_ui_contract(client)),
         SmokeCheck("mobile CSS contracts", _check_mobile_css_contracts),
         SmokeCheck("chat API", lambda: _check_chat_api(client)),
