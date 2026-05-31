@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import os
 import json
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
@@ -15,12 +15,23 @@ BASE_DATA_DIR = Path("/tmp") if os.getenv("VERCEL") else (ROOT_DIR / "data")
 
 @dataclass(frozen=True)
 class SiteConfig:
+    owner_name: str
+    brand_initials: str
+    brand_subtitle: str
     site_title: str
     site_description: str
+    hero_kicker: str
+    hero_primary_cta: str
+    hero_chat_cta: str
+    footer_tagline: str
     public_email: Optional[str]
     linkedin_url: Optional[str]
     github_username: Optional[str]
     resume_url: Optional[str]
+    contact_intro: str
+    contact_response_time: str
+    resume_pdf_prompt: str
+    resume_pdf_description: str
 
 
 def _read_site_json() -> dict[str, Any]:
@@ -41,14 +52,23 @@ def _read_site_json() -> dict[str, Any]:
 
 def get_config() -> SiteConfig:
     data = _read_site_json()
-    # Public email logic: explicit env > json > CONTACT_EMAIL > SMTP_TO
+    # Public email logic: explicit public value > contact alias > SMTP destination.
     public_email = (
-        os.getenv("SMTP_TO")
+        os.getenv("PUBLIC_EMAIL")
         or str(data.get("public_email") or "").strip()
         or os.getenv("CONTACT_EMAIL")
-        or os.getenv("PUBLIC_EMAIL")
+        or os.getenv("SMTP_TO")
     )
     return SiteConfig(
+        owner_name=os.getenv(
+            "OWNER_NAME", str(data.get("owner_name") or "Matthew L. Pergolski")
+        ),
+        brand_initials=os.getenv(
+            "BRAND_INITIALS", str(data.get("brand_initials") or "MLP")
+        ),
+        brand_subtitle=os.getenv(
+            "BRAND_SUBTITLE", str(data.get("brand_subtitle") or "Portfolio")
+        ),
         site_title=os.getenv(
             "SITE_TITLE", str(data.get("site_title") or "Professional Portfolio")
         ),
@@ -56,9 +76,35 @@ def get_config() -> SiteConfig:
             "SITE_DESCRIPTION",
             str(data.get("site_description") or "AI/ML Engineer & Data Scientist"),
         ),
+        hero_kicker=str(data.get("hero_kicker") or "AI/ML Engineering Portfolio"),
+        hero_primary_cta=str(data.get("hero_primary_cta") or "View Projects"),
+        hero_chat_cta=str(data.get("hero_chat_cta") or "Experience Chat"),
+        footer_tagline=str(
+            data.get("footer_tagline")
+            or "Data Science • Machine Learning • AI Engineering"
+        ),
         public_email=public_email,
         linkedin_url=os.getenv("LINKEDIN_URL") or (data.get("linkedin_url") or None),
         github_username=os.getenv("GITHUB_USERNAME")
         or (data.get("github_username") or None),
         resume_url=os.getenv("RESUME_URL") or (data.get("resume_url") or None),
+        contact_intro=str(
+            data.get("contact_intro")
+            or (
+                "I'm always interested in discussing new opportunities, "
+                "interesting projects, or just having a chat about data science and AI."
+            )
+        ),
+        contact_response_time=str(
+            data.get("contact_response_time")
+            or "I typically respond to emails within 24 hours."
+        ),
+        resume_pdf_prompt=str(data.get("resume_pdf_prompt") or "Want the PDF version?"),
+        resume_pdf_description=str(
+            data.get("resume_pdf_description")
+            or (
+                "Download the formatted resume, or browse the expanded "
+                "experience details below."
+            )
+        ),
     )

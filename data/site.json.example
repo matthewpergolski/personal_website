@@ -1,8 +1,19 @@
 {
+  "owner_name": "Your Name",
+  "brand_initials": "YN",
+  "brand_subtitle": "Portfolio",
   "site_title": "Personal Portfolio",
   "site_description": "AI/ML Engineer & Data Scientist",
+  "hero_kicker": "AI/ML Engineering Portfolio",
+  "hero_primary_cta": "View Projects",
+  "hero_chat_cta": "Experience Chat",
+  "footer_tagline": "Data Science \u2022 Machine Learning \u2022 AI Engineering",
   "public_email": "example@email.com",
   "linkedin_url": "https://linkedin.com/in/your-profile",
   "github_username": "your-github-username",
-  "resume_url": "https://docs.google.com/document/d/YOUR_FILE_ID/export?format=pdf"
+  "resume_url": "https://docs.google.com/document/d/YOUR_FILE_ID/export?format=pdf",
+  "contact_intro": "I'm always interested in discussing new opportunities, interesting projects, or just having a chat about data science and AI.",
+  "contact_response_time": "I typically respond to emails within 24 hours.",
+  "resume_pdf_prompt": "Want the PDF version?",
+  "resume_pdf_description": "Download the formatted resume, or browse the expanded experience details below."
 }

@@ -18,11 +18,7 @@ from src.config import SiteConfig
 
 
 def build_about_page(data: dict, profile: dict | None, config: SiteConfig):
-    summary = (
-        data.get("summary")
-        or config.site_description
-        or "AI/ML engineer turning data into product value."
-    )
+    summary = data.get("summary") or config.site_description
     avatar = (profile or {}).get("avatar_url") or (
         f"https://github.com/{config.github_username}.png"
         if config.github_username
@@ -112,7 +108,7 @@ def build_about_page(data: dict, profile: dict | None, config: SiteConfig):
     )
 
 
-def build_resume_page(data: dict):
+def build_resume_page(data: dict, config: SiteConfig):
     experience = data.get("experience", [])
     education = data.get("education", [])
     skills = data.get("skills", {})
@@ -159,11 +155,8 @@ def build_resume_page(data: dict):
         ft.H2("Professional Resume", cls="section-title"),
         ft.Div(
             ft.Div(
-                ft.H3("Want the PDF version?"),
-                ft.P(
-                    "Download the formatted resume, or browse the expanded "
-                    "experience details below."
-                ),
+                ft.H3(config.resume_pdf_prompt),
+                ft.P(config.resume_pdf_description),
             ),
             ft.A("Download Resume", href="/resume/download", cls="btn"),
             cls="resume-callout",

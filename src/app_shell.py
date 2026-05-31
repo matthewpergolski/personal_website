@@ -9,7 +9,7 @@ from starlette.staticfiles import StaticFiles
 
 from src.assets.scripts import DARK_MODE_SCRIPT, GLOBAL_INTERACTIONS_SCRIPT
 from src.assets.styles import GLOBAL_STYLES
-from src.config import ROOT_DIR
+from src.config import ROOT_DIR, get_config
 
 
 def create_app(session_key_fname: str, session_secret: str | None) -> FastHTML:
@@ -19,7 +19,7 @@ def create_app(session_key_fname: str, session_secret: str | None) -> FastHTML:
         key_fname=session_key_fname,
         secret_key=session_secret,
         sess_https_only=bool(os.getenv("VERCEL")),
-        title=os.getenv("SITE_TITLE", "Professional Portfolio"),
+        title=get_config().site_title,
         hdrs=(
             Link(
                 rel="stylesheet",

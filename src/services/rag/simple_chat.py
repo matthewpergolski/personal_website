@@ -170,10 +170,11 @@ def retrieve_sources(query: str, *, limit: int = 4) -> list[ChatSource]:
 
 
 def _fallback_answer(query: str, sources: list[ChatSource]) -> str:
+    cfg = get_config()
     if not sources:
         return (
             "I do not have enough portfolio context to answer that yet, but I can discuss "
-            "Matthew's AI/ML, data science, Python, automation, and project experience."
+            f"{cfg.owner_name}'s AI/ML, data science, Python, automation, and project experience."
         )
 
     lines = [
@@ -200,8 +201,9 @@ async def _call_hugging_face(
         return None, None
 
     model = os.getenv("HUGGINGFACE_CHAT_MODEL", "HuggingFaceTB/SmolLM2-1.7B-Instruct")
+    cfg = get_config()
     context = "\n\n".join(f"{source.label}:\n{source.text}" for source in sources)
-    prompt = f"""You are Matthew Pergolski's portfolio assistant.
+    prompt = f"""You are {cfg.owner_name}'s portfolio assistant.
 Answer only from the context. Be concise, specific, and helpful.
 If the context does not answer the question, say what you can answer from the portfolio.
 
@@ -267,8 +269,9 @@ async def answer_chat(query: str) -> dict[str, Any]:
     if not response:
         response = _fallback_answer(cleaned, sources)
         if model_note:
+            cfg = get_config()
             response = (
-                f"{model_note}. I can still answer from Matthew's portfolio context.\n\n"
+                f"{model_note}. I can still answer from {cfg.owner_name}'s portfolio context.\n\n"
                 f"{response}"
             )
 

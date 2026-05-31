@@ -22,11 +22,7 @@ def build_contact_page(
             Card(
                 alert if alert else ft.Div(),
                 ft.H3("Let's Connect"),
-                ft.P(
-                    "I'm always interested in discussing new opportunities, "
-                    "interesting projects, or just having a chat about data science "
-                    "and AI."
-                ),
+                ft.P(config.contact_intro),
                 ft.H4("Contact Information"),
                 ft.P(f"📧 Email: {config.public_email or ''}"),
                 InlineActions(
@@ -43,7 +39,7 @@ def build_contact_page(
                     cls="contact-links",
                 ),
                 ft.H4("Response Time"),
-                ft.P("I typically respond to emails within 24 hours."),
+                ft.P(config.contact_response_time),
             ),
             Card(
                 ft.H3("Send a Message"),

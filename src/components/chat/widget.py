@@ -4,6 +4,8 @@ import json
 
 import fasthtml.common as ft
 
+from src.config import get_config
+
 
 class ChatWidget:
     """Small persistent site chat widget."""
@@ -28,6 +30,10 @@ class ChatWidget:
         )
 
     def _shell(self):
+        config = get_config()
+        owner_first_name = (
+            config.owner_name.split()[0] if config.owner_name else "this site"
+        )
         is_page = self.mode == "page"
         title = "Ask About My Experience"
         subtitle = "This chat uses portfolio and resume context. History stays in this browser tab."
@@ -102,7 +108,7 @@ class ChatWidget:
                     {
                         "role": "assistant",
                         "content": (
-                            "Hi, I can answer questions about Matthew's experience, "
+                            f"Hi, I can answer questions about {owner_first_name}'s experience, "
                             "skills, projects, education, and fit for technical roles."
                         ),
                     }
@@ -156,7 +162,7 @@ class ChatWidget:
                   const saved = sessionStorage.getItem(STORE_KEY);
                   if (saved) return JSON.parse(saved);
                   return JSON.parse(root.dataset.initial || '[]');
-                } catch (_) { return [{role:'assistant', content:'Hi, ask me about Matthew\\'s experience.'}]; }
+                } catch (_) { return [{role:'assistant', content:'Hi, ask me about this portfolio.'}]; }
               }
               function saveMessages(messages){
                 try { sessionStorage.setItem(STORE_KEY, JSON.stringify(messages.slice(-30))); } catch (_) {}
