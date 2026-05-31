@@ -177,7 +177,7 @@ class ChatWidget:
             .chat-panel-page {
                 width: 100%;
                 height: auto;
-                min-height: min(900px, calc(100svh - 220px));
+                min-height: 0;
                 grid-template-rows: auto auto auto auto auto;
                 overflow: visible;
                 box-shadow: none;
@@ -226,9 +226,9 @@ class ChatWidget:
                 .experience-chat-page .chat-panel {
                     width: 100%;
                     height: auto;
-                    min-height: calc(100svh - 178px);
+                    min-height: 0;
                     border-radius: 10px;
-                    padding-bottom: 150px;
+                    padding-bottom: 0;
                 }
                 .experience-chat-page .chat-messages { min-height: 300px; padding: .9rem; }
                 .experience-chat-page.chat-has-suggestions .chat-messages { min-height: 0; }
@@ -251,7 +251,7 @@ class ChatWidget:
                 .chat-message { max-width: 94%; }
                 .chat-page-section { padding-top: 1.4rem; }
                 .chat-page-title { margin-bottom: 1.1rem; }
-                .chat-page-container { padding-bottom: 110px; }
+                .chat-page-container { padding-bottom: 190px; }
             }
         """)
 
@@ -388,10 +388,8 @@ class ChatWidget:
                   box.appendChild(el);
                 });
                 box.scrollTop = box.scrollHeight;
-                const suggestions = byId('chat-suggestions');
-                const hasSuggestions = messages.length <= 1;
                 const root = getRoot();
-                if (suggestions) suggestions.style.display = hasSuggestions ? 'flex' : 'none';
+                const hasSuggestions = messages.length <= 1;
                 if (root) root.classList.toggle('chat-has-suggestions', hasSuggestions);
               }
               function resetChat(){
