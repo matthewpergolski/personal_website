@@ -37,10 +37,7 @@ class ChatWidget:
         )
         is_page = self.mode == "page"
         title = "Experience Chat" if is_page else "Ask About My Experience"
-        subtitle = (
-            "Same session-scoped conversation across the site. "
-            "Answers use portfolio and resume context first."
-        )
+        subtitle = "Ask about Matthew's experience, projects, and role fit."
         ai_polish_enabled = bool(
             os.getenv("HUGGINGFACE_API_KEY") or os.getenv("HF_TOKEN")
         )
@@ -84,14 +81,15 @@ class ChatWidget:
                             else "chat-full-link chat-toggle-hidden",
                         ),
                         ft.Button(
-                            "New chat",
+                            "New",
                             id="chat-reset",
                             cls="chat-reset",
                             type="button",
+                            title="Start a new chat",
                             aria_label="Start a new chat",
                         ),
                         ft.Button(
-                            "Copy conversation",
+                            "Copy",
                             id="chat-copy",
                             cls="chat-copy",
                             type="button",
@@ -211,7 +209,7 @@ class ChatWidget:
                 min-height: 420px;
                 overflow: visible;
             }
-            .experience-chat-page.chat-has-suggestions .chat-messages { min-height: 160px; }
+            .experience-chat-page.chat-has-suggestions .chat-messages { min-height: 0; }
             .experience-chat-page .chat-form {
                 position: sticky;
                 bottom: 0;
@@ -230,10 +228,10 @@ class ChatWidget:
                     height: auto;
                     min-height: calc(100svh - 178px);
                     border-radius: 10px;
-                    padding-bottom: 180px;
+                    padding-bottom: 150px;
                 }
                 .experience-chat-page .chat-messages { min-height: 300px; padding: .9rem; }
-                .experience-chat-page.chat-has-suggestions .chat-messages { min-height: 120px; }
+                .experience-chat-page.chat-has-suggestions .chat-messages { min-height: 0; }
                 .experience-chat-page .chat-status { padding: .55rem .9rem 1rem; }
                 .experience-chat-page .chat-form {
                     position: fixed;
@@ -249,7 +247,7 @@ class ChatWidget:
                 .chat-header { align-items: stretch; flex-direction: column; gap: .75rem; }
                 .chat-subtitle { max-width: 34rem; }
                 .chat-header-actions { flex-wrap: wrap; justify-content: start; }
-                .chat-reset, .chat-copy { flex: 1 1 calc(50% - .25rem); min-width: 0; }
+                .chat-reset, .chat-copy { flex: 1 1 0; min-width: 0; }
                 .chat-message { max-width: 94%; }
                 .chat-page-section { padding-top: 1.4rem; }
                 .chat-page-title { margin-bottom: 1.1rem; }
