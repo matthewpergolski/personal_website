@@ -12,6 +12,13 @@ def test_retrieve_sources_finds_experience_context():
     assert sources[0].label.startswith("Experience")
 
 
+def test_python_work_query_prioritizes_experience_over_skills():
+    sources = retrieve_sources("How have you used Python in your AI/ML work?")
+
+    assert sources[0].label.startswith("Experience")
+    assert "Python" in sources[0].text
+
+
 def test_retrieve_sources_can_use_synced_resume_text(monkeypatch):
     monkeypatch.setattr(
         simple_chat,

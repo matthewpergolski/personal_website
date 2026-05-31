@@ -66,6 +66,37 @@ FOLLOW_UP_MARKERS = {
     "this",
 }
 
+PROJECT_INTENT_TOKENS = {
+    "built",
+    "build",
+    "created",
+    "developed",
+    "done",
+    "project",
+    "projects",
+    "used",
+    "work",
+}
+
+SKILL_INTENT_TOKENS = {
+    "skill",
+    "skills",
+    "software",
+    "stack",
+    "tech",
+    "tool",
+    "tools",
+}
+
+TECH_FOCUS_TOKENS = {
+    "aws",
+    "docker",
+    "python",
+    "sql",
+    "rust",
+    "tableau",
+}
+
 
 @dataclass(frozen=True)
 class ChatSource:
@@ -205,15 +236,27 @@ def _experience_sources() -> list[ChatSource]:
 
 def retrieve_sources(query: str, *, limit: int = 4) -> list[ChatSource]:
     query_tokens = _tokens(query)
+    project_intent = bool(query_tokens & PROJECT_INTENT_TOKENS)
+    skill_intent = bool(query_tokens & SKILL_INTENT_TOKENS)
+    tech_focus = query_tokens & TECH_FOCUS_TOKENS
     scored: list[ChatSource] = []
     for source in _experience_sources():
         source_tokens = _tokens(f"{source.label} {source.text}")
         overlap = len(query_tokens & source_tokens)
         density = overlap / math.sqrt(max(len(source_tokens), 1))
+        if tech_focus and not (tech_focus & source_tokens):
+            density *= 0.25
         if source.label.startswith("Experience"):
-            density *= 1.2
+            density *= 1.45 if project_intent else 1.2
         elif source.label in {"Highlights", "Professional summary"}:
-            density *= 1.1
+            density *= 1.25 if project_intent else 1.1
+        elif source.label.startswith("Skills"):
+            if skill_intent:
+                density *= 1.2
+            elif project_intent:
+                density *= 0.35
+            else:
+                density *= 0.6
         elif source.label.startswith("Resume text"):
             density *= 0.65
         scored.append(ChatSource(source.label, source.text, density))
@@ -259,7 +302,7 @@ def _best_source_points(query: str, sources: list[ChatSource]) -> list[str]:
             overlap = len(query_tokens & _tokens(point))
             candidates.append((overlap, source_index * 10 + line_index, point))
 
-    candidates.sort(key=lambda item: (-item[0], item[1]))
+    candidates.sort(key=lambda item: (item[1] // 10, -item[0], item[1]))
     points: list[str] = []
     seen: set[str] = set()
     for overlap, _index, point in candidates:
@@ -272,6 +315,34 @@ def _best_source_points(query: str, sources: list[ChatSource]) -> list[str]:
         points.append(point)
         if len(points) >= 5:
             break
+    return points
+
+
+def _tech_focus_points(query: str, sources: list[ChatSource]) -> list[str]:
+    tech_focus = _tokens(query) & TECH_FOCUS_TOKENS
+    if not tech_focus:
+        return []
+
+    points: list[str] = []
+    seen: set[str] = set()
+    for source in sources:
+        source_tokens = _tokens(f"{source.label} {source.text}")
+        if not tech_focus & source_tokens:
+            continue
+        for raw_line in source.text.splitlines():
+            line = raw_line.strip()
+            if source.label.startswith("Experience") and not line.startswith("- "):
+                continue
+            point = line.removeprefix("- ").strip()
+            if not point or point.lower() in seen:
+                continue
+            if tech_focus & _tokens(point) or (
+                source.label.startswith("Experience") and points
+            ):
+                seen.add(point.lower())
+                points.append(point)
+            if len(points) >= 3:
+                return points
     return points
 
 
@@ -293,7 +364,7 @@ def _fallback_answer(query: str, sources: list[ChatSource]) -> str:
             f"{cfg.owner_name}'s AI/ML, data science, Python, automation, and project experience."
         )
 
-    points = _best_source_points(query, sources)
+    points = _tech_focus_points(query, sources) or _best_source_points(query, sources)
     if points:
         lines = ["Here are the strongest matches from the portfolio context:", ""]
         lines.extend(f"- {point}" for point in points)

@@ -59,7 +59,7 @@ class ChatWidget:
         )
         suggestions = [
             "What AI/ML work have you done?",
-            "What are your strongest Python projects?",
+            "How have you used Python in your AI/ML work?",
             "Summarize your Lockheed Martin experience.",
             "What kind of roles are you targeting?",
         ]
@@ -94,7 +94,7 @@ class ChatWidget:
                             aria_label="Start a new chat",
                         ),
                         ft.Button(
-                            "Copy",
+                            "Copy conversation",
                             id="chat-copy",
                             cls="chat-copy",
                             type="button",
@@ -214,6 +214,7 @@ class ChatWidget:
                 min-height: 420px;
                 overflow: visible;
             }
+            .experience-chat-page.chat-has-suggestions .chat-messages { min-height: 190px; }
             .experience-chat-page .chat-form {
                 position: sticky;
                 bottom: 0;
@@ -231,7 +232,8 @@ class ChatWidget:
                     border-radius: 10px;
                     padding-bottom: 94px;
                 }
-                .experience-chat-page .chat-messages { min-height: 380px; padding: .9rem; }
+                .experience-chat-page .chat-messages { min-height: 300px; padding: .9rem; }
+                .experience-chat-page.chat-has-suggestions .chat-messages { min-height: 170px; }
                 .experience-chat-page .chat-status { padding: .55rem .9rem 0; }
                 .experience-chat-page .chat-form {
                     position: fixed;
@@ -319,7 +321,7 @@ class ChatWidget:
                     copy.textContent = 'Copied';
                     copy.disabled = true;
                     window.setTimeout(function(){
-                      copy.textContent = label || 'Copy';
+                      copy.textContent = label || 'Copy conversation';
                       copy.disabled = false;
                     }, 1200);
                   }
@@ -384,7 +386,10 @@ class ChatWidget:
                 });
                 box.scrollTop = box.scrollHeight;
                 const suggestions = byId('chat-suggestions');
-                if (suggestions) suggestions.style.display = messages.length > 1 ? 'none' : 'flex';
+                const hasSuggestions = messages.length <= 1;
+                const root = getRoot();
+                if (suggestions) suggestions.style.display = hasSuggestions ? 'flex' : 'none';
+                if (root) root.classList.toggle('chat-has-suggestions', hasSuggestions);
               }
               function resetChat(){
                 const root = getRoot();
