@@ -1,47 +1,45 @@
 # Code Structure Audit
 
 Date: 2026-05-30
+Updated: 2026-05-31
 
 ## Summary
 
-The app is healthy enough to keep shipping, but `src/main.py` has become the main maintenance risk. It currently owns app setup, global CSS, browser JavaScript, static mounting, page rendering, route handlers, chart behavior, contact form validation, CAPTCHA handling, and redirects.
+The app is healthy enough to keep shipping. The initial refactor pass has reduced `src/main.py` from a monolithic route/rendering module into a thinner route orchestration layer. App shell setup, global CSS/JavaScript, public page builders, and contact form validation now live in dedicated modules.
 
-The next refactor should be incremental. Avoid a broad rewrite; split stable seams first, keep route behavior unchanged, and add smoke tests around moved pages.
+Future refactors should stay incremental. Keep route behavior unchanged, add or update smoke tests around moved pages, and avoid turning this FastHTML app into a frontend/backend framework migration unless the product need is clear.
 
 ## Current Shape
 
 | Area | Current file | Notes |
 | --- | --- | --- |
-| App entrypoint, routes, CSS, JavaScript, page composition | `src/main.py` | 1,738 lines; largest module by far |
+| App entrypoint and route orchestration | `src/main.py` | Thin Vercel-stable route layer around app/page/service modules |
+| App shell, headers, static mount | `src/app_shell.py` | FastHTML app construction and shared assets |
+| Global CSS and browser JavaScript | `src/assets/styles.py`, `src/assets/scripts.py` | Extracted from the entrypoint |
+| Page composition | `src/pages/*.py` | Home, projects, about/resume, contact, and chat builders |
 | Shared UI primitives | `src/components/ui.py` | Navigation, hero, footer, mobile tabs |
 | Chat UI | `src/components/chat/widget.py` | Self-contained CSS/JS widget |
 | RAG logic | `src/services/rag/simple_chat.py` | Reasonably scoped service module |
 | Resume sync parser | `scripts/sync_resume_content.py` | Large, but isolated CLI/parser responsibility |
-| Contact email | `src/services/email.py` | Small service, route still owns most contact workflow |
+| Contact email | `src/services/email.py` | Small SMTP delivery service |
+| Contact form rules | `src/services/contact_form.py` | Validation, CAPTCHA session helpers, local fallback persistence |
 | Rate limiting | `src/utils/rate_limit.py` | Isolated helper, file-backed best-effort limits |
 
-Largest Python files:
+Largest Python files after the first refactor pass:
 
-- `src/main.py`: 1,738 lines
 - `scripts/sync_resume_content.py`: 609 lines
+- `src/main.py`: about 300 lines
 - `src/services/rag/simple_chat.py`: 291 lines
 - `src/components/ui.py`: 236 lines
 - `src/components/chat/widget.py`: 235 lines
 
-Largest route/page functions in `src/main.py`:
-
-- `home`: 172 lines
-- `contact`: 155 lines
-- `about`: 154 lines
-- `contact_submit`: 106 lines
-- `projects`: 93 lines
-- `resume`: 74 lines
+Largest remaining route/workflow functions in `src/main.py` are now small enough to review directly. The next size risk is `scripts/sync_resume_content.py`, which is acceptable while it remains an isolated CLI/parser responsibility.
 
 ## Findings
 
-### 1. `src/main.py` Mixes Too Many Responsibilities
+### 1. `src/main.py` No Longer Owns Most Rendering, But Routes Could Still Be Split Later
 
-`src/main.py` should eventually become a thin composition layer: create the app, register routes, and delegate page/body construction. Today it mixes page layout, form handling, data loading, external service calls, and browser behavior.
+`src/main.py` now creates the stable app export, registers routes, loads request-specific data, and delegates rendering/workflow details. A later split into `src/routes/` is possible, but it is no longer urgent.
 
 Impact:
 
@@ -49,17 +47,15 @@ Impact:
 - Small visual changes can accidentally touch routing, security, or startup code.
 - Tests mostly cover contact/RAG/parser behavior, not page rendering regressions.
 
-Recommended split:
+Remaining optional split:
 
-- `src/app.py`: FastHTML app construction, startup validation, static mounting.
-- `src/routes/pages.py`: page route registration or route handlers.
+- `src/routes/pages.py`: public page routes.
 - `src/routes/api.py`: JSON endpoints such as `/api/rag/chat`.
-- `src/routes/contact.py`: contact GET/POST routes.
-- `src/pages/home.py`, `src/pages/about.py`, `src/pages/resume.py`, `src/pages/projects.py`, `src/pages/contact.py`, `src/pages/chat.py`: page composition.
+- `src/routes/contact.py`: contact GET/POST route handlers.
 
-### 2. Global CSS and Browser JavaScript Should Move Out of the Entrypoint
+### 2. Global CSS and Browser JavaScript Are Extracted
 
-Global CSS and browser scripts are embedded in `src/main.py` inside the FastHTML app setup. The navigation edge-swipe JavaScript block is duplicated, which is a concrete sign the embedded script is becoming hard to maintain.
+Global CSS and browser scripts now live in `src/assets/styles.py` and `src/assets/scripts.py`. The duplicate edge-swipe handler was removed.
 
 Impact:
 
@@ -67,16 +63,13 @@ Impact:
 - JavaScript cannot be linted or tested independently.
 - Duplicate handlers can cause subtle interaction bugs.
 
-Recommended split:
+Remaining optional improvement:
 
-- Move global CSS into `src/assets/styles.py` first as a Python string to minimize behavior change.
-- Move global browser scripts into `src/assets/scripts.py` next.
-- After that, consider static `/static/app.css` and `/static/app.js` if cache/versioning needs justify it.
-- Remove the duplicate edge-swipe block as the first low-risk cleanup.
+- Consider static `/static/app.css` and `/static/app.js` if cache/versioning needs justify it.
 
-### 3. Page Composition Should Be Modularized Before Further UX Work
+### 3. Page Composition Is Ready For Further UX Work
 
-Home, About, Resume, Projects, Contact, and Chat are all composed directly in route functions. That makes the next UX pass more expensive than it needs to be.
+Home, Projects, About, Resume, Contact, and Chat now have page builders under `src/pages/`. This is the right base for the next UX pass.
 
 Impact:
 
@@ -84,33 +77,23 @@ Impact:
 - Reused patterns such as cards, chips, timeline rows, stat boxes, and CTAs are recreated inline.
 - Inline `style=` attributes are scattered through page functions.
 
-Recommended split:
+Recommended next step:
 
-- Move page body builders first, without changing URLs:
-  - `build_home_page(...)`
-  - `build_projects_page(...)`
-  - `build_about_page(...)`
-  - `build_resume_page(...)`
-  - `build_contact_page(...)`
-  - `build_chat_page()`
 - Promote repeated UI pieces into small components only after the page modules exist.
-- Add route smoke tests for `/`, `/projects`, `/about`, `/resume`, `/contact`, `/chat`, and `/resume/download`.
+- Continue route smoke tests for `/`, `/projects`, `/about`, `/resume`, `/contact`, `/chat`, and `/resume/download`.
 
-### 4. Contact Form Workflow Is Security-Sensitive and Should Be Isolated
+### 4. Contact Form Workflow Is Isolated Enough For Current Risk
 
-The contact POST route handles validation, timing checks, CAPTCHA, rate limiting, email sending, Vercel fallback behavior, and local message persistence in one function.
+The contact POST route still orchestrates the workflow, but validation, timing thresholds, CAPTCHA session helpers, error-code selection, and local fallback persistence now live in `src/services/contact_form.py`.
 
 Impact:
 
 - It is harder to change UI copy or form layout without touching security logic.
 - Security behavior is already tested, but the production route remains dense.
 
-Recommended split:
+Remaining optional improvement:
 
-- `src/services/contact_form.py` for validation and result objects.
-- Keep `src/services/email.py` for delivery.
-- Keep rate limiting in `src/utils/rate_limit.py`.
-- Route should translate form data into a contact service call and redirect based on a structured result.
+- Introduce a structured contact workflow result if the POST route grows again.
 
 ### 5. Configuration Access Is Inconsistent
 
@@ -146,7 +129,7 @@ Recommended split:
 
 ### PR 1: Extract App Shell Assets
 
-Goal: reduce `src/main.py` size without changing routes or page output.
+Status: complete in PR #10.
 
 Scope:
 
@@ -163,7 +146,7 @@ Why first:
 
 ### PR 2: Add Route Smoke Tests
 
-Goal: create guardrails before moving page modules.
+Status: complete in PR #10 expansion.
 
 Scope:
 
@@ -178,7 +161,7 @@ Why second:
 
 ### PR 3: Extract Page Builders
 
-Goal: move page composition out of route handlers.
+Status: complete in PR #10 expansion.
 
 Scope:
 
@@ -192,7 +175,7 @@ Why third:
 
 ### PR 4: Extract Contact Workflow
 
-Goal: isolate security-sensitive contact validation from rendering.
+Status: complete in PR #10 expansion.
 
 Scope:
 
@@ -206,7 +189,7 @@ Why fourth:
 
 ### PR 5: Config Cleanup
 
-Goal: reduce scattered public config lookups.
+Status: partly complete in PR #10 expansion.
 
 Scope:
 
@@ -224,4 +207,3 @@ Why fifth:
 - Do not move to static CSS/JS files until the Python-string extraction is stable.
 - Do not rewrite the resume parser as part of page refactoring.
 - Do not add a database or external content service for this audit; the current Vercel/free-first constraints still favor committed JSON plus GitHub Actions sync.
-

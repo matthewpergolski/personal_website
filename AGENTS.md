@@ -17,9 +17,9 @@ This file is the single source of truth for coding-agent behavior in this reposi
 Start with these files, depending on the task:
 
 - General orientation: `README.md`, then `DEPLOYING.md` if deployment is relevant.
-- App routing/UI: `src/main.py`, `src/components/ui.py`, `src/utils/render.py`.
+- App routing/UI: `src/main.py`, `src/app_shell.py`, `src/pages/`, `src/components/ui.py`, `src/utils/render.py`.
 - Chat/RAG: `src/components/chat/widget.py`, `src/services/rag/simple_chat.py`, `tests/test_rag_chat.py`.
-- Contact/security: `src/main.py`, `src/services/email.py`, `src/utils/rate_limit.py`, `tests/test_contact.py`.
+- Contact/security: `src/main.py`, `src/pages/contact.py`, `src/services/contact_form.py`, `src/services/email.py`, `src/utils/rate_limit.py`, `tests/test_contact.py`.
 - Content changes: `data/experience.json`, optionally `data/site.json.example`.
 - Dependencies/tooling: `pyproject.toml`, `uv.lock`, `.pre-commit-config.yaml`.
 
@@ -34,8 +34,23 @@ Do not bulk-read generated or lock files unless the task requires dependency or 
 - Run tests with `uv run pytest -q`.
 - Run lint/format with `uv run pre-commit run --all-files`.
 - Keep files/modules under roughly 7,800 tokens; split large modules before they become hard to review.
+- Keep `src.main:app` as the stable Vercel entrypoint; move page rendering and workflow details into `src/pages/` and `src/services/`.
 - Prefer small, focused changes over broad rewrites.
 - Treat docs as part of done: update `README.md` or other tracked docs in the same PR when changes affect setup, operations, deployment, workflows, or user-facing behavior.
+
+## Git/PR Hygiene
+
+- Keep feature branches short-lived and scoped to one PR.
+- Do not delete a branch while its PR is open.
+- After a PR merges, confirm GitHub auto-deleted the head branch or delete it manually.
+- Keep GitHub's "Automatically delete head branches" repository setting enabled unless there is a specific reason not to.
+- Before merging, verify required GitHub checks, Vercel preview, and any relevant local/browser smoke checks are passing.
+
+## Agent Collaboration
+
+- When the active coding tool supports subagents, fan out a small team for context derivation, codebase reconnaissance, documentation review, or focused research when it materially improves quality or protects the main context window.
+- Do not use subagents by default for narrow edits or simple questions; use them only when the added coordination cost is justified by project complexity, uncertainty, or context volume.
+- Keep subagent tasks scoped and concrete, then synthesize their findings into the main implementation or review.
 
 ## Security Rules
 

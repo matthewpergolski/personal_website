@@ -64,8 +64,8 @@ def Navigation():
                         "×", id="nav-close", cls="nav-close", aria_label="Close menu"
                     ),
                     A("Home", href="/", cls="nav-link"),
-                    A("Projects", href="/projects", cls="nav-link"),
                     A("About", href="/about", cls="nav-link"),
+                    A("Projects", href="/projects", cls="nav-link"),
                     A("Resume", href="/resume", cls="nav-link"),
                     A("Contact", href="/contact", cls="nav-link"),
                     A("Chat", href="/chat", cls="nav-link"),
@@ -198,16 +198,16 @@ def MobileTabBar():
         ),
         A(
             Span("📦", cls="tab-ico"),
-            Span("Projects", cls="tab-txt"),
-            href="/projects",
-            id="tab-projects",
+            Span("About", cls="tab-txt"),
+            href="/about",
+            id="tab-about",
             cls="tab",
         ),
         A(
             Span("👤", cls="tab-ico"),
-            Span("About", cls="tab-txt"),
-            href="/about",
-            id="tab-about",
+            Span("Projects", cls="tab-txt"),
+            href="/projects",
+            id="tab-projects",
             cls="tab",
         ),
         A(
