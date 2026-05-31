@@ -18,14 +18,24 @@ jobs:
         with:
           python-version-file: .python-version
 
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - name: Install Python dependencies
         run: uv sync --frozen --dev
+
+      - name: Install frontend tooling
+        run: bun install --frozen-lockfile
 
       - name: Check formatting
         run: uv run ruff format --check .
 
       - name: Check linting
         run: uv run ruff check .
+
+      - name: Check frontend assets
+        run: bun run check
 
       - name: Run tests
         run: uv run pytest -q

@@ -5,7 +5,7 @@ Updated: 2026-05-31
 
 ## Summary
 
-The app is healthy enough to keep shipping. The initial refactor pass has reduced `src/main.py` from a monolithic route/rendering module into a thinner route orchestration layer. App shell setup, global CSS/JavaScript, public page builders, and contact form validation now live in dedicated modules.
+The app is healthy enough to keep shipping. The initial refactor pass has reduced `src/main.py` from a monolithic route/rendering module into a thinner route orchestration layer. App shell setup, public page builders, contact form validation, and browser assets now live in dedicated modules/files.
 
 Future refactors should stay incremental. Keep route behavior unchanged, add or update smoke tests around moved pages, and avoid turning this FastHTML app into a frontend/backend framework migration unless the product need is clear.
 
@@ -15,7 +15,7 @@ Future refactors should stay incremental. Keep route behavior unchanged, add or 
 | --- | --- | --- |
 | App entrypoint and route orchestration | `src/main.py` | Thin Vercel-stable route layer around app/page/service modules |
 | App shell, headers, static mount | `src/app_shell.py` | FastHTML app construction and shared assets |
-| Global CSS and browser JavaScript | `src/assets/styles.py`, `src/assets/scripts.py` | Extracted from the entrypoint |
+| Browser assets | `src/assets/*.css`, `src/assets/*.js`, `src/assets/loader.py` | First-class CSS/JS files loaded into FastHTML |
 | Page composition | `src/pages/*.py` | Home, projects, about/resume, contact, and chat builders |
 | Shared UI primitives | `src/components/ui.py` | Navigation, hero, footer, mobile tabs |
 | Chat UI | `src/components/chat/widget.py` | Self-contained CSS/JS widget |
@@ -53,15 +53,15 @@ Remaining optional split:
 - `src/routes/api.py`: JSON endpoints such as `/api/rag/chat`.
 - `src/routes/contact.py`: contact GET/POST route handlers.
 
-### 2. Global CSS and Browser JavaScript Are Extracted
+### 2. Global CSS and Browser JavaScript Are First-Class Assets
 
-Global CSS and browser scripts now live in `src/assets/styles.py` and `src/assets/scripts.py`. The duplicate edge-swipe handler was removed.
+Global CSS and browser scripts now live as `.css` and `.js` files in `src/assets/`. Small Python loader modules read those files so FastHTML can continue injecting them into pages/components. Biome checks the extracted frontend assets.
 
 Impact:
 
-- Large string literals obscure actual Python structure.
-- JavaScript cannot be linted or tested independently.
-- Duplicate handlers can cause subtle interaction bugs.
+- Python modules are easier to review because they no longer carry large CSS/JS strings.
+- JavaScript and CSS can be formatted/checked independently.
+- Future theme work has a clearer asset boundary.
 
 Remaining optional improvement:
 

@@ -8,7 +8,7 @@ This file is the single source of truth for coding-agent behavior in this reposi
 - Backend/API: Python 3.12 ASGI app using FastHTML/Starlette, served through `src.main:app`.
 - UI: FastHTML components plus in-page CSS and small vanilla JavaScript snippets. There is no React/Vue frontend.
 - Deployment: Vercel Git integration with `vercel.json` routing all requests to `api/index.py`; Vercel installs dependencies from `pyproject.toml` and `uv.lock`.
-- Package manager: `uv` only.
+- Python package manager: `uv` only. Bun is used only to run Biome frontend-asset tooling.
 - Tests/lint: `pytest`, `ruff`, and `pre-commit`.
 - Chat: free-first local retrieval over committed portfolio data, with optional Hugging Face generation if `HUGGINGFACE_API_KEY` is configured.
 
@@ -34,6 +34,8 @@ Do not bulk-read generated or lock files unless the task requires dependency or 
 - Run tests with `uv run pytest -q`.
 - Run deterministic UI smoke checks with `uv run python scripts/verify_ui_smoke.py`.
 - Run browser UI smoke checks with `uv run python scripts/verify_ui_browser.py` after installing Chromium once with `uv run playwright install chromium`.
+- Install frontend tooling with `bun install --frozen-lockfile`.
+- Run frontend CSS/JS/JSON checks with `bun run check`.
 - Run lint/format with `uv run pre-commit run --all-files`.
 - Keep files/modules under roughly 7,800 tokens; split large modules before they become hard to review.
 - Keep `src.main:app` as the stable Vercel entrypoint; move page rendering and workflow details into `src/pages/` and `src/services/`.

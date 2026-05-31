@@ -20,15 +20,16 @@ This is not a template-string app. The remaining cleanup is about presentation o
 
 ## Findings
 
-### 1. Global CSS and JavaScript Are Acceptable, But Large
+### 1. CSS and JavaScript Are First-Class Asset Files
 
-`src/assets/styles.py` and `src/assets/scripts.py` keep the entrypoint clean, but they are still large Python strings. That is acceptable for a low-dependency FastHTML app, but it is not the final form of a world-class example.
+Global CSS, global browser interactions, chat behavior, and chart behavior now live as real `.css` and `.js` files under `src/assets/`. FastHTML still injects the assets into the rendered page, but the source files are now readable by editor tooling and Biome.
 
-Future options:
+Current direction:
 
-- Keep them as Python assets while the app is small.
-- Move to static `/static/app.css` and `/static/app.js` if cacheability, editor tooling, or syntax highlighting become more important.
-- Split CSS by ownership only if it reduces review friction; avoid fragmenting styles prematurely.
+- Keep page structure in FastHTML Python builders.
+- Keep browser-native behavior in JavaScript files when JavaScript is the right tool.
+- Keep CSS in CSS files instead of Python strings.
+- Use small Python loader modules only to read those assets into FastHTML headers/components.
 
 ### 2. Page Builders Should Prefer Components Over Repeated Structures
 
@@ -55,23 +56,15 @@ The page modules no longer use `style=`. Presentation that was previously inline
 
 Small one-off inline styles are acceptable in prototypes, but tracked pages should default to named classes.
 
-### 4. Dynamic JavaScript Needs A Clear Boundary
+### 4. Dynamic JavaScript Has A Data Boundary
 
-The home page chart still emits a dynamic Plotly script because it embeds server-side data into browser behavior. That is reasonable, but it should remain isolated.
+The home page chart renders server-side data into a JSON script tag and keeps reusable Plotly behavior in `src/assets/tech-stack-chart.js`.
 
-Future options:
+This keeps the page builder responsible for data and the browser asset responsible for rendering/interactions.
 
-- Move reusable chart rendering code into `src/assets/scripts.py` and pass data through a JSON script tag or `data-*` attributes.
-- Keep the dynamic script local to `src/pages/home.py` if chart behavior remains one-off.
+### 5. Chat Widget Is Self-Contained With Extracted Assets
 
-### 5. Chat Widget Is Self-Contained But Should Be Reviewed Later
-
-`src/components/chat/widget.py` owns its own CSS and JavaScript. That can be a useful component boundary, especially for a portable widget, but it should be revisited during the chat/RAG quality pass.
-
-Future options:
-
-- Keep chat style/script colocated with the widget.
-- Extract chat CSS/JS into assets if it grows or needs independent tooling.
+`src/components/chat/widget.py` still owns chat markup and state configuration, while `src/assets/chat.css` and `src/assets/chat.js` own presentation and browser interaction. This preserves the portable widget boundary without hiding CSS/JS in Python strings.
 
 ## Target Structure
 
@@ -79,7 +72,7 @@ Future options:
 src/
 ├── app_shell.py          # FastHTML app construction, headers, static mount
 ├── main.py               # Thin route orchestration and stable app export
-├── assets/               # Global CSS/JS assets
+├── assets/               # CSS/JS asset files plus small Python loaders
 ├── components/           # Reusable FastHTML components and patterns
 ├── pages/                # Page body builders
 ├── services/             # External integrations and business workflows
@@ -91,6 +84,7 @@ src/
 - Added this audit as a tracked reference.
 - Added `src/components/patterns.py` for repeated FastHTML structures.
 - Removed inline `style=` usage from page/component builders.
+- Extracted large CSS/JS strings into first-class asset files and added Biome checks.
 - Kept route behavior and visual design intentionally stable.
 
 ## Recommended Follow-Up PRs
@@ -98,4 +92,4 @@ src/
 1. UX redesign pass: improve visual hierarchy, homepage first impression, desktop/mobile layout, and CTA ergonomics.
 2. Content source-of-truth pass: move more profile/about/project copy out of Python literals and into structured content.
 3. Chat/RAG quality pass: review the chat widget boundary, answer rendering, source display, and free-tier fallback UX.
-4. Visual regression pass: add lightweight browser/mobile screenshot checks before larger design changes.
+4. Theme configuration pass: add reusable professional theme packs with light/dark/system support.
