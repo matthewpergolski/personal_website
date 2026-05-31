@@ -341,6 +341,7 @@ GLOBAL_STYLES = r"""
             @media (max-width: 768px) {
                 .mobile-tabbar { display:flex; }
                 body { padding-bottom: 74px; }
+                .experience-chat:not(.experience-chat-page) { display: none; }
                 /* Hide when menu is open */
                 body.nav-open .mobile-tabbar,
                 .nav.open ~ .mobile-tabbar { transform: translateY(110%); transition: transform .2s ease; }
@@ -523,7 +524,11 @@ GLOBAL_STYLES = r"""
                 box-shadow: var(--shadow-lg);
                 backdrop-filter: blur(4px);
             }
-            .chart-toolbar { display:flex; justify-content:flex-end; margin-bottom:.75rem; }
+            .chart-toolbar { display:flex; justify-content:space-between; gap:1rem; margin-bottom:.75rem; align-items:end; flex-wrap:wrap; }
+            .chart-control-group { display:grid; gap:.4rem; }
+            .chart-control-label { color: var(--muted-text); font-size:.78rem; font-weight:800; }
+            .chart-segment { display:flex; gap:.35rem; padding:.25rem; border:1px solid var(--border-color); border-radius:999px; background: color-mix(in srgb, var(--surface-2) 76%, transparent); }
+            .chart-segment .icon-link { box-shadow:none; border-color:transparent; background:transparent; }
             .chart-controls { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; }
             .chart-canvas { height:480px; }
 
@@ -603,6 +608,8 @@ GLOBAL_STYLES = r"""
             ul { margin: .5rem 0 1rem 1.25rem; }
             li { margin: .25rem 0; }
             .chart-controls .icon-link.active { background: var(--primary-color); color: #fff; border-color: transparent; }
+            .chart-segment .icon-link.active { background: var(--primary-color); color: #fff; border-color: transparent; box-shadow: 0 8px 20px color-mix(in srgb, var(--primary-color) 22%, transparent); }
+            .chart-export { margin-left:auto; align-self:end; border-style:dashed; background: color-mix(in srgb, var(--surface-1) 72%, transparent); }
             .contact-form { display:grid; gap:1rem; max-width: 720px; }
             .contact-form .form-group { display:block; width:100%; }
             .contact-form label { display:block; font-weight:600; margin-bottom:.35rem; color: var(--muted-text); }
@@ -621,7 +628,9 @@ GLOBAL_STYLES = r"""
                 .highlight-grid { gap: .85rem; }
                 .chart-shell { padding: .75rem; }
                 .chart-canvas { height: 390px; }
-                .chart-controls { justify-content: center; }
-                .chart-controls span { width: 100%; text-align: center; color: var(--muted-text); font-size: .82rem; font-weight: 700; }
+                .chart-toolbar { justify-content:center; align-items:center; gap:.75rem; }
+                .chart-control-group { justify-items:center; }
+                .chart-control-label { text-align:center; }
+                .chart-export { width:100%; max-width: 180px; margin:0 auto; }
             }
 """
