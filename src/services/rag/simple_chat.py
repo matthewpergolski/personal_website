@@ -280,6 +280,25 @@ def _history_search_text(history: Any) -> str:
     return "\n".join(user_messages[-3:])
 
 
+def sanitized_chat_history(history: Any) -> list[dict[str, str]]:
+    """Return a small, server-owned history shape safe for retrieval context."""
+    if not isinstance(history, list):
+        return []
+
+    messages: list[dict[str, str]] = []
+    for item in history[-8:]:
+        if not isinstance(item, dict):
+            continue
+        role = str(item.get("role") or "").strip()
+        if role not in {"user", "assistant"}:
+            continue
+        content = str(item.get("content") or "").strip()
+        if not content:
+            continue
+        messages.append({"role": role, "content": content[:240]})
+    return messages[-8:]
+
+
 def _best_source_points(query: str, sources: list[ChatSource]) -> list[str]:
     query_tokens = _tokens(query)
     candidates: list[tuple[int, int, str]] = []
@@ -497,10 +516,12 @@ async def answer_chat(query: str, *, history: Any = None) -> dict[str, Any]:
     }
 
 
-async def handle_chat_payload(payload: dict[str, Any]) -> dict[str, Any]:
+async def handle_chat_payload(
+    payload: dict[str, Any], *, history: Any = None
+) -> dict[str, Any]:
     message = str(payload.get("message") or "").strip()
     if not message:
         return {"success": False, "error": "Message is required."}
     if len(message) > 700:
         return {"success": False, "error": "Message is too long."}
-    return await answer_chat(message, history=payload.get("history"))
+    return await answer_chat(message, history=sanitized_chat_history(history))

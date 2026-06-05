@@ -108,16 +108,35 @@ async def test_chat_uses_recent_user_history_for_retrieval(monkeypatch):
     monkeypatch.setattr(simple_chat, "_load_site_json", lambda: {})
 
     result = await handle_chat_payload(
-        {
-            "message": "What about that platform?",
-            "history": [
-                {
-                    "role": "user",
-                    "content": "Tell me about coordinated LLM agents.",
-                }
-            ],
-        }
+        {"message": "What about that platform?"},
+        history=[
+            {
+                "role": "user",
+                "content": "Tell me about coordinated LLM agents.",
+            }
+        ],
     )
 
     assert result["success"] is True
     assert any("Experience" in source["label"] for source in result["sources"])
+
+
+@pytest.mark.asyncio
+async def test_chat_payload_history_is_ignored(monkeypatch):
+    captured = {}
+
+    async def fake_answer_chat(query, *, history=None):
+        captured["history"] = history
+        return {"success": True, "response": "ok", "sources": []}
+
+    monkeypatch.setattr(simple_chat, "answer_chat", fake_answer_chat)
+
+    result = await handle_chat_payload(
+        {
+            "message": "What about that?",
+            "history": [{"role": "user", "content": "client controlled"}],
+        }
+    )
+
+    assert result["success"] is True
+    assert captured["history"] == []

@@ -8,8 +8,18 @@ on cold starts / scaling. See DEPLOYING.md for details.
 import json
 import os
 import time
+from dataclasses import dataclass
 
 from src.config import BASE_DATA_DIR  # type: ignore[attr-defined]
+
+
+@dataclass(frozen=True)
+class RateLimitConfig:
+    scope: str
+    ip_env: str
+    global_env: str
+    default_ip_per_hour: int
+    default_global_per_day: int
 
 
 def _safe_filename(value: str) -> str:
@@ -21,19 +31,41 @@ def _safe_filename(value: str) -> str:
     return safe[:80] or "unknown"
 
 
-def is_rate_limited(ip: str) -> bool:
+CONTACT_RATE_LIMIT = RateLimitConfig(
+    scope="contact",
+    ip_env="RATE_IP_PER_HOUR",
+    global_env="RATE_GLOBAL_PER_DAY",
+    default_ip_per_hour=3,
+    default_global_per_day=50,
+)
+
+CHAT_RATE_LIMIT = RateLimitConfig(
+    scope="chat",
+    ip_env="RATE_CHAT_IP_PER_HOUR",
+    global_env="RATE_CHAT_GLOBAL_PER_DAY",
+    default_ip_per_hour=30,
+    default_global_per_day=500,
+)
+
+
+def is_rate_limited(ip: str, config: RateLimitConfig = CONTACT_RATE_LIMIT) -> bool:
     """Best-effort per-IP and global rate limiting.
 
     Returns True if the IP (or global limit) has been exceeded.
     """
     try:
-        limit_ip = int(os.getenv("RATE_IP_PER_HOUR", "3"))
-        limit_global = int(os.getenv("RATE_GLOBAL_PER_DAY", "50"))
+        limit_ip = int(os.getenv(config.ip_env, str(config.default_ip_per_hour)))
+        limit_global = int(
+            os.getenv(config.global_env, str(config.default_global_per_day))
+        )
     except Exception:
-        limit_ip, limit_global = 3, 50
+        limit_ip, limit_global = (
+            config.default_ip_per_hour,
+            config.default_global_per_day,
+        )
 
     now = int(time.time())
-    rl_dir = BASE_DATA_DIR / "ratelimit"
+    rl_dir = BASE_DATA_DIR / "ratelimit" / config.scope
     try:
         rl_dir.mkdir(parents=True, exist_ok=True)
     except Exception:

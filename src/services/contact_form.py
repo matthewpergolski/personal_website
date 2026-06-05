@@ -4,6 +4,7 @@ import json
 import os
 import time
 from dataclasses import dataclass
+from email.utils import parseaddr
 from pathlib import Path
 from typing import Callable
 
@@ -58,6 +59,24 @@ def get_contact_thresholds() -> ContactThresholds:
     return ContactThresholds(min_message_length, min_submit_seconds)
 
 
+def _has_header_break(value: str) -> bool:
+    return "\r" in value or "\n" in value
+
+
+def _valid_email_address(value: str) -> bool:
+    if _has_header_break(value):
+        return False
+    display_name, address = parseaddr(value)
+    if display_name:
+        return False
+    if not address or address != value:
+        return False
+    local, separator, domain = address.partition("@")
+    if separator != "@" or not local or not domain or "." not in domain:
+        return False
+    return not any(char.isspace() for char in address)
+
+
 def validate_contact_fields(
     submission: ContactSubmission,
     thresholds: ContactThresholds,
@@ -70,9 +89,11 @@ def validate_contact_fields(
     if submission.submitted_at and thresholds.min_submit_seconds > 0:
         if now - submission.submitted_at < thresholds.min_submit_seconds:
             errors.append("Submission was too fast; please try again.")
+    if _has_header_break(submission.name) or _has_header_break(submission.email):
+        errors.append("Please remove line breaks from your name and email.")
     if len(submission.name) < 2:
         errors.append("Please enter your name.")
-    if "@" not in submission.email:
+    if not _valid_email_address(submission.email):
         errors.append("Please enter a valid email address.")
     if len(submission.message) < thresholds.min_message_length:
         errors.append("Please write a slightly longer message.")
