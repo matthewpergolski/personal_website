@@ -17,6 +17,7 @@ Future refactors should stay incremental. Keep route behavior unchanged, add or 
 | App shell, headers, static mount | `src/app_shell.py` | FastHTML app construction and shared assets |
 | Browser assets | `src/assets/*.css`, `src/assets/*.js`, `src/assets/loader.py` | First-class CSS/JS files loaded into FastHTML |
 | Themes | `src/themes.py`, `src/assets/global.css` | Registered theme metadata plus CSS token implementations |
+| Public site copy/config | `data/site.json`, `src/config.py` | Stable labels, CTAs, chart helper text, chat prompts, theme defaults, and public links |
 | Page composition | `src/pages/*.py` | Home, projects, about/resume, contact, and chat builders |
 | Shared UI primitives | `src/components/ui.py` | Navigation, hero, footer, mobile tabs |
 | Shared form primitives | `src/components/forms.py` | FastHTML form groups, text inputs, textareas, CAPTCHA field |
@@ -99,6 +100,8 @@ Remaining optional improvement:
 - Introduce a structured contact workflow result if the POST route grows again.
 
 ### 5. Configuration Access Is Inconsistent
+
+Status: partly improved. Stable public display values and page copy now flow through `data/site.json` and `SiteConfig`; secrets and service-specific envs should still stay close to the services that need them.
 
 The repo has `src/config.py`, but `src/main.py`, `src/components/ui.py`, `src/services/github.py`, and `src/services/email.py` still read many environment variables directly.
 

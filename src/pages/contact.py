@@ -18,40 +18,64 @@ def build_contact_page(
     alert = _contact_alert(query_params)
 
     return ft.Section(
-        ft.H2("Get In Touch", cls="section-title"),
+        ft.H2(config.text("contact", "title", "Get In Touch"), cls="section-title"),
         ft.Div(
             Card(
                 alert if alert else ft.Div(),
-                ft.H3("Let's Connect"),
+                ft.H3(config.text("contact", "intro_title", "Let's Connect")),
                 ft.P(config.contact_intro),
-                ft.H4("Contact Information"),
-                ft.P(f"📧 Email: {config.public_email or ''}"),
+                ft.H4(config.text("contact", "info_title", "Contact Information")),
+                ft.P(
+                    f"{config.text('contact', 'email_label', '📧 Email')}: "
+                    f"{config.public_email or ''}"
+                ),
                 InlineActions(
                     IconLink(
-                        "💼 LinkedIn",
+                        config.text("contact", "linkedin_label", "💼 LinkedIn"),
                         href=ensure_url(config.linkedin_url),
                     ),
                     IconLink(
-                        "🐙 GitHub",
+                        config.text("contact", "github_label", "🐙 GitHub"),
                         href=ensure_url(f"https://github.com/{config.github_username}")
                         if config.github_username
                         else "https://github.com/",
                     ),
                     cls="contact-links",
                 ),
-                ft.H4("Response Time"),
+                ft.H4(config.text("contact", "response_title", "Response Time")),
                 ft.P(config.contact_response_time),
             ),
             Card(
-                ft.H3("Send a Message"),
+                ft.H3(config.text("contact", "form_title", "Send a Message")),
                 ft.Form(
-                    TextInput("Name", "name", required=True),
-                    TextInput("Email", "email", input_type="email", required=True),
-                    TextInput("Company", "company", cls="hp-wrap"),
-                    TextareaField("Message", "message", required=True),
+                    TextInput(
+                        config.text("contact", "name_label", "Name"),
+                        "name",
+                        required=True,
+                    ),
+                    TextInput(
+                        config.text("contact", "form_email_label", "Email"),
+                        "email",
+                        input_type="email",
+                        required=True,
+                    ),
+                    TextInput(
+                        config.text("contact", "company_label", "Company"),
+                        "company",
+                        cls="hp-wrap",
+                    ),
+                    TextareaField(
+                        config.text("contact", "message_label", "Message"),
+                        "message",
+                        required=True,
+                    ),
                     ft.Input(type="hidden", name="t0", value=str(int(time.time()))),
                     CaptchaField(captcha_image),
-                    ft.Button("Send Message", type="submit", cls="btn"),
+                    ft.Button(
+                        config.text("contact", "submit_label", "Send Message"),
+                        type="submit",
+                        cls="btn",
+                    ),
                     method="post",
                     action="/contact",
                     cls="contact-form",

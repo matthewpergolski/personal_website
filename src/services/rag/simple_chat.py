@@ -226,7 +226,14 @@ def _experience_sources() -> list[ChatSource]:
         public_bits = [
             f"{key}: {value}"
             for key, value in site.items()
-            if key not in {"github_token", "smtp_password"} and value
+            if key
+            not in {
+                "content",
+                "github_token",
+                "smtp_password",
+            }
+            and isinstance(value, str | int | float | bool)
+            and value
         ]
         if public_bits:
             sources.append(ChatSource("Site profile", "\n".join(public_bits)))

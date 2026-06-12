@@ -44,11 +44,19 @@ def build_about_page(data: dict, profile: dict | None, config: SiteConfig):
     hero = ft.Div(
         *([Img(src=avatar, alt="Avatar", cls="avatar")] if avatar else []),
         ft.Div(
-            ft.H3("Professional Background"),
+            ft.H3(config.text("about", "background_title", "Professional Background")),
             ft.P(summary),
             ft.Div(
-                A("View Projects", href="/projects", cls="btn"),
-                A("Download Resume", href="/resume/download", cls="btn btn-secondary"),
+                A(
+                    config.text("about", "primary_cta", "View Projects"),
+                    href="/projects",
+                    cls="btn",
+                ),
+                A(
+                    config.text("about", "resume_cta", "Download Resume"),
+                    href="/resume/download",
+                    cls="btn btn-secondary",
+                ),
                 cls="hero-cta",
             ),
         ),
@@ -56,12 +64,12 @@ def build_about_page(data: dict, profile: dict | None, config: SiteConfig):
     )
 
     highlights_card = Card(
-        ft.H3("Highlights"),
+        ft.H3(config.text("about", "highlights_title", "Highlights")),
         BulletList(highlights, cls="bullet-list-loose"),
     )
 
     roles_card = Card(
-        ft.H3("Recent Roles"),
+        ft.H3(config.text("about", "roles_title", "Recent Roles")),
         ft.Div(
             *[
                 TimelineItem(
@@ -78,34 +86,37 @@ def build_about_page(data: dict, profile: dict | None, config: SiteConfig):
     left_col = ft.Div(highlights_card, roles_card, cls="about-content-stack")
 
     right_col = Card(
-        ft.H3("Snapshot"),
+        ft.H3(config.text("about", "snapshot_title", "Snapshot")),
         ft.Div(
             *([StatCard(years, "Years")] if years else []),
-            StatCard(public_repos, "Public Repos"),
+            StatCard(
+                public_repos,
+                config.text("about", "public_repos_label", "Public Repos"),
+            ),
             *([StatCard(followers, "Followers")] if followers > 0 else []),
             cls="stats-grid stats-grid-spaced",
         ),
-        ft.H3("Links"),
+        ft.H3(config.text("about", "links_title", "Links")),
         InlineActions(
             IconLink(
-                "💼 LinkedIn",
+                config.text("about", "linkedin_label", "💼 LinkedIn"),
                 href=ensure_url(config.linkedin_url),
             ),
             IconLink(
-                "🐙 GitHub",
+                config.text("about", "github_label", "🐙 GitHub"),
                 href=ensure_url(f"https://github.com/{config.github_username}")
                 if config.github_username
                 else "https://github.com/",
             ),
             IconLink(
-                "⬇️ Resume",
+                config.text("about", "resume_link_label", "⬇️ Resume"),
                 href="/resume/download",
             ),
         ),
     )
 
     return ft.Section(
-        ft.H2("About Me", cls="section-title"),
+        ft.H2(config.text("about", "title", "About Me"), cls="section-title"),
         hero,
         ft.Div(left_col, right_col, cls="grid-2-1 stack-gap"),
         ft.Div(*skill_cards, cls="card-grid stack-gap"),
@@ -120,27 +131,38 @@ def build_resume_page(data: dict, config: SiteConfig):
 
     experience_blocks = []
     if experience:
-        experience_blocks.append(ft.H3("Experience"))
+        experience_blocks.append(
+            ft.H3(config.text("resume", "experience_title", "Experience"))
+        )
         for role in experience:
             bullets = role.get("bullets") or []
             experience_blocks.append(
                 ft.Div(
                     ft.H4(display_role_title(role.get("title"))),
                     MutedText(
-                        f"{role.get('company', 'Company')} • {role.get('period', '')}",
+                        (
+                            f"{role.get('company', config.text('resume', 'fallback_company', 'Company'))} "
+                            f"• {role.get('period', '')}"
+                        ),
                     ),
                     BulletList(bullets, cls="bullet-list-loose"),
                 )
             )
     if education:
-        experience_blocks.append(ft.H3("Education"))
+        experience_blocks.append(
+            ft.H3(config.text("resume", "education_title", "Education"))
+        )
         for item in education:
             experience_blocks.append(
                 ft.Div(
-                    ft.H4(item.get("degree", "Degree")),
+                    ft.H4(
+                        item.get(
+                            "degree", config.text("resume", "fallback_degree", "Degree")
+                        )
+                    ),
                     MutedText(
                         (
-                            f"{item.get('institution', 'University')} • "
+                            f"{item.get('institution', config.text('resume', 'fallback_institution', 'University'))} • "
                             f"{item.get('period', '')}"
                         ),
                     ),
@@ -150,20 +172,26 @@ def build_resume_page(data: dict, config: SiteConfig):
 
     skill_blocks = []
     if skills:
-        skill_blocks.append(ft.H3("Skills"))
+        skill_blocks.append(ft.H3(config.text("resume", "skills_title", "Skills")))
         for category, items in skills.items():
             skill_blocks.append(ft.H4(display_skill_category(category)))
             skill_blocks.append(ChipList(items, cls="chips-spaced"))
     right_col = Card(*skill_blocks)
 
     return ft.Section(
-        ft.H2("Professional Resume", cls="section-title"),
+        ft.H2(
+            config.text("resume", "title", "Professional Resume"), cls="section-title"
+        ),
         ft.Div(
             ft.Div(
                 ft.H3(config.resume_pdf_prompt),
                 ft.P(config.resume_pdf_description),
             ),
-            ft.A("Download Resume", href="/resume/download", cls="btn"),
+            ft.A(
+                config.text("resume", "download_cta", "Download Resume"),
+                href="/resume/download",
+                cls="btn",
+            ),
             cls="resume-callout",
         ),
         ft.Div(left_col, right_col, cls="grid-2-1"),

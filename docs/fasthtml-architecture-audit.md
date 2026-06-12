@@ -15,6 +15,7 @@ The app is using FastHTML in the important places:
 - `src/pages/` owns page body builders.
 - `src/components/` owns reusable UI and pattern builders.
 - `src/services/` owns GitHub, email, content, contact-form, and chat logic.
+- `data/site.json` owns stable public display copy/config such as labels, CTAs, chart helper text, chat prompts, theme defaults, and public links.
 
 This is not a template-string app. The remaining cleanup is about presentation organization and reusable patterns.
 

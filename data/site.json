@@ -1,6 +1,6 @@
 {
-  "owner_name": "Your Name",
-  "brand_initials": "YN",
+  "owner_name": "Matthew L. Pergolski",
+  "brand_initials": "MLP",
   "brand_subtitle": "Portfolio",
   "site_title": "Personal Portfolio",
   "site_description": "AI/ML Engineer & Data Scientist",
@@ -8,15 +8,12 @@
   "hero_primary_cta": "View Projects",
   "hero_chat_cta": "Experience Chat",
   "footer_tagline": "Data Science \u2022 Machine Learning \u2022 AI Engineering",
-  "public_email": "example@email.com",
-  "linkedin_url": "https://linkedin.com/in/your-profile",
-  "github_username": "your-github-username",
-  "resume_url": "https://docs.google.com/document/d/YOUR_FILE_ID/export?format=pdf",
+  "github_username": "matthewpergolski",
   "theme": "cosmic",
   "appearance": "dark",
   "contact_intro": "I'm always interested in discussing new opportunities, interesting projects, or just having a chat about data science and AI.",
   "contact_response_time": "I typically respond to emails within 24 hours.",
-  "resume_pdf_prompt": "Want the PDF version?",
+  "resume_pdf_prompt": "Want the resume file?",
   "resume_pdf_description": "Download the formatted resume, or browse the expanded experience details below.",
   "content": {
     "hero": {
@@ -44,9 +41,9 @@
       "snapshot_title": "Snapshot",
       "public_repos_label": "Public Repos",
       "links_title": "Links",
-      "linkedin_label": "LinkedIn",
-      "github_label": "GitHub",
-      "resume_link_label": "Resume"
+      "linkedin_label": "\ud83d\udcbc LinkedIn",
+      "github_label": "\ud83d\udc19 GitHub",
+      "resume_link_label": "\u2b07\ufe0f Resume"
     },
     "projects": {
       "title": "Featured Projects",
@@ -57,7 +54,7 @@
       "updated_label": "Updated",
       "repo_count_prefix": "Showing",
       "repo_count_label": "repositories",
-      "github_profile_cta": "View GitHub Profile ->",
+      "github_profile_cta": "View GitHub Profile \u2192",
       "error_prefix": "Error loading projects"
     },
     "resume": {
@@ -74,9 +71,9 @@
       "title": "Get In Touch",
       "intro_title": "Let's Connect",
       "info_title": "Contact Information",
-      "email_label": "Email",
-      "linkedin_label": "LinkedIn",
-      "github_label": "GitHub",
+      "email_label": "\ud83d\udce7 Email",
+      "linkedin_label": "\ud83d\udcbc LinkedIn",
+      "github_label": "\ud83d\udc19 GitHub",
       "response_title": "Response Time",
       "form_title": "Send a Message",
       "name_label": "Name",
@@ -88,7 +85,7 @@
     "chat": {
       "page_title": "Experience Chat",
       "widget_title": "Ask About My Experience",
-      "subtitle": "Ask about this person's experience, projects, and role fit.",
+      "subtitle": "Ask about Matthew's experience, projects, and role fit.",
       "toggle_label": "Chat",
       "toggle_aria_label": "Open chat",
       "full_chat_label": "Full chat",
@@ -99,7 +96,7 @@
       "copy_aria_label": "Copy conversation to clipboard",
       "close_label": "x",
       "close_aria_label": "Close chat",
-      "advanced_placeholder": "Ask about skills, projects, background, or fit...",
+      "advanced_placeholder": "Ask about my skills, projects, background, or fit...",
       "free_placeholder": "Free-tier chat. Limited answers.",
       "advanced_status": "Advanced chat mode is enabled for more conversational answers.",
       "free_status": "Free-tier chat. Limited answers. Advanced models available.",
@@ -109,7 +106,7 @@
       "suggestions": [
         "What AI/ML work have you done?",
         "How have you used Python in your AI/ML work?",
-        "Summarize your recent experience.",
+        "Summarize your Lockheed Martin experience.",
         "What kind of roles are you targeting?"
       ]
     }
