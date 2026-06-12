@@ -35,6 +35,24 @@ class SiteConfig:
     contact_response_time: str
     resume_pdf_prompt: str
     resume_pdf_description: str
+    content: dict[str, Any]
+
+    def text(self, section: str, key: str, default: str) -> str:
+        section_data = self.content.get(section)
+        if not isinstance(section_data, dict):
+            return default
+        value = section_data.get(key)
+        return str(value) if value not in (None, "") else default
+
+    def text_list(self, section: str, key: str, default: list[str]) -> list[str]:
+        section_data = self.content.get(section)
+        if not isinstance(section_data, dict):
+            return default
+        value = section_data.get(key)
+        if not isinstance(value, list):
+            return default
+        items = [str(item).strip() for item in value if str(item).strip()]
+        return items or default
 
 
 def _read_site_json() -> dict[str, Any]:
@@ -55,6 +73,7 @@ def _read_site_json() -> dict[str, Any]:
 
 def get_config() -> SiteConfig:
     data = _read_site_json()
+    content = data.get("content") if isinstance(data.get("content"), dict) else {}
     # Public email logic: explicit public value > contact alias > SMTP destination.
     public_email = (
         os.getenv("PUBLIC_EMAIL")
@@ -116,4 +135,5 @@ def get_config() -> SiteConfig:
                 "experience details below."
             )
         ),
+        content=content,
     )

@@ -6,6 +6,7 @@ from fasthtml.common import Button, Div, H2, P, Script, Section, Span
 
 from src.assets.loader import asset_script
 from src.components.ui import HeroSection
+from src.config import SiteConfig
 
 
 def _top_language_items(values: dict | None, limit: int = 8) -> list[tuple[str, int]]:
@@ -33,6 +34,7 @@ def build_home_page(
     lang_bytes: dict | None,
     repos: list[dict] | None,
     experience_data: dict | None,
+    config: SiteConfig,
     github_username: str | None,
 ):
     experience_data = experience_data or {}
@@ -47,7 +49,10 @@ def build_home_page(
 
     highlights_section = (
         Section(
-            H2("Highlights", cls="section-title"),
+            H2(
+                config.text("home", "highlights_title", "Highlights"),
+                cls="section-title",
+            ),
             Div(
                 *[
                     Div(
@@ -67,7 +72,10 @@ def build_home_page(
 
     chart_section = (
         Section(
-            H2("Tech Stack Snapshot", cls="section-title"),
+            H2(
+                config.text("home", "tech_stack_title", "Tech Stack Snapshot"),
+                cls="section-title",
+            ),
             Div(
                 Div(
                     Div(
@@ -78,22 +86,46 @@ def build_home_page(
                                     "Donut",
                                     id="chart-donut",
                                     cls="icon-link chart-option",
-                                    title="Shows proportional share of the tech stack.",
-                                    data_chart_tip="Shows proportional share of the tech stack.",
+                                    title=config.text(
+                                        "home",
+                                        "chart_donut_tip",
+                                        "Shows proportional share of the tech stack.",
+                                    ),
+                                    data_chart_tip=config.text(
+                                        "home",
+                                        "chart_donut_tip",
+                                        "Shows proportional share of the tech stack.",
+                                    ),
                                 ),
                                 Button(
                                     "Bar",
                                     id="chart-bar",
                                     cls="icon-link chart-option",
-                                    title="Compares absolute totals across languages.",
-                                    data_chart_tip="Compares absolute totals across languages.",
+                                    title=config.text(
+                                        "home",
+                                        "chart_bar_tip",
+                                        "Compares absolute totals across languages.",
+                                    ),
+                                    data_chart_tip=config.text(
+                                        "home",
+                                        "chart_bar_tip",
+                                        "Compares absolute totals across languages.",
+                                    ),
                                 ),
                                 Button(
                                     "Treemap",
                                     id="chart-tree",
                                     cls="icon-link chart-option",
-                                    title="Shows mix and relative size in one compact map.",
-                                    data_chart_tip="Shows mix and relative size in one compact map.",
+                                    title=config.text(
+                                        "home",
+                                        "chart_treemap_tip",
+                                        "Shows mix and relative size in one compact map.",
+                                    ),
+                                    data_chart_tip=config.text(
+                                        "home",
+                                        "chart_treemap_tip",
+                                        "Shows mix and relative size in one compact map.",
+                                    ),
                                 ),
                                 cls="chart-segment",
                             ),
@@ -106,25 +138,43 @@ def build_home_page(
                                     "Repos",
                                     id="metric-repos",
                                     cls="icon-link chart-option",
-                                    title="Counts how often each language appears across repositories.",
-                                    data_chart_tip="Counts how often each language appears across repositories.",
+                                    title=config.text(
+                                        "home",
+                                        "chart_repos_tip",
+                                        "Counts how often each language appears across repositories.",
+                                    ),
+                                    data_chart_tip=config.text(
+                                        "home",
+                                        "chart_repos_tip",
+                                        "Counts how often each language appears across repositories.",
+                                    ),
                                 ),
                                 Button(
                                     "Bytes",
                                     id="metric-bytes",
                                     cls="icon-link chart-option",
-                                    title="Weights languages by code volume.",
-                                    data_chart_tip="Weights languages by code volume.",
+                                    title=config.text(
+                                        "home",
+                                        "chart_bytes_tip",
+                                        "Weights languages by code volume.",
+                                    ),
+                                    data_chart_tip=config.text(
+                                        "home",
+                                        "chart_bytes_tip",
+                                        "Weights languages by code volume.",
+                                    ),
                                 ),
                                 cls="chart-segment",
                             ),
                             cls="chart-control-group",
                         ),
                         Button(
-                            "Download PNG",
+                            config.text("home", "chart_export_label", "Download PNG"),
                             id="chart-export",
                             cls="icon-link chart-export",
-                            title="Download chart as PNG",
+                            title=config.text(
+                                "home", "chart_export_tip", "Download chart as PNG"
+                            ),
                         ),
                         cls="chart-toolbar",
                     ),

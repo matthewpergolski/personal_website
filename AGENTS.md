@@ -20,7 +20,7 @@ Start with these files, depending on the task:
 - App routing/UI: `src/main.py`, `src/app_shell.py`, `src/pages/`, `src/components/ui.py`, `src/utils/render.py`.
 - Chat/RAG: `src/components/chat/widget.py`, `src/services/rag/simple_chat.py`, `tests/test_rag_chat.py`.
 - Contact/security: `src/main.py`, `src/pages/contact.py`, `src/services/contact_form.py`, `src/services/email.py`, `src/utils/rate_limit.py`, `tests/test_contact.py`.
-- Content changes: `data/experience.json`, optionally `data/site.json.example`.
+- Content changes: `data/site.json` for stable public site copy/config, `data/experience.json` for resume-derived content, optionally `data/site.json.example` when changing the reusable template shape.
 - Theme changes: `src/themes.py`, `src/assets/global.css`, `data/site.json.example`, and `.codex/skills/generate-theme/` when deriving new themes from a URL, screenshot, brand colors, or style brief.
 - Dependencies/tooling: `pyproject.toml`, `uv.lock`, `.pre-commit-config.yaml`.
 

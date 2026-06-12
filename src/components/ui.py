@@ -235,13 +235,19 @@ def HeroSection(profile: dict | None = None, experience: dict | None = None):
                     else []
                 ),
                 Div(
-                    Span("Current Role", cls="hero-meta-label"),
+                    Span(
+                        config.text("hero", "current_role_label", "Current Role"),
+                        cls="hero-meta-label",
+                    ),
                     Span(
                         display_role_title(current_role.get("title")),
                         cls="hero-meta-main",
                     ),
                     Span(
-                        f"{current_role.get('company', 'Portfolio')} • {current_role.get('period', '')}",
+                        (
+                            f"{current_role.get('company', config.text('hero', 'fallback_company', 'Portfolio'))} "
+                            f"• {current_role.get('period', '')}"
+                        ),
                         cls="hero-meta-sub",
                     ),
                     cls="hero-current",

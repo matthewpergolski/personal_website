@@ -37,74 +37,112 @@ class ChatWidget:
             config.owner_name.split()[0] if config.owner_name else "this site"
         )
         is_page = self.mode == "page"
-        title = "Experience Chat" if is_page else "Ask About My Experience"
-        subtitle = "Ask about Matthew's experience, projects, and role fit."
+        title = (
+            config.text("chat", "page_title", "Experience Chat")
+            if is_page
+            else config.text("chat", "widget_title", "Ask About My Experience")
+        )
         ai_polish_enabled = bool(
             os.getenv("HUGGINGFACE_API_KEY") or os.getenv("HF_TOKEN")
         )
         chat_placeholder = (
-            "Ask about my skills, projects, background, or fit..."
+            config.text(
+                "chat",
+                "advanced_placeholder",
+                "Ask about my skills, projects, background, or fit...",
+            )
             if ai_polish_enabled
-            else "Free-tier chat. Limited answers."
+            else config.text(
+                "chat", "free_placeholder", "Free-tier chat. Limited answers."
+            )
         )
         chat_status = (
-            "Advanced chat mode is enabled for more conversational answers."
+            config.text(
+                "chat",
+                "advanced_status",
+                "Advanced chat mode is enabled for more conversational answers.",
+            )
             if ai_polish_enabled
-            else ("Free-tier chat. Limited answers. Advanced models available.")
+            else config.text(
+                "chat",
+                "free_status",
+                "Free-tier chat. Limited answers. Advanced models available.",
+            )
         )
-        suggestions = [
-            "What AI/ML work have you done?",
-            "How have you used Python in your AI/ML work?",
-            "Summarize your Lockheed Martin experience.",
-            "What kind of roles are you targeting?",
-        ]
+        suggestions = config.text_list(
+            "chat",
+            "suggestions",
+            [
+                "What AI/ML work have you done?",
+                "How have you used Python in your AI/ML work?",
+                "Summarize your Lockheed Martin experience.",
+                "What kind of roles are you targeting?",
+            ],
+        )
 
         return ft.Div(
             ft.Button(
-                "Chat",
+                config.text("chat", "toggle_label", "Chat"),
                 id="chat-toggle",
                 cls="chat-toggle" if not is_page else "chat-toggle chat-toggle-hidden",
                 type="button",
-                aria_label="Open chat",
+                aria_label=config.text("chat", "toggle_aria_label", "Open chat"),
             ),
             ft.Div(
                 ft.Div(
                     ft.Div(
                         ft.H3(title, cls="chat-title"),
-                        ft.P(subtitle, cls="chat-subtitle"),
+                        ft.P(
+                            config.text(
+                                "chat",
+                                "subtitle",
+                                "Ask about Matthew's experience, projects, and role fit.",
+                            ),
+                            cls="chat-subtitle",
+                        ),
                     ),
                     ft.Div(
                         ft.A(
-                            "Full chat",
+                            config.text("chat", "full_chat_label", "Full chat"),
                             href="/chat",
                             cls="chat-full-link"
                             if not is_page
                             else "chat-full-link chat-toggle-hidden",
                         ),
                         ft.Button(
-                            "New",
+                            config.text("chat", "new_label", "New"),
                             id="chat-reset",
                             cls="chat-reset",
                             type="button",
-                            title="Start a new chat",
-                            aria_label="Start a new chat",
+                            title=config.text("chat", "new_title", "Start a new chat"),
+                            aria_label=config.text(
+                                "chat", "new_title", "Start a new chat"
+                            ),
                         ),
                         ft.Button(
-                            "Copy",
+                            config.text("chat", "copy_label", "Copy"),
                             id="chat-copy",
                             cls="chat-copy",
                             type="button",
-                            title="Copy conversation",
-                            aria_label="Copy conversation to clipboard",
+                            title=config.text(
+                                "chat", "copy_title", "Copy conversation"
+                            ),
+                            aria_label=config.text(
+                                "chat",
+                                "copy_aria_label",
+                                "Copy conversation to clipboard",
+                            ),
                         ),
                         ft.Button(
-                            "x",
+                            config.text("chat", "close_label", "x"),
                             id="chat-close",
                             cls="chat-close"
                             if not is_page
                             else "chat-close chat-toggle-hidden",
                             type="button",
-                            aria_label="Close chat",
+                            aria_label=config.text(
+                                "chat", "close_aria_label", "Close chat"
+                            ),
                         ),
                         cls="chat-header-actions",
                     ),
@@ -137,9 +175,16 @@ class ChatWidget:
                         maxlength="700",
                         placeholder=chat_placeholder,
                         cls="chat-input",
-                        aria_label="Chat message",
+                        aria_label=config.text(
+                            "chat", "input_aria_label", "Chat message"
+                        ),
                     ),
-                    ft.Button("Send", type="submit", cls="chat-send", id="chat-send"),
+                    ft.Button(
+                        config.text("chat", "send_label", "Send"),
+                        type="submit",
+                        cls="chat-send",
+                        id="chat-send",
+                    ),
                     id="chat-form",
                     cls="chat-form",
                     data_endpoint=self.api_endpoint,
@@ -156,8 +201,13 @@ class ChatWidget:
                     {
                         "role": "assistant",
                         "content": (
-                            f"Hi, I can answer questions about {owner_first_name}'s experience, "
-                            "skills, projects, education, and fit for technical roles."
+                            f"Hi, I can answer questions about "
+                            f"{owner_first_name}'s experience, "
+                            + config.text(
+                                "chat",
+                                "initial_message_suffix",
+                                "skills, projects, education, and fit for technical roles.",
+                            )
                         ),
                     }
                 ]

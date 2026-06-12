@@ -167,6 +167,7 @@ async def home():
             lang_bytes,
             repos,
             experience_data,
+            config,
             config.github_username,
         ),
     )
@@ -181,10 +182,10 @@ async def projects():
             fetch_github_projects(), fetch_github_profile()
         )
         projects_content = build_projects_page(
-            projects_data, profile, config.github_username
+            projects_data, profile, config.github_username, config
         )
     except Exception as e:
-        projects_content = build_projects_error(e)
+        projects_content = build_projects_error(e, config)
 
     return render_page(
         f"Projects - {config.owner_name}",

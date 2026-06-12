@@ -20,7 +20,7 @@ A visually stunning and technically impressive portfolio website built exclusive
 - **Backend/API**: Python 3.12 ASGI app built with FastHTML/Starlette. `src/main.py` keeps the public route entrypoints, `src/app_shell.py` builds the FastHTML app, and Vercel enters through `api/index.py`.
 - **UI framework**: FastHTML server-rendered page builders in `src/pages/`, reusable components in `src/components/`, in-page CSS, and small vanilla JavaScript helpers. There is no React/Vue frontend.
 - **Chat/RAG**: Free-first local retrieval over committed portfolio data, with optional Hugging Face Inference API response polishing.
-- **Data sources**: `data/experience.json`, optional public `data/site.json`, an optional Google Docs/Drive resume source sync, and GitHub REST API calls through `httpx`.
+- **Data sources**: `data/site.json` for public site copy/config, `data/experience.json` for resume-derived content, an optional Google Docs/Drive resume source sync, and GitHub REST API calls through `httpx`.
 - **Deployment/hosting**: Vercel Git integration using `vercel.json` and the Vercel Python runtime.
 - **Dependencies**: Python dependencies are managed by `uv` through `pyproject.toml` and `uv.lock`; Biome frontend tooling is managed by Bun.
 - **Quality tooling**: Ruff formatting/linting, Biome CSS/JS/JSON checks, pytest, pre-commit, deterministic UI smoke checks, Playwright browser smoke checks, and GitHub Actions.
@@ -82,7 +82,8 @@ fasthtml-portfolio/
 │   └── utils/               # Rendering and rate-limit helpers
 ├── data/
 │   ├── experience.json      # Portfolio/resume/chat source content
-│   └── site.json.example    # Optional public site config template
+│   ├── site.json            # Public site copy/config for this deployment
+│   └── site.json.example    # Public site config template
 ├── docs/
 │   ├── code-structure-audit.md # Refactor audit and recommended PR sequence
 │   └── fasthtml-architecture-audit.md # FastHTML usage and structure guidance
@@ -170,7 +171,7 @@ export RATE_CHAT_GLOBAL_PER_DAY=500
 
 ### Public site config (non-secret)
 
-For non-secret values that you want in source control, such as public display copy, a public email alias, default titles, or links, add `data/site.json` from `data/site.json.example`:
+For non-secret values that you want in source control, such as public display copy, a public email alias, default titles, or links, edit `data/site.json`. Use `data/site.json.example` as the reusable template shape:
 
 ```json
 {
@@ -192,7 +193,25 @@ For non-secret values that you want in source control, such as public display co
   "contact_intro": "I'm always interested in discussing new opportunities.",
   "contact_response_time": "I typically respond to emails within 24 hours.",
   "resume_pdf_prompt": "Want the PDF version?",
-  "resume_pdf_description": "Download the formatted resume, or browse the expanded experience details below."
+  "resume_pdf_description": "Download the formatted resume, or browse the expanded experience details below.",
+  "content": {
+    "home": {
+      "highlights_title": "Highlights",
+      "tech_stack_title": "Tech Stack Snapshot"
+    },
+    "about": {
+      "title": "About Me",
+      "background_title": "Professional Background"
+    },
+    "projects": {
+      "title": "Featured Projects",
+      "project_cta": "View Project"
+    },
+    "chat": {
+      "page_title": "Experience Chat",
+      "suggestions": ["What AI/ML work have you done?"]
+    }
+  }
 }
 ```
 
@@ -201,6 +220,7 @@ At runtime the app merges env vars with this JSON:
 - `PUBLIC_EMAIL` is preferred for the Contact page; `CONTACT_EMAIL` and `SMTP_TO` are fallbacks.
 - `theme` selects a registered theme pack. Current options are `cosmic`, `graphite`, `evergreen`, `atelier`, `sunrise`, and `spectrum`.
 - `appearance` selects the default mode: `dark`, `light`, or `system`. Visitors can override it in their browser with the theme controls.
+- `content` owns public labels, headings, helper text, CTA labels, chart tooltip copy, and chat prompt suggestions for the page builders.
 - `data/experience.json` remains the source of truth for resume-derived About, Resume, Highlights, Skills, and chat retrieval content.
 - Keep secrets such as tokens and SMTP credentials in env vars only.
 
