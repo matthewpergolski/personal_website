@@ -170,7 +170,12 @@ def _check_theme_controls(page: Page, base_url: str, viewport: Viewport) -> None
             f"{viewport.name} mode controls",
         )
     else:
-        _assert_visible(page, "#theme-toggle", f"{viewport.name} theme toggle")
+        duplicate_toggles = page.locator("#theme-toggle").count()
+        if duplicate_toggles:
+            raise AssertionError(
+                "desktop theme controls should not include #theme-toggle"
+            )
+        _assert_visible(page, ".theme-summary", f"{viewport.name} theme menu")
         page.locator(".theme-summary").click()
         _assert_visible(
             page,
