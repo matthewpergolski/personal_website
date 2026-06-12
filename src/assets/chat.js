@@ -155,6 +155,7 @@
     saveMessages(messages);
     renderMessages(messages);
     setStatus("Started a new browser-session chat.");
+    fetch("/api/rag/chat/reset", { method: "POST" }).catch(function () {});
     const input = byId("chat-input");
     if (input && canAutoFocus()) input.focus();
   }
@@ -182,7 +183,7 @@
       const res = await fetch(form.dataset.endpoint || "/api/rag/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text.trim(), history: messages.slice(-10) }),
+        body: JSON.stringify({ message: text.trim() }),
       });
       const data = await res.json();
       messages.push({

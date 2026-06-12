@@ -15,6 +15,7 @@ import random
 from pathlib import Path
 import secrets
 import string
+from urllib.parse import urlparse
 from starlette.responses import JSONResponse, RedirectResponse
 from starlette.requests import Request
 from captcha.image import ImageCaptcha
@@ -39,11 +40,23 @@ from src.pages.contact import build_contact_page
 from src.pages.home import build_home_page
 from src.pages.profile import build_about_page, build_resume_page
 from src.pages.projects import build_projects_error, build_projects_page
-from src.utils.rate_limit import is_rate_limited
-from src.services.rag.simple_chat import handle_chat_payload
+from src.utils.rate_limit import CHAT_RATE_LIMIT, is_rate_limited
+from src.services.rag.simple_chat import handle_chat_payload, sanitized_chat_history
 
 
 load_dotenv("envs.sh")
+
+
+def _env_truthy(name: str) -> bool:
+    return os.getenv(name, "").lower() in ("1", "true", "yes", "on")
+
+
+def assert_debug_disabled_on_vercel() -> None:
+    if os.getenv("VERCEL") and _env_truthy("DEBUG"):
+        raise RuntimeError("DEBUG must be disabled on Vercel deployments.")
+
+
+assert_debug_disabled_on_vercel()
 
 
 # =============================================================================
@@ -52,11 +65,12 @@ load_dotenv("envs.sh")
 
 
 def get_client_ip(request):
-    """Best-effort real client IP, respecting common proxy headers."""
-    for header in ("x-forwarded-for", "x-real-ip"):
-        val = request.headers.get(header)
-        if val:
-            return val.split(",")[0].strip()
+    """Best-effort real client IP, trusting proxy headers only behind a proxy."""
+    if os.getenv("VERCEL") or _env_truthy("TRUST_PROXY_HEADERS"):
+        for header in ("x-forwarded-for", "x-real-ip"):
+            val = request.headers.get(header)
+            if val:
+                return val.split(",")[0].strip()
     return getattr(request.client, "host", "unknown") if request.client else "unknown"
 
 
@@ -83,7 +97,7 @@ def validate_startup_config() -> None:
         print(f"❌ {e}")
 
     if errors:
-        if os.getenv("DEBUG", "").lower() in ("1", "true", "yes"):
+        if _env_truthy("DEBUG"):
             print("DEBUG mode — continuing despite errors.")
         else:
             raise RuntimeError("Missing required environment variables.")
@@ -231,6 +245,16 @@ def chat_page():
 @app.post("/api/rag/chat")
 async def rag_chat(req: Request):
     """Answer portfolio questions with local retrieval and optional free HF generation."""
+    ip = get_client_ip(req)
+    if is_rate_limited(ip, CHAT_RATE_LIMIT):
+        return JSONResponse(
+            {
+                "success": False,
+                "error": "Too many chat requests. Please try again later.",
+            },
+            status_code=429,
+        )
+
     try:
         payload = await req.json()
     except Exception:
@@ -238,9 +262,29 @@ async def rag_chat(req: Request):
             {"success": False, "error": "Invalid JSON."}, status_code=400
         )
 
-    result = await handle_chat_payload(payload)
+    history = sanitized_chat_history(req.session.get("chat_history"))
+    result = await handle_chat_payload(payload, history=history)
+    if result.get("success"):
+        message = str(payload.get("message") or "").strip()
+        history.extend(
+            [
+                {"role": "user", "content": message[:240]},
+                {
+                    "role": "assistant",
+                    "content": str(result.get("response") or "")[:240],
+                },
+            ]
+        )
+        req.session["chat_history"] = sanitized_chat_history(history)
     status = 200 if result.get("success") else 400
     return JSONResponse(result, status_code=status)
+
+
+@app.post("/api/rag/chat/reset")
+async def rag_chat_reset(req: Request):
+    """Clear server-side chat history for this browser session."""
+    req.session["chat_history"] = []
+    return JSONResponse({"success": True})
 
 
 @app.post("/contact")
@@ -298,8 +342,34 @@ async def contact_submit(req: Request):
 @app.get("/resume/download")
 def resume_download():
     """Redirect to the configured resume URL or local static fallback."""
-    url = get_config().resume_url or "/static/resume.pdf"
+    url = _safe_resume_download_url(get_config().resume_url)
     return RedirectResponse(url, status_code=307)
+
+
+def _safe_resume_download_url(url: str | None) -> str:
+    fallback = "/static/resume.pdf"
+    candidate = (url or "").strip()
+    if not candidate:
+        return fallback
+    if candidate.startswith("/static/") and not candidate.startswith("//"):
+        return candidate
+
+    parsed = urlparse(candidate)
+    if parsed.scheme != "https" or not parsed.netloc:
+        return fallback
+
+    allowed_hosts = [
+        host.strip().lower()
+        for host in os.getenv("RESUME_URL_ALLOWED_HOSTS", "").split(",")
+        if host.strip()
+    ]
+    if (
+        allowed_hosts
+        and parsed.hostname
+        and parsed.hostname.lower() not in allowed_hosts
+    ):
+        return fallback
+    return candidate
 
 
 # Run the app

@@ -127,6 +127,45 @@ def test_contact_field_validation_enforces_basic_rules():
     assert "Please write a slightly longer message." in errors
 
 
+def test_contact_field_validation_rejects_header_breaks():
+    submission = ContactSubmission(
+        name="Test\r\nBcc: bad@example.com",
+        email="sender@example.com\r\nBcc: bad@example.com",
+        message="This is a long enough message.",
+        company="",
+        submitted_at=100,
+        captcha="ABCDE",
+    )
+
+    errors = validate_contact_fields(
+        submission,
+        ContactThresholds(min_message_length=10, min_submit_seconds=0),
+        now=101,
+    )
+
+    assert "Please remove line breaks from your name and email." in errors
+    assert "Please enter a valid email address." in errors
+
+
+def test_contact_field_validation_rejects_display_name_email():
+    submission = ContactSubmission(
+        name="Test User",
+        email="Test User <test@example.com>",
+        message="This is a long enough message.",
+        company="",
+        submitted_at=100,
+        captcha="ABCDE",
+    )
+
+    errors = validate_contact_fields(
+        submission,
+        ContactThresholds(min_message_length=10, min_submit_seconds=0),
+        now=101,
+    )
+
+    assert "Please enter a valid email address." in errors
+
+
 def test_contact_captcha_match_is_consumed():
     session = {"captcha_answers": [{"answer_hash": "match", "ts": 100}]}
 
@@ -181,10 +220,11 @@ def test_get_client_ip_direct():
     assert get_client_ip(req) == "203.0.113.50"
 
 
-def test_get_client_ip_x_forwarded_for():
+def test_get_client_ip_x_forwarded_for(monkeypatch):
     """Test that X-Forwarded-For is preferred (first value)."""
     from starlette.requests import Request
 
+    monkeypatch.setenv("TRUST_PROXY_HEADERS", "true")
     scope = {
         "type": "http",
         "headers": [
@@ -196,10 +236,11 @@ def test_get_client_ip_x_forwarded_for():
     assert get_client_ip(req) == "198.51.100.42"
 
 
-def test_get_client_ip_x_real_ip():
+def test_get_client_ip_x_real_ip(monkeypatch):
     """Test X-Real-IP fallback."""
     from starlette.requests import Request
 
+    monkeypatch.setenv("TRUST_PROXY_HEADERS", "true")
     scope = {
         "type": "http",
         "headers": [
@@ -209,3 +250,18 @@ def test_get_client_ip_x_real_ip():
     }
     req = Request(scope)
     assert get_client_ip(req) == "192.0.2.100"
+
+
+def test_get_client_ip_ignores_forwarded_header_without_trusted_proxy(monkeypatch):
+    """Test forwarded headers are ignored unless proxy trust is explicit."""
+    from starlette.requests import Request
+
+    monkeypatch.delenv("TRUST_PROXY_HEADERS", raising=False)
+    monkeypatch.delenv("VERCEL", raising=False)
+    scope = {
+        "type": "http",
+        "headers": [(b"x-forwarded-for", b"198.51.100.42")],
+        "client": ("203.0.113.50", 12345),
+    }
+    req = Request(scope)
+    assert get_client_ip(req) == "203.0.113.50"

@@ -63,7 +63,12 @@ Do not bulk-read generated or lock files unless the task requires dependency or 
 - Vercel secrets should be marked as sensitive environment variables.
 - After the April 2026 Vercel security incident, rotate any Vercel env vars that were not already marked sensitive, especially tokens, SMTP credentials, signing secrets, and provider API keys.
 - `SESSION_SECRET` should be configured in Vercel for stable signed sessions.
-- The chat assistant stores history in browser `sessionStorage`; this is per visitor and per browser tab/session, not shared server-side.
+- `DEBUG` must never be enabled on Vercel; startup should fail if `VERCEL=1` and `DEBUG=true`.
+- The chat assistant stores visible transcript history in browser `sessionStorage` and follow-up context in the signed visitor session; it is scoped per visitor/session and is not shared with other visitors.
+- Do not trust client-submitted chat history. Use server-owned session history for follow-up context.
+- `/api/rag/chat` should stay rate-limited separately from the contact form.
+- Forwarded client IP headers should be trusted only on Vercel or when `TRUST_PROXY_HEADERS=true` is explicitly configured for a known reverse proxy.
+- Resume download redirects should stay constrained to `/static/...` or `https://` URLs, with `RESUME_URL_ALLOWED_HOSTS` available for stricter host allowlisting.
 - Contact form fallback writes messages locally only outside Vercel. On Vercel, failed SMTP returns an error instead of claiming durable storage.
 
 ## Chat/RAG Policy

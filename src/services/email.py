@@ -3,7 +3,28 @@ import asyncio
 import smtplib
 import ssl
 from email.message import EmailMessage
+from email.utils import parseaddr
 from typing import Tuple, Optional
+
+
+def _clean_header(value: str | None) -> str:
+    return str(value or "").replace("\r", " ").replace("\n", " ").strip()
+
+
+def _clean_config_address(value: str | None) -> str:
+    candidate = _clean_header(value)
+    _, address = parseaddr(candidate)
+    if not address:
+        return ""
+    return candidate
+
+
+def _clean_reply_address(value: str | None) -> str:
+    candidate = _clean_header(value)
+    display_name, address = parseaddr(candidate)
+    if display_name or not address or address != candidate:
+        return ""
+    return candidate
 
 
 async def send_email(
@@ -26,20 +47,23 @@ async def send_email(
     port = int(os.getenv("SMTP_PORT") or 587)
     user = os.getenv("SMTP_USER")
     password = os.getenv("SMTP_PASSWORD") or os.getenv("SMTP_PASS")
-    sender = sender or os.getenv("SMTP_FROM") or os.getenv("CONTACT_EMAIL")
-    to = to or os.getenv("SMTP_TO") or os.getenv("CONTACT_EMAIL")
+    sender = _clean_config_address(
+        sender or os.getenv("SMTP_FROM") or os.getenv("CONTACT_EMAIL")
+    )
+    to = _clean_config_address(to or os.getenv("SMTP_TO") or os.getenv("CONTACT_EMAIL"))
     use_tls = os.getenv("SMTP_TLS", "true").lower() in ("1", "true", "yes")
 
     if not host or not port or not sender or not to:
         return False, "SMTP not configured (missing host/port/from/to)"
 
     msg = EmailMessage()
-    msg["Subject"] = subject
+    msg["Subject"] = _clean_header(subject)
     msg["From"] = sender
     msg["To"] = to
     msg.set_content(body)
-    if reply_to and "@" in reply_to:
-        msg["Reply-To"] = reply_to
+    clean_reply_to = _clean_reply_address(reply_to)
+    if clean_reply_to:
+        msg["Reply-To"] = clean_reply_to
 
     def _send():
         if str(port) == "465":

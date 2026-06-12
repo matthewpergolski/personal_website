@@ -127,6 +127,8 @@ export SITE_DESCRIPTION="Brief professional description"
 # Resume (external link preferred)
 # For Google Docs: https://docs.google.com/document/d/YOUR_FILE_ID/export?format=pdf
 export RESUME_URL="https://docs.google.com/document/d/YOUR_FILE_ID/export?format=pdf"
+# Optional: restrict external resume redirects to trusted hosts.
+# export RESUME_URL_ALLOWED_HOSTS="docs.google.com,drive.google.com"
 
 # Optional resume source for the content sync workflow.
 # Prefer a Google Docs edit/share URL so the sync can fetch plain text.
@@ -145,6 +147,8 @@ export RESUME_URL="https://docs.google.com/document/d/YOUR_FILE_ID/export?format
 
 # Recommended on Vercel: stable session/cookie secret.
 # export SESSION_SECRET="replace-with-a-long-random-string"
+# Only set when running behind a trusted proxy outside Vercel.
+# export TRUST_PROXY_HEADERS=false
 
 # Optional CAPTCHA hash secret. If omitted, the app uses SESSION_SECRET/session key.
 # export CAPTCHA_SECRET="replace-with-a-long-random-string"
@@ -152,6 +156,8 @@ export RESUME_URL="https://docs.google.com/document/d/YOUR_FILE_ID/export?format
 # Rate limits (server-side safeguards)
 export RATE_IP_PER_HOUR=3
 export RATE_GLOBAL_PER_DAY=50
+export RATE_CHAT_IP_PER_HOUR=30
+export RATE_CHAT_GLOBAL_PER_DAY=500
 
 # Optional experience chat generation.
 # If omitted, chat still works with local retrieval only.
@@ -249,19 +255,22 @@ At runtime the app merges env vars with this JSON:
   RESUME_SOURCE_URL="https://docs.google.com/document/d/YOUR_FILE_ID/edit" uv run python scripts/sync_resume_content.py
   ```
 - `RESUME_URL` is still the public resume download link. `RESUME_SOURCE_URL` is the editable source used to refresh site and chat content.
+- Resume downloads redirect only to `/static/...` or `https://` URLs. Set `RESUME_URL_ALLOWED_HOSTS` to a comma-separated host allowlist when you want tighter redirect control.
 
 ### Email + Contact
 - POST `/contact` sends email via SMTP and on success redirects to `/contact?sent=1`.
 - If SMTP is not configured or fails in local/non-serverless environments, messages are saved to `data/messages/` and the page redirects to `/contact?saved=1`.
 - On Vercel, SMTP failures return an error instead of writing messages to ephemeral `/tmp` storage.
 - Anti‑spam: honeypot + min submit time + self-hosted image CAPTCHA + per‑IP/hour and daily global rate‑limits.
+- Contact names/emails reject header-breaking characters before SMTP headers are built.
 
 ### Experience Chat
 - The assistant is available from every page through the desktop floating widget, mobile Chat tab, and full-page experience at `/chat`.
-- Chat history is stored in browser `sessionStorage`, so it carries across pages for the same visitor and tab/session only. It is not stored server-side and is not visible to other visitors.
+- Chat history is stored in browser `sessionStorage` for the visible transcript and in the signed visitor session for follow-up retrieval context. It is scoped to the same visitor/session and is not visible to other visitors.
 - Retrieval is local and free: the app ranks committed portfolio/experience data for each question, including recent user turns for follow-up context.
 - Responses show the answer path and source labels so visitors can tell whether the answer came from local retrieval or optional AI polishing.
 - `HUGGINGFACE_API_KEY` is optional. When configured, a small Hugging Face model can polish responses; if it is missing, rate-limited, or out of free usage, the local retrieved answer is still returned.
+- `/api/rag/chat` has separate best-effort rate limits through `RATE_CHAT_IP_PER_HOUR` and `RATE_CHAT_GLOBAL_PER_DAY`.
 
 ### Development Checks
 - Install Git hooks with `uv run pre-commit install`.
