@@ -126,6 +126,31 @@
         row.appendChild(chip);
       });
       meta.appendChild(row);
+
+      const details = document.createElement("details");
+      details.className = "chat-source-details";
+      const summary = document.createElement("summary");
+      summary.textContent = `Source details (${sources.length})`;
+      details.appendChild(summary);
+      const list = document.createElement("ul");
+      list.className = "chat-source-list";
+      (message.sources || []).forEach(function (source) {
+        const chipLabel = sourceLabel(source);
+        if (!chipLabel) return;
+        const item = document.createElement("li");
+        const strong = document.createElement("strong");
+        strong.textContent = chipLabel;
+        item.appendChild(strong);
+        const snippet = sourceSnippet(source);
+        if (snippet) {
+          const text = document.createElement("span");
+          text.textContent = `: ${snippet}`;
+          item.appendChild(text);
+        }
+        list.appendChild(item);
+      });
+      details.appendChild(list);
+      meta.appendChild(details);
     }
     el.appendChild(meta);
   }

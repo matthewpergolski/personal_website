@@ -150,6 +150,22 @@
   color: var(--text-color);
   background: color-mix(in srgb, var(--surface-1) 82%, transparent);
 }
+.chat-source-details {
+  margin-top: 0.15rem;
+}
+.chat-source-details summary {
+  cursor: pointer;
+  color: var(--text-color);
+  font-weight: 720;
+}
+.chat-source-list {
+  margin: 0.45rem 0 0 1rem;
+  padding: 0;
+}
+.chat-source-list li {
+  margin: 0.35rem 0;
+  line-height: 1.4;
+}
 .chat-suggestions {
   display: flex;
   gap: 0.5rem;

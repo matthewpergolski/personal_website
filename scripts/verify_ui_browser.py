@@ -131,6 +131,7 @@ def _check_chat_mobile_interaction(
         "() => [...document.querySelectorAll('.chat-message.assistant')].length >= 2",
         timeout=7000,
     )
+    _assert_visible(page, ".chat-source-details", f"{viewport.name} chat sources")
     _assert_visible(page, "#chat-suggestions", f"{viewport.name} chat follow-up")
     _assert_no_horizontal_overflow(page, f"{viewport.name} chat follow-up")
 
