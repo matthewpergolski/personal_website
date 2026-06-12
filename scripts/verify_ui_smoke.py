@@ -110,11 +110,13 @@ def _check_mobile_navigation(client: TestClient) -> None:
         'id="tab-chat"',
         'aria-controls="nav-links"',
         'id="nav-toggle"',
-        'id="theme-toggle-mobile"',
-        'data-appearance-toggle="true"',
         'data-theme-select="mobile-menu"',
     ]
     _assert_contains(html, "/", expected)
+    if 'id="theme-toggle-mobile"' in html or 'data-appearance-toggle="true"' in html:
+        raise AssertionError(
+            "Mobile nav should use one Theme menu, not a duplicate quick toggle"
+        )
     if html.index(">About<") > html.index(">Projects<"):
         raise AssertionError("Navigation order should put About before Projects")
 

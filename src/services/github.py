@@ -2,13 +2,23 @@ import os
 import time
 import httpx
 import asyncio
+import logging
 from typing import Any, Dict, List, Optional, Tuple
+
+from src.config import get_config
+
+
+logger = logging.getLogger(__name__)
+
+
+def _github_username() -> str | None:
+    return get_config().github_username
 
 
 async def fetch_github_projects() -> List[Dict[str, Any]]:
     """Fetch all GitHub repositories for the configured user (paginated)."""
     try:
-        username = os.getenv("GITHUB_USERNAME")
+        username = _github_username()
         token = os.getenv("GITHUB_TOKEN")
 
         if not username or not token:
@@ -27,7 +37,10 @@ async def fetch_github_projects() -> List[Dict[str, Any]]:
                 url = f"https://api.github.com/users/{username}/repos?sort=updated&per_page={per_page}&page={page}"
                 response = await client.get(url, headers=headers)
                 if response.status_code != 200:
-                    print(f"GitHub API Error: {response.status_code}")
+                    logger.warning(
+                        "GitHub repository API returned status %s",
+                        response.status_code,
+                    )
                     break
                 repos = response.json()
                 if not repos:
@@ -51,15 +64,15 @@ async def fetch_github_projects() -> List[Dict[str, Any]]:
             ]
             return processed
 
-    except Exception as e:
-        print(f"Error fetching GitHub projects: {e}")
+    except Exception as exc:
+        logger.warning("Error fetching GitHub projects: %s", exc)
         return []
 
 
 async def fetch_github_profile() -> Optional[Dict[str, Any]]:
     """Fetch GitHub user profile details (avatar, name, bio, counts)."""
     try:
-        username = os.getenv("GITHUB_USERNAME")
+        username = _github_username()
         token = os.getenv("GITHUB_TOKEN")
         if not username or not token:
             return None
@@ -71,7 +84,7 @@ async def fetch_github_profile() -> Optional[Dict[str, Any]]:
             url = f"https://api.github.com/users/{username}"
             r = await client.get(url, headers=headers)
             if r.status_code != 200:
-                print(f"GitHub Profile Error: {r.status_code}")
+                logger.warning("GitHub profile API returned status %s", r.status_code)
                 return None
             j = r.json()
             return {
@@ -86,8 +99,8 @@ async def fetch_github_profile() -> Optional[Dict[str, Any]]:
                 "company": j.get("company"),
                 "location": j.get("location"),
             }
-    except Exception as e:
-        print(f"Error fetching GitHub profile: {e}")
+    except Exception as exc:
+        logger.warning("Error fetching GitHub profile: %s", exc)
         return None
 
 
@@ -121,7 +134,7 @@ async def fetch_language_bytes_aggregate() -> Dict[str, int]:
 
     Cached for several hours to avoid rate-limit and latency.
     """
-    username = os.getenv("GITHUB_USERNAME")
+    username = _github_username()
     token = os.getenv("GITHUB_TOKEN")
     if not username or not token:
         return {}
