@@ -121,6 +121,10 @@ def _check_mobile_navigation(client: TestClient) -> None:
 
 def _check_theme_ui_contract(client: TestClient) -> None:
     html = _response_text(client, "/")
+    if 'id="theme-toggle"' in html:
+        raise AssertionError(
+            "Desktop nav should use one Theme menu, not a duplicate quick toggle"
+        )
     expected = [
         "window.__SITE_THEME_DEFAULTS__",
         '"theme": "cosmic"',

@@ -18,6 +18,10 @@
   "content": {
     "hero": {
       "current_role_label": "Current Role",
+      "role_fact_label": "Now",
+      "experience_fact_label": "Experience",
+      "focus_fact_label": "Focus",
+      "focus_fact_value": "AI/ML systems and practical automation",
       "fallback_company": "Portfolio"
     },
     "home": {

@@ -190,10 +190,7 @@ def Navigation():
                             if li_url
                             else []
                         )
-                        + [
-                            AppearanceToggle("theme-toggle"),
-                            ThemeMenu(),
-                        ]
+                        + [ThemeMenu()]
                     ),
                     cls="nav-actions",
                 ),
@@ -214,6 +211,28 @@ def HeroSection(profile: dict | None = None, experience: dict | None = None):
         f"https://github.com/{gh_user}.png?size=320" if gh_user else None
     )
     current_role = ((experience or {}).get("experience") or [{}])[0]
+    snapshot = (experience or {}).get("snapshot") or {}
+    years = snapshot.get("years")
+    hero_facts = [
+        (
+            config.text("hero", "role_fact_label", "Now"),
+            display_role_title(current_role.get("title")),
+        ),
+        *(
+            [
+                (
+                    config.text("hero", "experience_fact_label", "Experience"),
+                    f"{years}+ years",
+                )
+            ]
+            if years
+            else []
+        ),
+        (
+            config.text("hero", "focus_fact_label", "Focus"),
+            config.text("hero", "focus_fact_value", config.site_description),
+        ),
+    ]
     return Section(
         Div(
             Div(
@@ -251,6 +270,18 @@ def HeroSection(profile: dict | None = None, experience: dict | None = None):
                         cls="hero-meta-sub",
                     ),
                     cls="hero-current",
+                ),
+                Div(
+                    *[
+                        Div(
+                            Span(label, cls="hero-fact-label"),
+                            Span(value, cls="hero-fact-value"),
+                            cls="hero-fact",
+                        )
+                        for label, value in hero_facts
+                        if value
+                    ],
+                    cls="hero-facts",
                 ),
                 cls="hero-aside",
             ),

@@ -343,7 +343,7 @@ body::before {
 
 .hero-section {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-2) 72%, transparent), transparent 72%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-2) 82%, transparent), transparent 76%),
     radial-gradient(
       900px 420px at 18% 10%,
       color-mix(in srgb, var(--primary-color) 24%, transparent),
@@ -355,7 +355,7 @@ body::before {
       transparent 60%
     );
   color: var(--text-color);
-  padding: 5rem 0 4.25rem;
+  padding: clamp(4rem, 7vw, 6.25rem) 0 clamp(3.25rem, 6vw, 5rem);
   text-align: left;
   position: relative;
   overflow: hidden;
@@ -364,7 +364,7 @@ body::before {
 
 .hero-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
+  grid-template-columns: minmax(0, 1.18fr) minmax(300px, 0.82fr);
   gap: clamp(2rem, 5vw, 4.5rem);
   align-items: center;
 }
@@ -386,13 +386,57 @@ body::before {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
-  margin-top: 1.5rem;
+  margin-top: 1.4rem;
+}
+
+.hero-facts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
+  width: min(100%, 360px);
+}
+
+.hero-fact {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--border-color) 82%, transparent);
+  border-radius: var(--radius-md);
+  padding: 0.72rem 0.85rem;
+  background: color-mix(in srgb, var(--surface-2) 50%, transparent);
+  box-shadow: var(--shadow-sm);
+}
+
+.hero-fact-label {
+  display: block;
+  color: var(--muted-text);
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.hero-fact-value {
+  display: block;
+  color: var(--text-color);
+  font-size: 0.94rem;
+  font-weight: 760;
+  line-height: 1.25;
+  margin-top: 0.22rem;
+  overflow-wrap: anywhere;
 }
 
 .hero-aside {
   display: grid;
   justify-items: center;
   gap: 1.1rem;
+  padding: 1.25rem;
+  border: 1px solid color-mix(in srgb, var(--border-color) 82%, transparent);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(
+      320px 220px at 50% 0%,
+      color-mix(in srgb, var(--primary-color) 18%, transparent),
+      transparent 68%
+    ), color-mix(in srgb, var(--surface-1) 72%, transparent);
+  box-shadow: var(--shadow-lg);
 }
 
 .hero-current {
@@ -447,9 +491,13 @@ body::before {
   .hero-layout {
     grid-template-columns: 1fr;
     text-align: center;
+    gap: 1.5rem;
   }
   .hero-actions {
     justify-content: center;
+  }
+  .hero-facts {
+    display: none;
   }
   .hero-title {
     font-size: clamp(2.35rem, 12vw, 3.25rem);
@@ -462,6 +510,11 @@ body::before {
   }
   .hero-aside {
     gap: 0.75rem;
+    width: min(100%, 420px);
+    margin: 0 auto;
+  }
+  .hero-current {
+    display: none;
   }
 }
 
@@ -834,7 +887,7 @@ body::before {
 }
 
 .section {
-  padding: 4.5rem 0;
+  padding: clamp(3.25rem, 7vw, 5.25rem) 0;
 }
 
 .muted {
@@ -931,9 +984,10 @@ body::before {
   font-size: clamp(2rem, 5vw, 3.25rem);
   font-weight: 800;
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: clamp(1.75rem, 4vw, 3rem);
   color: var(--text-color);
   line-height: 1.1;
+  text-wrap: balance;
 }
 
 .highlight-grid {
@@ -943,16 +997,27 @@ body::before {
 }
 
 .highlight-card {
-  min-height: 176px;
+  min-height: 188px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  padding: 1.25rem;
+  padding: 1.35rem;
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--surface-1) 96%, transparent),
     var(--surface-1)
   );
   box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.highlight-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+  opacity: 0.9;
 }
 
 .highlight-index {
@@ -967,7 +1032,8 @@ body::before {
 .highlight-copy {
   color: var(--text-color);
   font-weight: 680;
-  line-height: 1.5;
+  line-height: 1.55;
+  margin-bottom: 0;
 }
 
 @media (max-width: 900px) {
@@ -1026,7 +1092,7 @@ body::before {
     linear-gradient(180deg, color-mix(in srgb, var(--surface-1) 96%, transparent), var(--surface-1));
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  padding: clamp(1.5rem, 4vw, 2.5rem);
+  padding: clamp(1.5rem, 4vw, 2.75rem);
   display: grid;
   grid-template-columns: auto 1fr;
   gap: clamp(1.25rem, 4vw, 2.25rem);
@@ -1037,6 +1103,7 @@ body::before {
   .about-hero {
     grid-template-columns: 1fr;
     text-align: center;
+    justify-items: center;
   }
 }
 .about-hero .avatar {
@@ -1078,7 +1145,7 @@ body::before {
   background: color-mix(in srgb, var(--surface-2) 78%, var(--surface-1));
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: 1rem;
+  padding: 1rem 0.85rem;
   text-align: center;
 }
 .stat-num {
@@ -1124,8 +1191,8 @@ body::before {
 
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+  gap: clamp(1rem, 3vw, 2rem);
   margin-top: 2rem;
 }
 
@@ -1133,7 +1200,7 @@ body::before {
 .grid-2-1 {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: 2rem;
+  gap: clamp(1rem, 3vw, 2rem);
   align-items: start;
 }
 @media (max-width: 980px) {
@@ -1149,7 +1216,7 @@ body::before {
     var(--surface-1)
   );
   border-radius: var(--radius-lg);
-  padding: 2rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
   box-shadow: var(--shadow-md);
   transition:
     transform 0.2s,
@@ -1164,7 +1231,7 @@ body::before {
 
 .card-title {
   font-size: 1.25rem;
-  font-weight: 600;
+  font-weight: 760;
   margin-bottom: 0.5rem;
   color: var(--text-color);
   line-height: 1.2;
@@ -1181,6 +1248,7 @@ body::before {
 .card-description {
   color: var(--text-color);
   margin-bottom: 1.5rem;
+  line-height: 1.6;
 }
 
 .chips {
@@ -1223,17 +1291,16 @@ body::before {
   );
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  padding: 1rem;
+  padding: clamp(1rem, 3vw, 1.4rem);
   box-shadow: var(--shadow-lg);
   backdrop-filter: blur(4px);
 }
 .chart-toolbar {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, auto)) 1fr;
+  gap: 0.9rem;
+  margin-bottom: 0.85rem;
   align-items: end;
-  flex-wrap: wrap;
 }
 .chart-control-group {
   display: grid;
@@ -1243,6 +1310,7 @@ body::before {
   color: var(--muted-text);
   font-size: 0.78rem;
   font-weight: 800;
+  text-transform: uppercase;
 }
 .chart-segment {
   display: flex;
@@ -1275,7 +1343,7 @@ body::before {
   align-items: center;
 }
 .chart-canvas {
-  height: 480px;
+  height: 500px;
 }
 .chart-key {
   display: none;
@@ -1435,6 +1503,7 @@ li {
   align-self: end;
   border-style: dashed;
   background: color-mix(in srgb, var(--surface-1) 72%, transparent);
+  justify-self: end;
 }
 @media (hover: hover) and (pointer: fine) {
   .chart-option::after {
@@ -1513,7 +1582,8 @@ li {
     padding: 3rem 0;
   }
   .section-title {
-    margin-bottom: 2rem;
+    font-size: clamp(1.85rem, 10vw, 2.55rem);
+    margin-bottom: 1.65rem;
   }
   .card {
     padding: 1.25rem;
@@ -1534,13 +1604,14 @@ li {
     flex-direction: column;
   }
   .chart-canvas {
-    height: 320px;
+    height: 340px;
     order: 4;
   }
   .chart-toolbar {
-    justify-content: center;
-    align-items: center;
+    grid-template-columns: 1fr 1fr;
+    align-items: end;
     gap: 0.75rem;
+    width: 100%;
   }
   .chart-control-group {
     justify-items: center;
@@ -1549,9 +1620,10 @@ li {
     text-align: center;
   }
   .chart-export {
-    width: 100%;
-    max-width: 180px;
+    grid-column: 1 / -1;
+    width: min(100%, 220px);
     margin: 0 auto;
+    justify-self: center;
   }
   .chart-hint {
     order: 2;
@@ -1566,5 +1638,8 @@ li {
     padding: 0.75rem 0;
     border-top: 1px solid var(--border-color);
     border-bottom: 1px solid var(--border-color);
+  }
+  .chart-key-list {
+    grid-template-columns: 1fr;
   }
 }
