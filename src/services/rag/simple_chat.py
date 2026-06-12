@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import math
 import os
 import re
@@ -12,6 +13,9 @@ import httpx
 
 from src.config import ROOT_DIR, get_config
 from src.services.content import load_experience
+
+
+logger = logging.getLogger(__name__)
 
 
 STOPWORDS = {
@@ -565,15 +569,17 @@ Answer:"""
                     note = "Hugging Face free inference is temporarily rate-limited"
                     if retry_after:
                         note = f"{note}; retry after {retry_after} seconds"
-                    print(f"{note}: {response.text[:300]}")
+                    logger.warning("%s: %s", note, response.text[:300])
                     return None, note
-                print(
-                    f"Hugging Face chat error: {response.status_code} {response.text[:300]}"
+                logger.warning(
+                    "Hugging Face chat error: %s %s",
+                    response.status_code,
+                    response.text[:300],
                 )
                 return None, "Hugging Face inference is temporarily unavailable"
             data = response.json()
     except Exception as exc:
-        print(f"Hugging Face chat request failed: {exc}")
+        logger.warning("Hugging Face chat request failed: %s", exc)
         return None, "Hugging Face inference is temporarily unavailable"
 
     generated = ""

@@ -41,3 +41,18 @@ def test_site_config_loads_public_content_copy(monkeypatch):
     assert site_config.text("projects", "missing", "Fallback") == "Fallback"
     assert site_config.text_list("chat", "suggestions", []) == ["Ask about leadership"]
     assert site_config.text_list("chat", "missing", ["Fallback"]) == ["Fallback"]
+
+
+def test_site_config_loads_public_github_username(monkeypatch):
+    monkeypatch.setattr(
+        config,
+        "_read_site_json",
+        lambda: {"github_username": "from-site-json"},
+    )
+    monkeypatch.delenv("GITHUB_USERNAME", raising=False)
+
+    assert config.get_config().github_username == "from-site-json"
+
+    monkeypatch.setenv("GITHUB_USERNAME", "from-env")
+
+    assert config.get_config().github_username == "from-env"

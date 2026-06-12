@@ -158,7 +158,11 @@ def _check_chat_mobile_interaction(
 def _check_theme_controls(page: Page, base_url: str, viewport: Viewport) -> None:
     page.goto(f"{base_url}/", wait_until="domcontentloaded")
     if viewport.is_mobile:
-        _assert_visible(page, "#theme-toggle-mobile", f"{viewport.name} theme toggle")
+        duplicate_toggles = page.locator("#theme-toggle-mobile").count()
+        if duplicate_toggles:
+            raise AssertionError(
+                "mobile theme controls should not include #theme-toggle-mobile"
+            )
         page.locator("#nav-toggle").click()
         _assert_visible(
             page,

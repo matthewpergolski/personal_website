@@ -11,6 +11,7 @@ import os
 import asyncio
 import hashlib
 import hmac
+import logging
 import random
 from pathlib import Path
 import secrets
@@ -46,6 +47,8 @@ from src.services.rag.simple_chat import handle_chat_payload, sanitized_chat_his
 
 load_dotenv("envs.sh")
 
+logger = logging.getLogger(__name__)
+
 
 def _env_truthy(name: str) -> bool:
     return os.getenv(name, "").lower() in ("1", "true", "yes", "on")
@@ -76,10 +79,11 @@ def get_client_ip(request):
 
 def validate_startup_config() -> None:
     """Fail fast with clear messages if critical configuration is missing."""
+    config = get_config()
     warnings = []
     errors = []
 
-    if not os.getenv("GITHUB_USERNAME"):
+    if not config.github_username:
         warnings.append("GITHUB_USERNAME not set — GitHub features disabled.")
 
     if not os.getenv("GITHUB_TOKEN"):
@@ -91,14 +95,14 @@ def validate_startup_config() -> None:
             "No contact destination configured (contact form will save locally)."
         )
 
-    for w in warnings:
-        print(f"⚠️  {w}")
-    for e in errors:
-        print(f"❌ {e}")
+    for warning in warnings:
+        logger.warning(warning)
+    for error in errors:
+        logger.error(error)
 
     if errors:
         if _env_truthy("DEBUG"):
-            print("DEBUG mode — continuing despite errors.")
+            logger.warning("DEBUG mode - continuing despite startup config errors.")
         else:
             raise RuntimeError("Missing required environment variables.")
 
@@ -320,8 +324,9 @@ async def contact_submit(req: Request):
                 return RedirectResponse("/contact?sent=1", status_code=303)
             else:
                 if os.getenv("VERCEL"):
-                    print(
-                        f"Email send failed; local fallback disabled on Vercel: {info}"
+                    logger.warning(
+                        "Email send failed; local fallback disabled on Vercel: %s",
+                        info,
                     )
                     return RedirectResponse("/contact?err=server", status_code=303)
                 # Fallback: persist to data/messages

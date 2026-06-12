@@ -138,7 +138,6 @@ def Navigation():
                     cls="nav-brand",
                 ),
                 Div(
-                    AppearanceToggle("theme-toggle-mobile", cls="mobile-theme-toggle"),
                     Button(
                         "☰",
                         id="nav-toggle",
