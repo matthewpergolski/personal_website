@@ -66,6 +66,16 @@ FOLLOW_UP_MARKERS = {
     "this",
 }
 
+COMPANY_SUMMARY_TOKENS = {
+    "career",
+    "experience",
+    "history",
+    "lockheed",
+    "martin",
+    "summarize",
+    "summary",
+}
+
 PROJECT_INTENT_TOKENS = {
     "built",
     "build",
@@ -76,6 +86,17 @@ PROJECT_INTENT_TOKENS = {
     "projects",
     "used",
     "work",
+}
+
+ROLE_FIT_TOKENS = {
+    "fit",
+    "hire",
+    "job",
+    "jobs",
+    "role",
+    "roles",
+    "target",
+    "targeting",
 }
 
 SKILL_INTENT_TOKENS = {
@@ -175,7 +196,6 @@ def _experience_label(role: dict[str, Any]) -> str:
 
 def _experience_sources() -> list[ChatSource]:
     data = load_experience(ROOT_DIR) or {}
-    site = _load_site_json()
     cfg = get_config()
     sources: list[ChatSource] = []
 
@@ -222,40 +242,33 @@ def _experience_sources() -> list[ChatSource]:
         label = "Resume text" if index == 1 else f"Resume text {index}"
         sources.append(ChatSource(label, chunk))
 
-    if site:
-        public_bits = [
-            f"{key}: {value}"
-            for key, value in site.items()
-            if key
-            not in {
-                "content",
-                "github_token",
-                "smtp_password",
-            }
-            and isinstance(value, str | int | float | bool)
-            and value
-        ]
-        if public_bits:
-            sources.append(ChatSource("Site profile", "\n".join(public_bits)))
-
     return sources
 
 
 def retrieve_sources(query: str, *, limit: int = 4) -> list[ChatSource]:
     query_tokens = _tokens(query)
+    company_summary_intent = bool({"lockheed", "martin"} & query_tokens) and bool(
+        COMPANY_SUMMARY_TOKENS & query_tokens
+    )
     project_intent = bool(query_tokens & PROJECT_INTENT_TOKENS)
+    role_fit_intent = bool(query_tokens & ROLE_FIT_TOKENS)
     skill_intent = bool(query_tokens & SKILL_INTENT_TOKENS)
     tech_focus = query_tokens & TECH_FOCUS_TOKENS
     scored: list[ChatSource] = []
-    for source in _experience_sources():
+    for index, source in enumerate(_experience_sources()):
         source_tokens = _tokens(f"{source.label} {source.text}")
         overlap = len(query_tokens & source_tokens)
         density = overlap / math.sqrt(max(len(source_tokens), 1))
         if tech_focus and not (tech_focus & source_tokens):
             density *= 0.25
         if source.label.startswith("Experience"):
+            if company_summary_intent:
+                density *= 1.25 + max(0, 10 - index) * 0.04
+                density += max(0, 16 - index) * 0.25
             density *= 1.45 if project_intent else 1.2
         elif source.label in {"Highlights", "Professional summary"}:
+            if role_fit_intent:
+                density *= 1.35
             density *= 1.25 if project_intent else 1.1
         elif source.label.startswith("Skills"):
             if skill_intent:
@@ -382,6 +395,91 @@ def _greeting_answer() -> str:
     )
 
 
+def _is_company_summary_query(query: str) -> bool:
+    query_tokens = _tokens(query)
+    return bool({"lockheed", "martin"} & query_tokens) and bool(
+        COMPANY_SUMMARY_TOKENS & query_tokens
+    )
+
+
+def _is_role_fit_query(query: str) -> bool:
+    return bool(_tokens(query) & ROLE_FIT_TOKENS)
+
+
+def _lockheed_summary_answer() -> str | None:
+    data = load_experience(ROOT_DIR) or {}
+    roles = [
+        role
+        for role in data.get("experience") or []
+        if "lockheed" in str(role.get("company") or "").lower()
+    ]
+    if not roles:
+        return None
+
+    current_roles = roles[:3]
+    lines = [
+        "Matthew's Lockheed Martin experience spans operations, data science, and AI/ML engineering:",
+        "",
+    ]
+    for role in current_roles:
+        title = re.sub(
+            r"\s*\([^)]*\)\s*", " ", str(role.get("title") or "Role")
+        ).strip()
+        period = str(role.get("period") or "").strip()
+        bullets = [
+            str(item).strip() for item in role.get("bullets") or [] if str(item).strip()
+        ]
+        detail = (
+            bullets[0]
+            if bullets
+            else "Contributed to technical and operational delivery."
+        )
+        prefix = f"{title}"
+        if period:
+            prefix = f"{prefix} ({period})"
+        lines.append(f"- {prefix}: {detail}")
+
+    if len(roles) > len(current_roles):
+        lines.append(
+            "- Earlier manufacturing planning roles add operations, supply-chain, and process-improvement context."
+        )
+
+    lines.append("")
+    lines.append(
+        "The through-line is practical automation: using data, ML, and platform engineering to improve technical and business workflows."
+    )
+    return "\n".join(lines)
+
+
+def _role_fit_answer() -> str:
+    cfg = get_config()
+    data = load_experience(ROOT_DIR) or {}
+    summary = str(data.get("summary") or cfg.site_description).strip()
+    current_role = ((data.get("experience") or [{}])[0]) or {}
+    title = re.sub(
+        r"\s*\([^)]*\)\s*", " ", str(current_role.get("title") or "AI/ML Engineer")
+    ).strip()
+    bullets = [
+        str(item).strip()
+        for item in current_role.get("bullets") or []
+        if str(item).strip()
+    ][:3]
+
+    lines = [
+        "The strongest role fit is practical AI/ML engineering where data science, automation, and software delivery overlap:",
+        "",
+        f"- Current positioning: {title}.",
+    ]
+    if summary:
+        lines.append(f"- Portfolio summary: {summary}")
+    lines.extend(f"- Evidence: {bullet}" for bullet in bullets)
+    lines.append("")
+    lines.append(
+        "Good target roles include AI/ML engineer, applied machine learning engineer, data science engineer, AI platform engineer, and automation-focused technical lead roles."
+    )
+    return "\n".join(lines)
+
+
 def _fallback_answer(query: str, sources: list[ChatSource]) -> str:
     cfg = get_config()
     if not sources:
@@ -389,6 +487,14 @@ def _fallback_answer(query: str, sources: list[ChatSource]) -> str:
             "I do not have enough portfolio context to answer that yet, but I can discuss "
             f"{cfg.owner_name}'s AI/ML, data science, Python, automation, and project experience."
         )
+
+    if _is_company_summary_query(query):
+        answer = _lockheed_summary_answer()
+        if answer:
+            return answer
+
+    if _is_role_fit_query(query):
+        return _role_fit_answer()
 
     points = _tech_focus_points(query, sources) or _best_source_points(query, sources)
     if points:

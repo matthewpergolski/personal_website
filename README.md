@@ -288,7 +288,7 @@ At runtime the app merges env vars with this JSON:
 - The assistant is available from every page through the desktop floating widget, mobile Chat tab, and full-page experience at `/chat`.
 - Chat history is stored in browser `sessionStorage` for the visible transcript and in the signed visitor session for follow-up retrieval context. It is scoped to the same visitor/session and is not visible to other visitors.
 - Retrieval is local and free: the app ranks committed portfolio/experience data for each question, including recent user turns for follow-up context.
-- Responses show the answer path and source labels so visitors can tell whether the answer came from local retrieval or optional AI polishing.
+- Responses show the answer path, source labels, and expandable source snippets so visitors can tell whether the answer came from local retrieval or optional AI polishing.
 - `HUGGINGFACE_API_KEY` is optional. When configured, a small Hugging Face model can polish responses; if it is missing, rate-limited, or out of free usage, the local retrieved answer is still returned.
 - `/api/rag/chat` has separate best-effort rate limits through `RATE_CHAT_IP_PER_HOUR` and `RATE_CHAT_GLOBAL_PER_DAY`.
 

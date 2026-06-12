@@ -19,6 +19,19 @@ def test_python_work_query_prioritizes_experience_over_skills():
     assert "Python" in sources[0].text
 
 
+def test_general_ai_query_does_not_surface_site_profile():
+    sources = retrieve_sources("What AI/ML work have you done?")
+
+    assert "Site profile" not in [source.label for source in sources]
+
+
+def test_lockheed_summary_prioritizes_recent_roles():
+    sources = retrieve_sources("Summarize your Lockheed Martin experience.")
+
+    assert sources[0].label == "Experience: A/AI Machine Learning Engineer Staff"
+    assert sources[1].label == "Experience: A/AI Machine Learning Engineer Senior"
+
+
 def test_retrieve_sources_can_use_synced_resume_text(monkeypatch):
     monkeypatch.setattr(
         simple_chat,
@@ -73,6 +86,34 @@ async def test_chat_greeting_does_not_reuse_prior_context(monkeypatch):
     assert result["success"] is True
     assert "Hi, I can answer questions" in result["response"]
     assert result["sources"] == []
+
+
+@pytest.mark.asyncio
+async def test_role_fit_query_gets_target_role_answer(monkeypatch):
+    monkeypatch.delenv("HUGGINGFACE_API_KEY", raising=False)
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+
+    result = await handle_chat_payload(
+        {"message": "What kind of roles are you targeting?"}
+    )
+
+    assert result["success"] is True
+    assert "Good target roles include" in result["response"]
+    assert "AI/ML engineer" in result["response"]
+
+
+@pytest.mark.asyncio
+async def test_lockheed_summary_gets_career_level_answer(monkeypatch):
+    monkeypatch.delenv("HUGGINGFACE_API_KEY", raising=False)
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+
+    result = await handle_chat_payload(
+        {"message": "Summarize your Lockheed Martin experience."}
+    )
+
+    assert result["success"] is True
+    assert "spans operations, data science, and AI/ML engineering" in result["response"]
+    assert "A/AI Machine Learning Engineer Staff" in result["response"]
 
 
 @pytest.mark.asyncio

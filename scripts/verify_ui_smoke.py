@@ -147,12 +147,13 @@ def _check_chat_ui_contract(client: TestClient) -> None:
     html = _response_text(client, "/chat")
     expected = [
         "Ask about Matthew&#x27;s experience, projects, and role fit.",
-        "Free-tier chat. Limited answers.",
-        "Advanced models available.",
+        "Free-tier portfolio chat. Local answers first; advanced models can be enabled later.",
         "What AI/ML work have you done?",
         "How have you used Python in your AI/ML work?",
         "Summarize your Lockheed Martin experience.",
         "What kind of roles are you targeting?",
+        "New chat",
+        "Copy chat",
         "Start a new chat",
         "Copy conversation",
         "chat-page-title",
