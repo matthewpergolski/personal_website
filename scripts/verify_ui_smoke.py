@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import html
 import sys
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -73,7 +74,9 @@ def _response_text(client: TestClient, path: str) -> str:
 
 
 def _assert_contains(text: str, path: str, expected: list[str]) -> None:
-    missing = [item for item in expected if item not in text]
+    # Compare decoded text, so the check does not depend on how a library escapes quotes.
+    decoded = html.unescape(text)
+    missing = [item for item in expected if html.unescape(item) not in decoded]
     if missing:
         raise AssertionError(f"{path} missing expected content: {missing}")
 
