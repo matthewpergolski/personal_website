@@ -154,7 +154,7 @@ def test_technical_model_mention_is_not_attribution():
             _good(),
             "",
             "The smoke test does not call gpt-4o-mini.",
-            "Frontend assets are generated with a local script.",
+            "Frontend assets come from a local script.",
             "Dependencies are installed with Composer in the PHP example.",
         ]
     )

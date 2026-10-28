@@ -60,6 +60,7 @@ _LABEL_RE = re.compile(
     re.IGNORECASE,
 )
 _NEGATION_RE = re.compile(r"\b(?:not|without|no)\b", re.IGNORECASE)
+_GENERATED_WITH_RE = re.compile(r"\bgenerated with\b", re.IGNORECASE)
 
 _BANNED = (
     (
@@ -67,7 +68,6 @@ _BANNED = (
         'Remove the Cursor footer marker "CURSOR_AGENT_PR_BODY".',
     ),
     ("Open in Cursor", 'Remove the text "Open in Cursor".'),
-    ("Generated with", 'Remove the phrase "Generated with".'),
 )
 
 
@@ -123,7 +123,10 @@ def _mermaid_problems(body: str) -> list[str]:
 
 
 def _banned_problems(body: str) -> list[str]:
-    return [_problem(fix) for needle, fix in _BANNED if needle in body]
+    problems = [_problem(fix) for needle, fix in _BANNED if needle in body]
+    if _GENERATED_WITH_RE.search(body):
+        problems.append(_problem('Remove the phrase "Generated with".'))
+    return problems
 
 
 def _negated(line: str, start: int) -> bool:
