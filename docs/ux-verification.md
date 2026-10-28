@@ -38,11 +38,8 @@ Use this checklist for visual or interaction-heavy PRs. Keep it lightweight: the
 ## Required Commands
 
 ```bash
-uv run pytest -q
-uv run python scripts/verify_ui_smoke.py
 uv run playwright install chromium
-uv run python scripts/verify_ui_browser.py
-uv run pre-commit run --all-files
+./scripts/check.sh
 ```
 
 `verify_ui_browser.py` launches the FastHTML app with patched external services and checks desktop/mobile routes with Chromium. It is not a pixel-perfect screenshot test; it catches broken routes, console errors, horizontal overflow, missing critical UI, and mobile chat/tab-bar overlap.

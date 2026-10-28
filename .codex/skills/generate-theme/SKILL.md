@@ -19,11 +19,7 @@ description: Create or extend this FastHTML portfolio's theme system from a URL,
    - Add one `ThemeOption` in `src/themes.py`.
    - Add matching light and dark token blocks in `src/assets/global.css`.
    - Keep `data/site.json.example`, README, and browser smoke checks aligned.
-5. Validate the theme across desktop and mobile:
-   - `bun run check`
-   - `uv run python scripts/verify_ui_smoke.py`
-   - `uv run python scripts/verify_ui_browser.py`
-   - `uv run pre-commit run --all-files`
+5. Validate the theme across desktop and mobile with `./scripts/check.sh` after installing Chromium once with `uv run playwright install chromium`.
 
 ## Design Rules
 

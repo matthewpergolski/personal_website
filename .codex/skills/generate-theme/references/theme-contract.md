@@ -61,10 +61,8 @@ Do not redefine spacing, layout, or component structure in a theme block unless 
 Run:
 
 ```bash
-bun run check
-uv run python scripts/verify_ui_smoke.py
-uv run python scripts/verify_ui_browser.py
-uv run pre-commit run --all-files
+uv run playwright install chromium
+./scripts/check.sh
 ```
 
 The browser smoke test must pass across desktop and mobile for every slug in `THEMES`.
