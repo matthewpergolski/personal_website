@@ -115,15 +115,17 @@ def _heading_texts(body: str) -> list[str]:
 
 
 def _heading_problems(body: str) -> list[str]:
-    found = _heading_texts(body)
-    problems: list[str] = []
-    indexes: list[int] = []
-    for heading in REQUIRED_HEADINGS:
-        if heading not in found:
-            problems.append(_problem(f'Add a markdown heading "{heading}".'))
-            continue
-        indexes.append(found.index(heading))
-    if len(indexes) == len(REQUIRED_HEADINGS) and indexes != sorted(indexes):
+    present: list[str] = []
+    for heading in _heading_texts(body):
+        if heading in REQUIRED_HEADINGS and heading not in present:
+            present.append(heading)
+    problems = [
+        _problem(f'Add a markdown heading "{heading}".')
+        for heading in REQUIRED_HEADINGS
+        if heading not in present
+    ]
+    expected = [heading for heading in REQUIRED_HEADINGS if heading in present]
+    if present != expected:
         order = ", ".join(REQUIRED_HEADINGS)
         problems.append(_problem(f"Reorder the required headings to: {order}."))
     return problems
