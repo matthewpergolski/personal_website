@@ -148,6 +148,31 @@ def test_generated_with_is_a_word_not_a_prefix():
     assert 'pr-body: Remove the phrase "Generated with".' in lowered
 
 
+def test_model_id_near_an_attribution_verb_is_not_attribution():
+    body = "\n".join(
+        [
+            _good(),
+            "Files created for the smoke test include gpt-4o fixtures.",
+            "Compare results with gpt-4o.",
+            "Packages are installed with gpt-4o-mini.",
+        ]
+    )
+
+    assert check_pr_body(body) == []
+
+
+def test_written_by_lowercase_name_is_attribution():
+    problems = check_pr_body(_good() + "\nwritten by claude.\n")
+
+    assert 'pr-body: Remove the model attribution "claude".' in problems
+
+
+def test_drafted_by_name_is_attribution():
+    problems = check_pr_body(_good() + "\nDrafted by Sonnet.\n")
+
+    assert 'pr-body: Remove the model attribution "Sonnet".' in problems
+
+
 def test_technical_model_mention_is_not_attribution():
     body = "\n".join(
         [
