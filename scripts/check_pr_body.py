@@ -46,7 +46,20 @@ _MODEL_ID_RE = re.compile(
     r")[A-Za-z0-9]+(?:[._-][A-Za-z0-9]+)*",
     re.IGNORECASE,
 )
-_BARE_MODEL_RE = re.compile(r"\b(ChatGPT|GPT|Claude|Grok|Gemini|Composer)\b")
+_BARE_MODEL_RE = re.compile(
+    r"\b(ChatGPT|GPT|Claude|Grok|Gemini|Composer)\b",
+    re.IGNORECASE,
+)
+_BY_NAME_RE = re.compile(
+    r"\b(?:drafted|written)\s+by:?\s+([A-Za-z][\w.-]*)",
+    re.IGNORECASE,
+)
+_NAME_STOPWORDS = frozenset(
+    (
+        "a an author authors hand human humans me myself people reviewer "
+        "reviewers somebody someone team the them us user users"
+    ).split()
+)
 _ATTRIBUTION_VERB_RE = re.compile(
     r"\b(?:generated|written|authored|co-authored|drafted|created|prepared|produced|assisted)\b",
     re.IGNORECASE,
@@ -139,19 +152,15 @@ def _is_signature(line: str, token: str) -> bool:
     return text.casefold() == token.casefold()
 
 
-def _attribution_before(line: str, start: int, *, bare_name: bool) -> bool:
+def _attribution_before(line: str, start: int) -> bool:
+    """True when the token is the object of an attribution, not merely nearby."""
     if _negated(line, start):
         return False
     window = line[max(0, start - 80) : start]
     if _LABEL_RE.search(window):
         return True
-    if bare_name:
-        return bool(
-            _ATTRIBUTION_VERB_RE.search(window)
-            and _LEADING_PREPOSITION_RE.search(window)
-        )
     return bool(
-        _ATTRIBUTION_VERB_RE.search(window) or _LEADING_PREPOSITION_RE.search(window)
+        _ATTRIBUTION_VERB_RE.search(window) and _LEADING_PREPOSITION_RE.search(window)
     )
 
 
@@ -175,9 +184,7 @@ def _model_problems(body: str) -> list[str]:
             key = token.casefold()
             if key in seen:
                 continue
-            if _is_signature(line, token) or _attribution_before(
-                line, start, bare_name=False
-            ):
+            if _is_signature(line, token) or _attribution_before(line, start):
                 seen.add(key)
                 problems.append(_problem(f'Remove the model attribution "{token}".'))
         for match in _BARE_MODEL_RE.finditer(line):
@@ -188,7 +195,16 @@ def _model_problems(body: str) -> list[str]:
             covered = any(
                 start <= match.start() and end >= match.end() for start, end, _ in spans
             )
-            if covered or not _attribution_before(line, match.start(), bare_name=True):
+            if covered or not _attribution_before(line, match.start()):
+                continue
+            seen.add(key)
+            problems.append(_problem(f'Remove the model attribution "{token}".'))
+        for match in _BY_NAME_RE.finditer(line):
+            token = match.group(1).strip(".-")
+            key = token.casefold()
+            if not token or key in seen or key in _NAME_STOPWORDS:
+                continue
+            if _negated(line, match.start()):
                 continue
             seen.add(key)
             problems.append(_problem(f'Remove the model attribution "{token}".'))
