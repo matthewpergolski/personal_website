@@ -134,6 +134,20 @@ def test_bare_model_name_with_attribution_verb():
     assert 'pr-body: Remove the model attribution "Claude".' in problems
 
 
+def test_generated_with_is_a_word_not_a_prefix():
+    within = check_pr_body(_good() + "\nGenerated within the fixture.\n")
+    without = check_pr_body(_good() + "\nGenerated without a footer.\n")
+    lowered = check_pr_body(_good() + "\nThis note was generated with a footer.\n")
+
+    assert not any(
+        'Remove the phrase "Generated with".' in problem for problem in within
+    )
+    assert not any(
+        'Remove the phrase "Generated with".' in problem for problem in without
+    )
+    assert 'pr-body: Remove the phrase "Generated with".' in lowered
+
+
 def test_technical_model_mention_is_not_attribution():
     body = "\n".join(
         [
