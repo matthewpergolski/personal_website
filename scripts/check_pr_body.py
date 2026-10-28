@@ -1,17 +1,10 @@
 """Check a pull request body against the portfolio template.
 
-Report-only switch
-------------------
-``REPORT_ONLY`` in this file is the enforce-vs-report switch.
-
-* ``True`` (current): print every problem and exit 0. The build stays green.
-* ``False``: print every problem and exit 1 when the body has any problem.
-
-Leave ``REPORT_ONLY`` set to ``True`` until the template should be required.
-``PR_BODY_CHECK_MODE=report`` or ``PR_BODY_CHECK_MODE=enforce`` overrides the
-constant for a single run. The pull request workflow does not set that variable.
-
-A missing body file or an unknown mode is a usage error and exits 2 in either mode.
+``REPORT_ONLY`` is the enforce-vs-report switch. ``True`` (current) prints every
+problem and exits 0. ``False`` exits 1 when the body has any problem. Leave it
+``True`` until the template should be required. ``PR_BODY_CHECK_MODE`` set to
+``report`` or ``enforce`` overrides it for one run. The workflow does not set
+that variable. A missing body file or an unknown mode exits 2 in either mode.
 """
 
 from __future__ import annotations
@@ -37,9 +30,9 @@ REQUIRED_HEADINGS = (
 
 _HEADING_RE = re.compile(r"^#{1,6}[ \t]+(.+?)\s*$", re.MULTILINE)
 _MERMAID_RE = re.compile(
-    r"(?ms)^(?:```|~~~)[ \t]*mermaid[ \t]*\n.*?^(?:```|~~~)[ \t]*$"
+    r"(?ims)^[ \t]*(?:```|~~~)[ \t]*mermaid[ \t]*\n.*?^[ \t]*(?:```|~~~)[ \t]*$"
 )
-_FENCE_RE = re.compile(r"^(```+|~~~+)")
+_FENCE_RE = re.compile(r"^[ \t]*(```+|~~~+)")
 _MODEL_ID_RE = re.compile(
     r"\b(?:"
     r"cursor-grok-|muse-wonder-|claude-|grok-|gemini-|composer-|gpt-"
@@ -106,18 +99,28 @@ def _outside_fences(body: str) -> str:
     return "\n".join(kept)
 
 
+def _canonical_heading(text: str) -> str | None:
+    folded = text.casefold()
+    for heading in REQUIRED_HEADINGS:
+        if folded == heading.casefold():
+            return heading
+    return None
+
+
 def _heading_texts(body: str) -> list[str]:
     texts: list[str] = []
     for match in _HEADING_RE.finditer(_outside_fences(body)):
         text = re.sub(r"\s+#+\s*$", "", match.group(1).strip()).strip()
-        texts.append(text)
+        canonical = _canonical_heading(text)
+        if canonical is not None:
+            texts.append(canonical)
     return texts
 
 
 def _heading_problems(body: str) -> list[str]:
     present: list[str] = []
     for heading in _heading_texts(body):
-        if heading in REQUIRED_HEADINGS and heading not in present:
+        if heading not in present:
             present.append(heading)
     problems = [
         _problem(f'Add a markdown heading "{heading}".')
