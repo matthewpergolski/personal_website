@@ -87,6 +87,30 @@ flowchart TD
     ]
 
 
+def test_scrambled_headings_report_missing_and_order():
+    body = """## Review
+
+## Summary
+
+## How it works
+
+```mermaid
+flowchart TD
+  A --> B
+```
+
+## Files changed
+
+## How to test
+"""
+
+    assert check_pr_body(body) == [
+        'pr-body: Add a markdown heading "TL;DR".',
+        "pr-body: Reorder the required headings to: "
+        "TL;DR, How it works, Summary, Files changed, How to test, Review.",
+    ]
+
+
 def test_missing_mermaid_names_the_fence_to_add():
     body = _good().replace(
         "```mermaid\nflowchart TD\n  body[Pull request body] --> check[Body check]\n"
