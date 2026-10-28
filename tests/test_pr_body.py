@@ -111,6 +111,24 @@ flowchart TD
     ]
 
 
+def test_indented_or_mixed_case_mermaid_fence_is_accepted():
+    body = _good().replace("```mermaid", "  ```Mermaid", 1)
+
+    assert check_pr_body(body) == []
+
+
+def test_heading_case_and_trailing_space_still_match():
+    body = (
+        _good()
+        .replace("## TL;DR", "## tl;dr  ", 1)
+        .replace("## How it works", "## HOW IT WORKS", 1)
+    )
+    extra = _good().replace("## Summary", "## Summary of the change", 1)
+
+    assert check_pr_body(body) == []
+    assert 'pr-body: Add a markdown heading "Summary".' in check_pr_body(extra)
+
+
 def test_missing_mermaid_names_the_fence_to_add():
     body = _good().replace(
         "```mermaid\nflowchart TD\n  body[Pull request body] --> check[Body check]\n"
