@@ -1,0 +1,25 @@
+name: PR body
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+# Report-only until REPORT_ONLY in scripts/check_pr_body.py is set to false.
+# This workflow does not set PR_BODY_CHECK_MODE.
+
+jobs:
+  pr-body:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+
+      - name: Check pull request body
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: uv run python scripts/check_pr_body.py --body-env PR_BODY

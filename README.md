@@ -300,6 +300,7 @@ At runtime the app merges env vars with this JSON:
 - Install Chromium once with `uv run playwright install chromium`.
 - Run the test and lint suite with `./scripts/check.sh`. GitHub Actions uses that same script.
 - Hooks run Ruff formatting, Ruff lint fixes, and Biome frontend asset checks.
+- Pull request descriptions are checked by `.github/workflows/pr-body.yml`. The check prints missing template sections and banned footer text, and it stays report-only until `REPORT_ONLY` in `scripts/check_pr_body.py` is set to `False`.
 - Vercel installs Python dependencies from the committed `pyproject.toml` and `uv.lock`.
 - Visual/UX-heavy PRs should also follow `docs/ux-verification.md` for desktop and mobile screenshot checks.
 
