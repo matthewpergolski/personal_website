@@ -297,6 +297,7 @@ At runtime the app merges env vars with this JSON:
 - Install frontend tooling with `bun install --frozen-lockfile`.
 - Hooks run Ruff formatting, Ruff lint fixes, and Biome frontend asset checks.
 - GitHub Actions runs formatting, linting, Biome checks, tests, deterministic UI smoke checks, and Playwright desktop/mobile browser smoke checks.
+- Pull request descriptions are checked by `.github/workflows/pr-body.yml`. The check prints missing template sections and banned footer text, and it stays report-only until `REPORT_ONLY` in `scripts/check_pr_body.py` is set to `False`.
 - Run frontend asset checks locally with `bun run check`.
 - Run deterministic UI checks locally with `uv run python scripts/verify_ui_smoke.py`.
 - Install the local Chromium test browser with `uv run playwright install chromium`, then run browser checks with `uv run python scripts/verify_ui_browser.py`.
