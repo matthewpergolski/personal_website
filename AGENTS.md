@@ -32,12 +32,9 @@ Do not bulk-read generated or lock files unless the task requires dependency or 
 - Add runtime dependencies with `uv add <package>`.
 - Add development dependencies with `uv add --dev <package>`.
 - Run app locally with `uv run uvicorn src.main:app --host 127.0.0.1 --port 8000`.
-- Run tests with `uv run pytest -q`.
-- Run deterministic UI smoke checks with `uv run python scripts/verify_ui_smoke.py`.
-- Run browser UI smoke checks with `uv run python scripts/verify_ui_browser.py` after installing Chromium once with `uv run playwright install chromium`.
-- Install frontend tooling with `bun install --frozen-lockfile`.
-- Run frontend CSS/JS/JSON checks with `bun run check`.
-- Run lint/format with `uv run pre-commit run --all-files`.
+- Install frontend tooling with `bun install --frozen-lockfile`. The Bun version is pinned in `.bun-version`.
+- Install Chromium once before the check suite with `uv run playwright install chromium`.
+- Run tests and lint with `./scripts/check.sh`. That script is the only test/lint entrypoint.
 - Keep files/modules under roughly 7,800 tokens; split large modules before they become hard to review.
 - Keep `src.main:app` as the stable Vercel entrypoint; move page rendering and workflow details into `src/pages/` and `src/services/`.
 - Prefer small, focused changes over broad rewrites.

@@ -89,6 +89,7 @@ fasthtml-portfolio/
 │   └── fasthtml-architecture-audit.md # FastHTML usage and structure guidance
 ├── tests/                   # pytest coverage, including route smoke tests
 ├── scripts/
+│   ├── check.sh             # Test and lint entrypoint
 │   ├── push-vercel-envs     # Sync selected envs.sh values to Vercel
 │   ├── sync_resume_content.py # Parse resume source into data/experience.json
 │   ├── verify_ui_smoke.py   # Deterministic route/chat/mobile contract checks
@@ -98,6 +99,7 @@ fasthtml-portfolio/
 ├── envs.sh.example         # Environment template
 ├── pyproject.toml          # UV project configuration
 ├── package.json            # Biome frontend asset tooling run with Bun
+├── .bun-version            # Pinned Bun version for frontend tooling
 ├── bun.lock                # Bun lockfile for frontend tooling
 ├── biome.json              # CSS/JS/JSON formatter/check configuration
 ├── uv.lock                 # Dependency lock file
@@ -294,12 +296,10 @@ At runtime the app merges env vars with this JSON:
 
 ### Development Checks
 - Install Git hooks with `uv run pre-commit install`.
-- Install frontend tooling with `bun install --frozen-lockfile`.
+- Install frontend tooling with `bun install --frozen-lockfile`. The Bun version is pinned in `.bun-version`.
+- Install Chromium once with `uv run playwright install chromium`.
+- Run the test and lint suite with `./scripts/check.sh`. GitHub Actions uses that same script.
 - Hooks run Ruff formatting, Ruff lint fixes, and Biome frontend asset checks.
-- GitHub Actions runs formatting, linting, Biome checks, tests, deterministic UI smoke checks, and Playwright desktop/mobile browser smoke checks.
-- Run frontend asset checks locally with `bun run check`.
-- Run deterministic UI checks locally with `uv run python scripts/verify_ui_smoke.py`.
-- Install the local Chromium test browser with `uv run playwright install chromium`, then run browser checks with `uv run python scripts/verify_ui_browser.py`.
 - Vercel installs Python dependencies from the committed `pyproject.toml` and `uv.lock`.
 - Visual/UX-heavy PRs should also follow `docs/ux-verification.md` for desktop and mobile screenshot checks.
 

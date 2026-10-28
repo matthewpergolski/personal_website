@@ -26,8 +26,18 @@ jobs:
         with:
           python-version-file: .python-version
 
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+
       - name: Install Python dependencies
         run: uv sync --frozen --dev
+
+      - name: Install frontend tooling
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: uv run playwright install --with-deps chromium
 
       - name: Validate resume source URL
         run: |
@@ -53,9 +63,7 @@ jobs:
             exit 1
           fi
 
-          uv run ruff format --check .
-          uv run ruff check .
-          uv run pytest -q
+          ./scripts/check.sh
 
       - name: Create and merge pull request when content changed
         env:

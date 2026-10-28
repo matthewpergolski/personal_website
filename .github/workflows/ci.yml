@@ -23,7 +23,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: .bun-version
 
       - name: Install Python dependencies
         run: uv sync --frozen --dev
@@ -31,26 +31,11 @@ jobs:
       - name: Install frontend tooling
         run: bun install --frozen-lockfile
 
-      - name: Check formatting
-        run: uv run ruff format --check .
-
-      - name: Check linting
-        run: uv run ruff check .
-
-      - name: Check frontend assets
-        run: bun run check
-
-      - name: Run tests
-        run: uv run pytest -q
-
-      - name: Run UI smoke verification
-        run: uv run python scripts/verify_ui_smoke.py
-
       - name: Install Playwright Chromium
         run: uv run playwright install --with-deps chromium
 
-      - name: Run browser UI smoke verification
-        run: uv run python scripts/verify_ui_browser.py
+      - name: Run checks
+        run: ./scripts/check.sh
 
       - name: Smoke test resume source sync
         if: ${{ vars.RESUME_SOURCE_URL != '' }}
